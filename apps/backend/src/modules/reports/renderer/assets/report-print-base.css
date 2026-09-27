@@ -129,6 +129,10 @@ thead th {
   font-weight: 700;
   margin-bottom: 4px;
 }
+/* No name: the signature rule is the line to sign on — no second blank line above it. */
+.rpt-sig .rpt-sig-name .blank-line {
+  display: none;
+}
 .rpt-sig .rpt-sig-role {
   font-size: 8pt;
   color: #555;

@@ -129,31 +129,6 @@
         font-weight: 700;
       }
 
-      /* ── SIGNATORY TABLE ── */
-      .sig-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 12px;
-        font-size: 9pt;
-        page-break-inside: avoid;
-        break-inside: avoid;
-      }
-
-      .sig-table td {
-        width: 50%;
-        padding: 4px 4px;
-        vertical-align: top;
-      }
-
-      .sig-line {
-        border-top: 1px solid #1a1a1a;
-        padding-top: 4px;
-        font-weight: 600;
-        font-size: 8.5pt;
-        color: #1a1a1a;
-        margin-top: 16px;
-      }
-
       .witness-label {
         font-size: 8.5pt;
         color: #444;
@@ -384,40 +359,25 @@
           MSEDCL agree to this agreement.
         </p>
 
-        <table class="sig-table">
-          <tbody>
-            <tr>
-              <td>
-                <div class="sig-line"><strong>{{consumer_name}}</strong></div>
-                <div class="witness-label">for and on behalf of Eligible Consumer</div>
-              </td>
-              <td>
-                <div class="sig-line"><strong>{{signatory_licensee_name}}</strong></div>
-                <div class="witness-label">for and on behalf of MSEDCL</div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="sig-line">&nbsp;</div>
-                <div class="witness-label">for and on behalf of Eligible Consumer</div>
-              </td>
-              <td>
-                <div class="sig-line">&nbsp;</div>
-                <div class="witness-label">for and on behalf of MSEDCL</div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="witness-label" style="margin-top: 8px;">Witness 1: ___________________</div>
-                <div class="witness-label">Witness 2: ___________________</div>
-              </td>
-              <td>
-                <div class="witness-label" style="margin-top: 8px;">Witness 1: ___________________</div>
-                <div class="witness-label">Witness 2: ___________________</div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <!-- Signatures as on the WCR: space to sign, the name above the line, the role below it. -->
+        <div class="rpt-sig-row">
+          {{> signature name=consumer_name role="for and on behalf of Eligible Consumer"}}
+          {{> signature name=signatory_licensee_name role="for and on behalf of MSEDCL"}}
+        </div>
+        <div class="rpt-sig-row" style="margin-top: 28px">
+          <div class="rpt-sig"><div class="rpt-sig-space"></div><div class="rpt-sig-rule"></div><div class="rpt-sig-role">for and on behalf of Eligible Consumer</div></div>
+          <div class="rpt-sig"><div class="rpt-sig-space"></div><div class="rpt-sig-rule"></div><div class="rpt-sig-role">for and on behalf of MSEDCL</div></div>
+        </div>
+        <div class="rpt-sig-row" style="margin-top: 16px">
+          <div>
+            <div class="witness-label">Witness 1: ___________________</div>
+            <div class="witness-label">Witness 2: ___________________</div>
+          </div>
+          <div>
+            <div class="witness-label">Witness 1: ___________________</div>
+            <div class="witness-label">Witness 2: ___________________</div>
+          </div>
+        </div>
 
       </div><!-- end page 3 -->
 
