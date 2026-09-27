@@ -3,7 +3,6 @@
 import {
   Box,
   Button,
-  CircularProgress,
   IconButton,
   Link,
   MenuItem,
@@ -11,14 +10,13 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { normalizeFactInput, validateFactInput, type WorkspaceFact } from '@tejas96/shared/reports';
+import { validateFactInput, type WorkspaceFact } from '@tejas96/shared/reports';
 import { maskAadhaar } from '@tejas96/shared/utils';
 import { Info, Lock } from 'lucide-react';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useState } from 'react';
 
 import { DiscomFactInput } from './discom-fact-input';
 import { TonePill } from '../../primitives';
-import type { FactSaveResult } from '../hooks/use-report-fact-saves';
 
 const MUTED_BOX = { '& .MuiInputBase-root': { bgcolor: 'action.hover' } };
 
@@ -37,7 +35,7 @@ function storedError(fact: WorkspaceFact): string | null {
  * unsaved changes. A stored value that is not 12 digits still shows only its
  * last 4 digits.
  */
-function shownValue(fact: WorkspaceFact, value: string): string {
+export function shownValue(fact: WorkspaceFact, value: string): string {
   if (fact.key !== 'consumer_aadhaar_number' || !value) return value;
   const full = maskAadhaar(value, ' ');
   if (full) return full;
@@ -45,9 +43,9 @@ function shownValue(fact: WorkspaceFact, value: string): string {
   return digits.length > 4 ? `XXXX ${digits.slice(-4)}` : 'XXXX';
 }
 
-/** Never editable here: quote, BOM, company and fixed facts. A cancelled project is read-only without the lock. */
-function isLockedFact(fact: WorkspaceFact): boolean {
-  return fact.source !== 'manual' && !fact.edit;
+/** Never editable here: BOM, company and fixed facts. A cancelled project is read-only without the lock. */
+export function isLockedFact(fact: WorkspaceFact): boolean {
+  return fact.source !== 'manual' && !fact.edit && fact.quoteValue === undefined;
 }
 
 /** Multi-line facts keep their line breaks: a single-line input would join them on any edit. Read-only ones grow to fit. */
@@ -68,9 +66,13 @@ interface FactLabelRowProps {
   required: boolean;
   needed: boolean;
   usedBy: string;
+  /** Changed and not saved yet. */
+  unsaved: boolean;
+  /** A quote fact printing a value typed here, not the quote's. */
+  fromQuote: boolean;
 }
 
-/** Label · ⓘ · spacer · Required / Needed · used-by. The ⓘ opens on hover, keyboard focus and tap. */
+/** Label · ⓘ · spacer · Required / Needed · quiet used-by text. The ⓘ opens on hover, keyboard focus and tap. */
 function FactLabelRow({
   inputId,
   label,
@@ -78,6 +80,8 @@ function FactLabelRow({
   required,
   needed,
   usedBy,
+  unsaved,
+  fromQuote,
 }: FactLabelRowProps): React.JSX.Element {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, minWidth: 0 }}>
@@ -96,11 +100,19 @@ function FactLabelRow({
       </Tooltip>
       <Box sx={{ flex: 1 }} />
       <Box sx={{ display: 'flex', gap: 0.5, minWidth: 0, overflow: 'hidden' }}>
+        {unsaved && <TonePill label="Unsaved" tone="info" dot className="h-[18px] px-2" />}
+        {fromQuote && <TonePill label="Changed from quote" tone="info" className="h-[18px] px-2" />}
         {required && <TonePill label="Required" tone="warning" className="h-[18px] px-2" />}
         {needed && !required && (
           <TonePill label="Needed" tone="warning" className="h-[18px] px-2" />
         )}
-        <TonePill label={usedBy} tone="neutral" className="h-[18px] px-2" />
+        <Typography
+          variant="caption"
+          noWrap
+          sx={{ color: 'text.disabled', fontSize: 11, alignSelf: 'center' }}
+        >
+          {usedBy}
+        </Typography>
       </Box>
     </Box>
   );
@@ -111,24 +123,23 @@ interface FactFieldProps {
   help: string;
   usedBy: string;
   required: boolean;
-  /** A utility detail the site needs before a utility field being edited can save. */
+  /** A utility detail the site needs before a changed utility field can save. */
   needed: boolean;
   /** No `projects.edit`, or reports are being generated. */
   readOnly: boolean;
-  /** Rejects with an Error whose message is shown under the field. */
-  onSave: (value: string | null) => Promise<FactSaveResult>;
-  /** Focused, changed or showing an error. */
-  onActivity?: (active: boolean) => void;
-  /** A utility value held by the tab, not saved yet: the input shows it. */
-  held?: string;
-  /** The stored value `held` replaces. */
-  heldBase?: string;
-  /** A value a batch just saved for this field, until the workspace shows it: the baseline meanwhile. */
-  savedValue?: string;
-  /** Shown under the field when it has no error of its own (held note, failed batch). */
-  note?: string | null;
-  /** The field went back to its stored value or holds an invalid value: drop what it held. */
-  onDiscard?: () => void;
+  /** Save is running: the input keeps its draft but cannot change. */
+  busy: boolean;
+  /** The value typed and not saved yet; undefined shows the stored value. */
+  draft?: string;
+  /** The draft would change what is stored. */
+  changed: boolean;
+  /** Its rule, a failed save, or the utility details still to set. */
+  error: string | null;
+  /** Show the error even while the field is focused: Save was pressed. */
+  forceError: boolean;
+  onChange: (raw: string) => void;
+  /** Back to the stored value. */
+  onUndo: () => void;
 }
 
 /** One fact: the same box for every fact; locked ones are muted with a lock and never editable. */
@@ -139,13 +150,13 @@ export function FactField({
   required,
   needed,
   readOnly,
-  onSave,
-  onActivity,
-  held,
-  heldBase,
-  savedValue,
-  note,
-  onDiscard,
+  busy,
+  draft,
+  changed,
+  error,
+  forceError,
+  onChange,
+  onUndo,
 }: FactFieldProps): React.JSX.Element {
   const inputId = useId();
   return (
@@ -160,18 +171,20 @@ export function FactField({
         required={required}
         needed={needed}
         usedBy={usedBy}
+        unsaved={changed}
+        fromQuote={!changed && !!fact.overridden}
       />
       {fact.editable && !readOnly ? (
         <EditableFactInput
           inputId={inputId}
           fact={fact}
-          onSave={onSave}
-          onActivity={onActivity}
-          held={held}
-          heldBase={heldBase}
-          savedValue={savedValue}
-          note={note ?? null}
-          onDiscard={onDiscard}
+          draft={draft}
+          changed={changed}
+          error={error}
+          forceError={forceError}
+          readOnly={busy}
+          onChange={onChange}
+          onUndo={onUndo}
         />
       ) : (
         <ReadOnlyFactInput inputId={inputId} fact={fact} />
@@ -215,14 +228,13 @@ function ReadOnlyFactInput({
 }
 
 /**
- * Saves on blur and on Enter — only when the draft actually changed. Some
- * stored values are legacy text that fails its own rule (e.g. an
- * `application_date` saved as "12/03/2025"). Blurring an untouched field must
- * never send anything for a value like that: `dirty` tracks a real edit and
- * a save only runs when it is set. A failed save stays dirty with the server's
- * message under the field. Esc puts the stored value back. Multi-line facts
- * (addresses, the lightning arrester text) keep their line breaks: Shift+Enter
- * adds one, Enter alone saves.
+ * Typing changes the draft only: nothing is sent until the tab's Save. Esc and
+ * Undo put the stored value back. A rule error shows once the field loses
+ * focus, or at once after Save was pressed. Multi-line facts keep their line
+ * breaks.
+ *
+ * A quote fact changed here shows Reset, which brings the quote value back
+ * (on Save). Emptied, it shows the quote value as its placeholder.
  *
  * A date whose stored value fails its rule renders as plain text (showing
  * exactly what is stored, with the rule error) so it can be retyped; it goes
@@ -231,142 +243,61 @@ function ReadOnlyFactInput({
 function EditableFactInput({
   inputId,
   fact,
-  onSave,
-  onActivity,
-  held,
-  heldBase,
-  savedValue,
-  note,
-  onDiscard,
+  draft,
+  changed,
+  error,
+  forceError,
+  readOnly,
+  onChange,
+  onUndo,
 }: {
   inputId: string;
   fact: WorkspaceFact;
-  onSave: (value: string | null) => Promise<FactSaveResult>;
-  onActivity?: (active: boolean) => void;
-  held?: string;
-  heldBase?: string;
-  savedValue?: string;
-  note: string | null;
-  onDiscard?: () => void;
+  draft?: string;
+  changed: boolean;
+  error: string | null;
+  forceError: boolean;
+  readOnly: boolean;
+  onChange: (raw: string) => void;
+  onUndo: () => void;
 }): React.JSX.Element {
-  const [draft, setDraft] = useState(held ?? savedValue ?? fact.editValue);
-  const [dirty, setDirty] = useState(held !== undefined);
-  const [saving, setSaving] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [error, setError] = useState<string | null>(() =>
-    held !== undefined ? null : storedError(fact),
+  const value = draft ?? fact.editValue;
+  const shownError =
+    draft === undefined ? storedError(fact) : focused && !forceError && changed ? null : error;
+  const resetting =
+    !!fact.overridden && changed && (!value.trim() || value.trim() === fact.quoteValue);
+
+  const helperLink = (label: string, onClick: () => void, aria: string): React.ReactNode => (
+    <Link
+      component="button"
+      type="button"
+      variant="caption"
+      disabled={readOnly}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onClick}
+      aria-label={aria}
+      sx={{ verticalAlign: 'baseline' }}
+    >
+      {label}
+    </Link>
   );
-  // What this field last saved, until the workspace catches up: when saves
-  // overlap the cache waits for a refetch, and Esc must not flash the old value.
-  const [saved, setSaved] = useState<string | null>(null);
-  const baseline = saved ?? savedValue ?? fact.editValue;
-
-  // A batch another field completed saved this one too: it is no longer a
-  // change, so a blur must not hold or send it again.
-  useEffect(() => {
-    if (savedValue === undefined || normalizeFactInput(fact, draft) !== savedValue) return;
-    setDirty(false);
-    setError(null);
-  }, [savedValue]);
-
-  // React only when the stored value changes (a save, or another user's save
-  // on refetch) — not on mount, so a held value shown on remount stays. A held
-  // value based on the new stored value (typed while a batch was saving) is
-  // kept; anything else resets to the stored value and drops what it held.
-  const lastEditValue = useRef(fact.editValue);
-  useEffect(() => {
-    if (lastEditValue.current === fact.editValue) return;
-    lastEditValue.current = fact.editValue;
-    setSaved(null);
-    if (held !== undefined && heldBase === fact.editValue) {
-      setDraft(held);
-      setDirty(true);
-      setError(null);
-      return;
-    }
-    setDraft(fact.editValue);
-    setDirty(false);
-    setError(storedError(fact));
-    onDiscard?.();
-  }, [fact.editValue]);
-
-  const shownError = error ?? note;
-  const active = focused || dirty || !!shownError;
-  useEffect(() => {
-    onActivity?.(active);
-    return () => onActivity?.(false);
-  }, [active, onActivity]);
-
-  const commit = (raw: string): void => {
-    if (saving) return;
-    const value = normalizeFactInput(fact, raw);
-    if (value === baseline) {
-      setDraft(baseline);
-      setDirty(false);
-      setError(baseline === fact.editValue ? storedError(fact) : null);
-      onDiscard?.();
-      return;
-    }
-    const message = validateFactInput(fact, value);
-    setError(message);
-    if (message) {
-      // An invalid replacement must not leave an older held value to be sent later.
-      onDiscard?.();
-      return;
-    }
-
-    setSaving(true);
-    onSave(value === '' ? null : value)
-      .then(
-        (result) => {
-          if (result === 'held') return; // stays dirty; the tab's note says what else to set
-          setDirty(false);
-          setSaved(value);
-        },
-        (err: unknown) =>
-          setError(
-            err instanceof Error && err.message ? err.message : 'Could not save. Try again.',
-          ),
-      )
-      .finally(() => setSaving(false));
-  };
-
-  const restore = (): void => {
-    setDraft(baseline);
-    setDirty(false);
-    setError(baseline === fact.editValue ? storedError(fact) : null);
-    onDiscard?.();
-  };
-
-  // A held value can always be undone, including in a select, where Esc only
-  // closes the menu. Same path as Esc: back to the stored value, held entry dropped.
   const helper =
-    held !== undefined ? (
+    shownError || changed || fact.overridden ? (
       <>
-        {shownError}{' '}
-        <Link
-          component="button"
-          type="button"
-          variant="caption"
-          disabled={saving}
-          // Keep focus in the input: a blur here would re-commit the held value first.
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={restore}
-          aria-label={`Undo the change to ${fact.label}`}
-          sx={{ verticalAlign: 'baseline' }}
-        >
-          Undo
-        </Link>
+        {shownError ?? (resetting ? 'Goes back to the quote value when saved.' : null)}{' '}
+        {changed
+          ? helperLink('Undo', onUndo, `Undo the change to ${fact.label}`)
+          : fact.overridden
+            ? helperLink(
+                'Reset to quote',
+                () => onChange(fact.quoteValue ?? ''),
+                `Reset ${fact.label} to the quote value`,
+              )
+            : null}
       </>
-    ) : (
-      (shownError ?? undefined)
-    );
+    ) : undefined;
 
-  const pick = (value: string): void => {
-    setDraft(value);
-    setDirty(true);
-    commit(value);
-  };
   const focusTracking = {
     onFocus: () => setFocused(true),
     onBlur: () => setFocused(false),
@@ -377,11 +308,11 @@ function EditableFactInput({
       <Box {...focusTracking}>
         <DiscomFactInput
           inputId={inputId}
-          value={draft}
+          value={value}
           error={shownError}
           helper={helper}
-          saving={saving}
-          onPick={pick}
+          saving={readOnly}
+          onPick={onChange}
         />
       </Box>
     );
@@ -395,24 +326,19 @@ function EditableFactInput({
         select
         size="small"
         fullWidth
-        value={draft}
+        value={value}
         error={!!shownError}
         helperText={helper}
-        onChange={(e) => pick(e.target.value)}
-        slotProps={{
-          select: { readOnly: saving, displayEmpty: true },
-          input: {
-            endAdornment: saving ? <CircularProgress size={14} sx={{ mr: 3 }} /> : undefined,
-          },
-        }}
+        onChange={(e) => onChange(e.target.value)}
+        slotProps={{ select: { readOnly, displayEmpty: true } }}
       >
-        {!draft && (
+        {!value && (
           <MenuItem value="" disabled>
             Not set
           </MenuItem>
         )}
-        {Object.entries(fact.edit.options ?? {}).map(([value, label]) => (
-          <MenuItem key={value} value={value}>
+        {Object.entries(fact.edit.options ?? {}).map(([option, label]) => (
+          <MenuItem key={option} value={option}>
             {label}
           </MenuItem>
         ))}
@@ -423,7 +349,7 @@ function EditableFactInput({
   const storedIsInvalidDate = fact.type === 'date' && storedError(fact) !== null;
   const type = fact.type === 'date' && !storedIsInvalidDate ? 'date' : 'text';
   const multiline = fact.type === 'textarea';
-  const shown = focused ? draft : shownValue(fact, draft);
+  const shown = focused ? value : shownValue(fact, value);
 
   return (
     <TextField
@@ -433,48 +359,29 @@ function EditableFactInput({
       type={multiline ? undefined : type}
       multiline={multiline}
       {...(multiline ? MULTILINE_ROWS : {})}
-      placeholder={fact.placeholder}
+      placeholder={fact.quoteValue ? fact.quoteValue : fact.placeholder}
       value={shown}
       error={!!shownError}
       helperText={helper}
       onFocus={() => setFocused(true)}
-      onChange={(e) => {
-        setDraft(e.target.value);
-        setDirty(true);
-      }}
-      onBlur={() => {
-        setFocused(false);
-        if (dirty) commit(draft);
-      }}
+      onBlur={() => setFocused(false)}
+      onChange={(e) => onChange(e.target.value)}
       onKeyDown={(e) => {
-        // Shift+Enter is a line break in a multi-line fact; Enter alone saves.
-        if (e.key === 'Enter' && !(multiline && e.shiftKey)) {
+        if (e.key === 'Escape') {
           e.preventDefault();
-          if (dirty) commit(draft);
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          restore();
+          onUndo();
         }
       }}
       slotProps={{
         htmlInput: { inputMode: inputMode(fact) },
         input: {
-          readOnly: saving,
-          endAdornment: saving ? (
-            <CircularProgress size={14} aria-label="Saving" />
-          ) : fact.type === 'date' ? (
-            <Button
-              size="small"
-              onClick={() => {
-                const today = todayIso();
-                setDraft(today);
-                setDirty(true);
-                commit(today);
-              }}
-            >
-              Today
-            </Button>
-          ) : undefined,
+          readOnly,
+          endAdornment:
+            fact.type === 'date' && !readOnly ? (
+              <Button size="small" onClick={() => onChange(todayIso())}>
+                Today
+              </Button>
+            ) : undefined,
         },
       }}
     />

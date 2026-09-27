@@ -58,7 +58,12 @@ export interface FactPatchResult {
   errors: Record<string, string>;
 }
 
-/** `null` or blank clears a key. Only manual facts can be patched. */
+/** Saved in the project's own report facts: hand-typed facts, and quote facts changed for the reports only. */
+export function isProjectStoredFact(fact: Pick<ReportFact, 'source' | 'overridable'>): boolean {
+  return fact.source === 'manual' || !!fact.overridable;
+}
+
+/** `null` or blank clears a key. Only manual and overridable quote facts can be patched. */
 export function applyFactPatch(
   current: Record<string, string>,
   patch: Record<string, unknown>,
@@ -70,7 +75,7 @@ export function applyFactPatch(
 
   for (const [key, value] of Object.entries(patch)) {
     const fact = getFact(key);
-    if (!fact || fact.source !== 'manual') {
+    if (!fact || !isProjectStoredFact(fact)) {
       errors.set(key, `${key} cannot be edited on the Reports tab`);
       continue;
     }

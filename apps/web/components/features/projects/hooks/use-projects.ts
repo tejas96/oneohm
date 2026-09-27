@@ -27,6 +27,9 @@ export interface ProjectFilters {
   customerId?: string;
   /** Projects with (true) or without (false) open or in-progress tickets. */
   hasActiveTickets?: boolean;
+  /** System size bounds in kW, inclusive. */
+  systemSizeMin?: number;
+  systemSizeMax?: number;
   fromDate?: string;
   toDate?: string;
   startDateFrom?: string;
@@ -157,6 +160,10 @@ export function useProjects(
       if (queryFilters.customerId) params.append('customerId', queryFilters.customerId);
       if (queryFilters.hasActiveTickets !== undefined)
         params.append('hasActiveTickets', String(queryFilters.hasActiveTickets));
+      if (queryFilters.systemSizeMin !== undefined)
+        params.append('systemSizeMin', String(queryFilters.systemSizeMin));
+      if (queryFilters.systemSizeMax !== undefined)
+        params.append('systemSizeMax', String(queryFilters.systemSizeMax));
       if (queryFilters.memberId) params.append('memberId', queryFilters.memberId);
       if (queryFilters.pendingWorkflowStepId)
         params.append('pendingWorkflowStepId', queryFilters.pendingWorkflowStepId);

@@ -114,6 +114,8 @@ export class ProjectService {
       healthStatus?: string;
       createdBy?: string;
       hasActiveTickets?: boolean;
+      systemSizeMin?: number;
+      systemSizeMax?: number;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
     },

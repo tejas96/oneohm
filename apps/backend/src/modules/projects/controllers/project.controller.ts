@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   Get,
   Param,
+  ParseFloatPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -176,6 +177,18 @@ export class ProjectController {
     description: 'Filter by creator - use "me" for current user or provide userId',
   })
   @ApiQuery({
+    name: 'systemSizeMin',
+    required: false,
+    type: Number,
+    description: 'Minimum system size in kW',
+  })
+  @ApiQuery({
+    name: 'systemSizeMax',
+    required: false,
+    type: Number,
+    description: 'Maximum system size in kW',
+  })
+  @ApiQuery({
     name: 'hasActiveTickets',
     required: false,
     type: Boolean,
@@ -227,6 +240,8 @@ export class ProjectController {
     @Query('healthStatus') healthStatusRaw?: string,
     @Query('createdBy') createdBy?: string,
     @Query('hasActiveTickets') hasActiveTicketsRaw?: string,
+    @Query('systemSizeMin', new ParseFloatPipe({ optional: true })) systemSizeMin?: number,
+    @Query('systemSizeMax', new ParseFloatPipe({ optional: true })) systemSizeMax?: number,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
   ): Promise<PaginatedResponse<ProjectListItemDto>> {
@@ -298,6 +313,8 @@ export class ProjectController {
       healthStatus,
       createdBy: effectiveCreatedBy,
       hasActiveTickets,
+      systemSizeMin,
+      systemSizeMax,
       sortBy,
       sortOrder,
     });
