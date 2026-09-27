@@ -211,6 +211,27 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
     result.priority = priority as ProjectPriority;
   }
 
+  const projectType = raw.projectType;
+  if (projectType && typeof projectType === 'string' && projectType !== 'all') {
+    result.projectType = projectType;
+  }
+
+  const sizeRange = raw.systemSizeKw as { min?: string; max?: string } | undefined;
+  if (
+    sizeRange?.min !== undefined &&
+    sizeRange.min !== '' &&
+    !Number.isNaN(Number(sizeRange.min))
+  ) {
+    result.systemSizeMin = Number(sizeRange.min);
+  }
+  if (
+    sizeRange?.max !== undefined &&
+    sizeRange.max !== '' &&
+    !Number.isNaN(Number(sizeRange.max))
+  ) {
+    result.systemSizeMax = Number(sizeRange.max);
+  }
+
   // team filter -> backend memberId
   const memberId = raw.team;
   if (memberId && typeof memberId === 'string' && memberId !== 'all') {

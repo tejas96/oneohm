@@ -180,6 +180,8 @@ export class ProjectRepository {
       healthStatus?: string;
       createdBy?: string;
       hasActiveTickets?: boolean;
+      systemSizeMin?: number;
+      systemSizeMax?: number;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
     },
@@ -336,6 +338,18 @@ export class ProjectRepository {
           .getQuery()}`,
         { memberId: filters.memberId },
       );
+    }
+
+    // Same expression the System size column shows and sorts by.
+    if (filters?.systemSizeMin !== undefined) {
+      query.andWhere(`${systemSizeKwSql('cv')} >= :systemSizeMin`, {
+        systemSizeMin: filters.systemSizeMin,
+      });
+    }
+    if (filters?.systemSizeMax !== undefined) {
+      query.andWhere(`${systemSizeKwSql('cv')} <= :systemSizeMax`, {
+        systemSizeMax: filters.systemSizeMax,
+      });
     }
 
     if (filters?.createdBy) {
