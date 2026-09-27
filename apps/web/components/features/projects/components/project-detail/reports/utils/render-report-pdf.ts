@@ -8,8 +8,9 @@ const PAGE_BREAK_AVOID_SELECTORS = [
   '.pdf-wrapper',
   '.header-table',
   '.text-block',
-  '.sig-table',
   '.sig-box',
+  // The shared signature block (name, line, role): never split across a page.
+  '.rpt-sig-row',
   '.guarantee-heading',
   '.guarantee-text',
   '.identity-block',
