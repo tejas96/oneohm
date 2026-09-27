@@ -35,7 +35,7 @@ export function normalizeFactInput(fact: Pick<ReportFact, 'type' | 'edit'>, raw:
  * on the server and has the last word.
  */
 export function validateFactInput(
-  fact: Pick<ReportFact, 'label' | 'type' | 'edit'>,
+  fact: Pick<ReportFact, 'label' | 'type' | 'edit' | 'maxLength'>,
   value: string,
 ): string | null {
   const edit = fact.edit;

@@ -103,6 +103,16 @@ export function ReportFactsForm({
       ? `${fact.help} Typed once for this project and printed on ${printedOn(fact)}.`
       : `${fact.help} Printed on ${printedOn(fact)}.`;
 
+  /** "30 of 33 panels have a serial number", counting what is typed now. */
+  const serialCountHint = (fact: WorkspaceFact): string | null => {
+    const typed = drafts.drafts.get(fact.key) ?? fact.editValue;
+    const serials = typed.split(/[\s,;]+/).filter(Boolean).length;
+    const panels = Number(workspace.facts.find((f) => f.key === 'module_count')?.value);
+    if (!Number.isFinite(panels) || panels <= 0)
+      return serials > 0 ? `${serials} serial numbers` : null;
+    return `${serials} of ${panels} panels have a serial number`;
+  };
+
   // One home per fact: what a report still needs and can be typed here lives in To fill only.
   const toFill = visible.filter((f) => f.editable && isRequired(f));
   const toFillKeys = new Set<string>(toFill.map((f) => f.key));
@@ -122,6 +132,7 @@ export function ReportFactsForm({
       changed={drafts.changedKeys.has(fact.key)}
       error={drafts.errorFor(fact.key)}
       forceError={drafts.showAllErrors}
+      hint={fact.key === 'module_serial_numbers' ? serialCountHint(fact) : null}
       onChange={(raw) => drafts.change(fact, raw)}
       onUndo={() => drafts.undo(fact.key)}
     />

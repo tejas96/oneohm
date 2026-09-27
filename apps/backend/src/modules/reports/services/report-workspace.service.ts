@@ -150,6 +150,7 @@ export class ReportWorkspaceService {
             help: fact.help,
             edit: fact.edit,
             readOnlyNote: fact.readOnlyNote,
+            maxLength: fact.maxLength,
             value: facts[fact.key as FactKey] ?? '',
             editValue: editValues[fact.key as FactKey] ?? '',
             editable: !locked && (isProjectStoredFact(fact) || !!fact.edit),

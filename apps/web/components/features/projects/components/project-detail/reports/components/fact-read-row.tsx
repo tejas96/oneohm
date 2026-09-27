@@ -4,7 +4,7 @@ import { Box, Tooltip, Typography } from '@mui/material';
 import type { WorkspaceFact } from '@tejas96/shared/reports';
 import { Lock } from 'lucide-react';
 
-import { isLockedFact, shownValue } from './fact-field';
+import { isChangedFromSource, isLockedFact, shownValue } from './fact-field';
 
 /** Where a value that cannot be changed here comes from. */
 function lockedSource(fact: WorkspaceFact): string {
@@ -48,7 +48,7 @@ export function FactReadRow({
 }: FactReadRowProps): React.JSX.Element {
   const value = readValue(fact, changed ? draft : undefined);
   const locked = isLockedFact(fact);
-  const marked = changed || !!fact.overridden;
+  const marked = changed || isChangedFromSource(fact);
 
   return (
     <Box

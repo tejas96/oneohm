@@ -16,13 +16,13 @@ const MAX_LENGTH: Record<ReportFact['type'], number> = {
 
 /** Null when valid. An empty value is always valid here; required-ness is per report. */
 export function validateFactValue(
-  fact: Pick<ReportFact, 'label' | 'type'>,
+  fact: Pick<ReportFact, 'label' | 'type' | 'maxLength'>,
   raw: string,
 ): string | null {
   const value = raw.trim();
   if (!value) return null;
 
-  const max = MAX_LENGTH[fact.type];
+  const max = fact.maxLength ?? MAX_LENGTH[fact.type];
   if (value.length > max) return `${fact.label} is too long (max ${max} characters)`;
 
   switch (fact.type) {

@@ -27,6 +27,8 @@ export interface WorkspaceFact {
   chip?: string;
   /** An overridable quote fact holds a value typed on the Reports tab, not the quote's. */
   overridden?: boolean;
+  /** Longest value accepted, when larger than the type's own limit. */
+  maxLength?: number;
   /** A read-only fact's reason, shown in place of its source (e.g. worked out from other facts). */
   readOnlyNote?: string;
   /** Overridable quote facts: the quote's own value, which Reset brings back. */

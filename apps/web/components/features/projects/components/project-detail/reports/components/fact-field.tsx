@@ -48,6 +48,15 @@ export function isLockedFact(fact: WorkspaceFact): boolean {
   return fact.source !== 'manual' && !fact.edit && fact.quoteValue === undefined;
 }
 
+/**
+ * A value typed here replaces one that came from the quote. A fact whose
+ * source had nothing (serial numbers before any are recorded) is just typed:
+ * no "Changed from quote" and no Reset.
+ */
+export function isChangedFromSource(fact: WorkspaceFact): boolean {
+  return !!fact.overridden && !!fact.quoteValue;
+}
+
 /** Multi-line facts keep their line breaks: a single-line input would join them on any edit. Read-only ones grow to fit. */
 const MULTILINE_ROWS = { minRows: 1, maxRows: 4 } as const;
 
@@ -137,6 +146,8 @@ interface FactFieldProps {
   error: string | null;
   /** Show the error even while the field is focused: Save was pressed. */
   forceError: boolean;
+  /** Quiet line under the input when there is no error (e.g. how many panels have a serial). */
+  hint?: string | null;
   onChange: (raw: string) => void;
   /** Back to the stored value. */
   onUndo: () => void;
@@ -155,6 +166,7 @@ export function FactField({
   changed,
   error,
   forceError,
+  hint,
   onChange,
   onUndo,
 }: FactFieldProps): React.JSX.Element {
@@ -172,7 +184,7 @@ export function FactField({
         needed={needed}
         usedBy={usedBy}
         unsaved={changed}
-        fromQuote={!changed && !!fact.overridden}
+        fromQuote={!changed && isChangedFromSource(fact)}
       />
       {fact.editable && !readOnly ? (
         <EditableFactInput
@@ -182,6 +194,7 @@ export function FactField({
           changed={changed}
           error={error}
           forceError={forceError}
+          hint={hint ?? null}
           readOnly={busy}
           onChange={onChange}
           onUndo={onUndo}
@@ -247,6 +260,7 @@ function EditableFactInput({
   changed,
   error,
   forceError,
+  hint,
   readOnly,
   onChange,
   onUndo,
@@ -257,6 +271,7 @@ function EditableFactInput({
   changed: boolean;
   error: string | null;
   forceError: boolean;
+  hint: string | null;
   readOnly: boolean;
   onChange: (raw: string) => void;
   onUndo: () => void;
@@ -266,7 +281,7 @@ function EditableFactInput({
   const shownError =
     draft === undefined ? storedError(fact) : focused && !forceError && changed ? null : error;
   const resetting =
-    !!fact.overridden && changed && (!value.trim() || value.trim() === fact.quoteValue);
+    isChangedFromSource(fact) && changed && (!value.trim() || value.trim() === fact.quoteValue);
 
   const helperLink = (label: string, onClick: () => void, aria: string): React.ReactNode => (
     <Link
@@ -283,12 +298,12 @@ function EditableFactInput({
     </Link>
   );
   const helper =
-    shownError || changed || fact.overridden ? (
+    shownError || changed || isChangedFromSource(fact) || hint ? (
       <>
-        {shownError ?? (resetting ? 'Goes back to the quote value when saved.' : null)}{' '}
+        {shownError ?? (resetting ? 'Goes back to the quote value when saved.' : hint)}{' '}
         {changed
           ? helperLink('Undo', onUndo, `Undo the change to ${fact.label}`)
-          : fact.overridden
+          : isChangedFromSource(fact)
             ? helperLink(
                 'Reset to quote',
                 () => onChange(fact.quoteValue ?? ''),
