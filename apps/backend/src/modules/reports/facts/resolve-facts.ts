@@ -1,5 +1,11 @@
 import { COMPANY } from '@tejas96/shared/constants';
-import { type FactKey, REPORT_FACTS, type ReportFact } from '@tejas96/shared/reports';
+import {
+  type FactKey,
+  formatEarthing,
+  formatSerials,
+  REPORT_FACTS,
+  type ReportFact,
+} from '@tejas96/shared/reports';
 import {
   CONNECTION_TYPE_LABELS,
   PROPERTY_TYPE_LABELS,
@@ -30,29 +36,6 @@ export function resolveFacts(source: ReportSource): Record<FactKey, string> {
   facts.earthing_details = formatEarthing(facts.earthing_details);
   facts.module_serial_numbers = formatSerials(facts.module_serial_numbers);
   return facts;
-}
-
-/**
- * Earth resistances typed as plain numbers get the pit count and Ω added:
- * "3, 4, 3" and "3 - 3, 4, 3" both print "3 - 3Ω, 4Ω, 3Ω". A value that
- * already carries Ω (or "ohm"), or anything that is not a list of numbers,
- * prints exactly as typed.
- */
-export function formatEarthing(raw: string): string {
-  const value = raw.trim();
-  if (!value || /Ω|ohm/i.test(value)) return value;
-  const counted = /^(\d+)\s*-\s*(.+)$/.exec(value);
-  const values = (counted ? counted[2]! : value).split(/[\s,;]+/).filter(Boolean);
-  if (values.length === 0 || !values.every((v) => /^\d+(\.\d+)?$/.test(v))) return value;
-  return `${counted ? counted[1] : values.length} - ${values.map((v) => `${v}Ω`).join(', ')}`;
-}
-
-/** Serial numbers typed one per line, or with commas or spaces, print as one comma-separated list. */
-export function formatSerials(raw: string): string {
-  return raw
-    .split(/[\s,;]+/)
-    .filter(Boolean)
-    .join(', ');
 }
 
 /**

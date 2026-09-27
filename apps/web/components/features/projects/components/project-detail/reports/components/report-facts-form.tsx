@@ -1,7 +1,15 @@
 'use client';
 
 import { Box, Button, Typography } from '@mui/material';
-import { FACT_GROUPS, type ReportWorkspace, type WorkspaceFact } from '@tejas96/shared/reports';
+import {
+  earthingCountMismatch,
+  FACT_GROUPS,
+  formatEarthing,
+  repeatedSerials,
+  type ReportWorkspace,
+  splitSerials,
+  type WorkspaceFact,
+} from '@tejas96/shared/reports';
 import { Check, Pencil } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -103,15 +111,50 @@ export function ReportFactsForm({
       ? `${fact.help} Typed once for this project and printed on ${printedOn(fact)}.`
       : `${fact.help} Printed on ${printedOn(fact)}.`;
 
-  /** "30 of 33 panels have a serial number", counting what is typed now. */
-  const serialCountHint = (fact: WorkspaceFact): string | null => {
-    const typed = drafts.drafts.get(fact.key) ?? fact.editValue;
-    const serials = typed.split(/[\s,;]+/).filter(Boolean).length;
-    const panels = Number(workspace.facts.find((f) => f.key === 'module_count')?.value);
-    if (!Number.isFinite(panels) || panels <= 0)
-      return serials > 0 ? `${serials} serial numbers` : null;
-    return `${serials} of ${panels} panels have a serial number`;
+  /** What is typed now for a fact: its unsaved draft, else what is stored. */
+  const typedNow = (key: string): string => {
+    const fact = workspace.facts.find((f) => f.key === key);
+    return drafts.drafts.get(key) ?? fact?.editValue ?? '';
   };
+
+  /** "30 of 33 panels have a serial number · 1 repeated: WS01", against the panel count as typed now. */
+  const serialCountHint = (fact: WorkspaceFact): string | null => {
+    const typed = typedNow(fact.key);
+    const unique = new Set(splitSerials(typed).map((s) => s.toUpperCase())).size;
+    const repeated = repeatedSerials(typed);
+    const countFact = workspace.facts.find((f) => f.key === 'module_count');
+    // An emptied override falls back to the quote's count, as it will print.
+    const panels = Number(
+      typedNow('module_count').trim() || countFact?.quoteValue || countFact?.value,
+    );
+    const base =
+      Number.isFinite(panels) && panels > 0
+        ? `${unique} of ${panels} panels have a serial number`
+        : unique > 0
+          ? `${unique} serial numbers`
+          : null;
+    if (repeated.length === 0) return base;
+    const shown = repeated.slice(0, 3).join(', ') + (repeated.length > 3 ? '…' : '');
+    return `${base ?? ''} · ${repeated.length} repeated: ${shown}`;
+  };
+
+  /** "Prints as: 3 - 3Ω, 4Ω, 3Ω", and a warning when the pit count and the values disagree. */
+  const earthingHint = (fact: WorkspaceFact): string | null => {
+    const typed = typedNow(fact.key);
+    if (!typed.trim()) return null;
+    const mismatch = earthingCountMismatch(typed);
+    const prints = `Prints as: ${formatEarthing(typed)}`;
+    return mismatch
+      ? `${prints} · ${mismatch.declared} pits written, but ${mismatch.given} values given`
+      : prints;
+  };
+
+  const hintFor = (fact: WorkspaceFact): string | null =>
+    fact.key === 'module_serial_numbers'
+      ? serialCountHint(fact)
+      : fact.key === 'earthing_details'
+        ? earthingHint(fact)
+        : null;
 
   // One home per fact: what a report still needs and can be typed here lives in To fill only.
   const toFill = visible.filter((f) => f.editable && isRequired(f));
@@ -132,7 +175,7 @@ export function ReportFactsForm({
       changed={drafts.changedKeys.has(fact.key)}
       error={drafts.errorFor(fact.key)}
       forceError={drafts.showAllErrors}
-      hint={fact.key === 'module_serial_numbers' ? serialCountHint(fact) : null}
+      hint={hintFor(fact)}
       onChange={(raw) => drafts.change(fact, raw)}
       onUndo={() => drafts.undo(fact.key)}
     />

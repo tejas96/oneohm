@@ -4,7 +4,7 @@ import { Box, Tooltip, Typography } from '@mui/material';
 import type { WorkspaceFact } from '@tejas96/shared/reports';
 import { Lock } from 'lucide-react';
 
-import { isChangedFromSource, isLockedFact, shownValue } from './fact-field';
+import { isChangedFromSource, isLockedFact, shownValue, sourceWord } from './fact-field';
 
 /** Where a value that cannot be changed here comes from. */
 function lockedSource(fact: WorkspaceFact): string {
@@ -78,10 +78,10 @@ export function FactReadRow({
         }}
       >
         {marked && (
-          <Tooltip title={changed ? 'Unsaved change' : 'Changed from the quote'}>
+          <Tooltip title={changed ? 'Unsaved change' : `Changed from the ${sourceWord(fact)}`}>
             <Box
               component="span"
-              aria-label={changed ? 'Unsaved change' : 'Changed from the quote'}
+              aria-label={changed ? 'Unsaved change' : `Changed from the ${sourceWord(fact)}`}
               sx={{
                 width: 6,
                 height: 6,

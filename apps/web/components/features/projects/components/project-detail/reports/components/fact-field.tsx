@@ -57,6 +57,11 @@ export function isChangedFromSource(fact: WorkspaceFact): boolean {
   return !!fact.overridden && !!fact.quoteValue;
 }
 
+/** Where a changeable value came from: the quote, or the BOM (panel serial numbers). */
+export function sourceWord(fact: WorkspaceFact): string {
+  return fact.source === 'bom' ? 'BOM' : 'quote';
+}
+
 /** Multi-line facts keep their line breaks: a single-line input would join them on any edit. Read-only ones grow to fit. */
 const MULTILINE_ROWS = { minRows: 1, maxRows: 4 } as const;
 
@@ -77,8 +82,8 @@ interface FactLabelRowProps {
   usedBy: string;
   /** Changed and not saved yet. */
   unsaved: boolean;
-  /** A quote fact printing a value typed here, not the quote's. */
-  fromQuote: boolean;
+  /** A quote or BOM fact printing a value typed here: which one it was changed from. */
+  changedFrom: string | null;
 }
 
 /** Label · ⓘ · spacer · Required / Needed · quiet used-by text. The ⓘ opens on hover, keyboard focus and tap. */
@@ -90,7 +95,7 @@ function FactLabelRow({
   needed,
   usedBy,
   unsaved,
-  fromQuote,
+  changedFrom,
 }: FactLabelRowProps): React.JSX.Element {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, minWidth: 0 }}>
@@ -110,7 +115,9 @@ function FactLabelRow({
       <Box sx={{ flex: 1 }} />
       <Box sx={{ display: 'flex', gap: 0.5, minWidth: 0, overflow: 'hidden' }}>
         {unsaved && <TonePill label="Unsaved" tone="info" dot className="h-[18px] px-2" />}
-        {fromQuote && <TonePill label="Changed from quote" tone="info" className="h-[18px] px-2" />}
+        {changedFrom && (
+          <TonePill label={`Changed from ${changedFrom}`} tone="info" className="h-[18px] px-2" />
+        )}
         {required && <TonePill label="Required" tone="warning" className="h-[18px] px-2" />}
         {needed && !required && (
           <TonePill label="Needed" tone="warning" className="h-[18px] px-2" />
@@ -184,7 +191,7 @@ export function FactField({
         needed={needed}
         usedBy={usedBy}
         unsaved={changed}
-        fromQuote={!changed && isChangedFromSource(fact)}
+        changedFrom={!changed && isChangedFromSource(fact) ? sourceWord(fact) : null}
       />
       {fact.editable && !readOnly ? (
         <EditableFactInput
@@ -300,14 +307,15 @@ function EditableFactInput({
   const helper =
     shownError || changed || isChangedFromSource(fact) || hint ? (
       <>
-        {shownError ?? (resetting ? 'Goes back to the quote value when saved.' : hint)}{' '}
+        {shownError ??
+          (resetting ? `Goes back to the ${sourceWord(fact)} value when saved.` : hint)}{' '}
         {changed
           ? helperLink('Undo', onUndo, `Undo the change to ${fact.label}`)
           : isChangedFromSource(fact)
             ? helperLink(
-                'Reset to quote',
+                `Reset to ${sourceWord(fact)}`,
                 () => onChange(fact.quoteValue ?? ''),
-                `Reset ${fact.label} to the quote value`,
+                `Reset ${fact.label} to the ${sourceWord(fact)} value`,
               )
             : null}
       </>
