@@ -275,20 +275,20 @@ export const REPORT_FACTS = [
 
   {
     key: 'sanction_number',
-    label: 'Sanction number',
+    label: 'Application / sanction number',
     type: 'text',
     group: 'sanction',
     source: 'manual',
-    placeholder: 'e.g. 63436547',
-    help: "The number on the DISCOM's sanction letter.",
+    placeholder: 'e.g. 1295 / K.MAHANKAL / 76717990',
+    help: "The DISCOM's reference for this connection, as on its sanction letter. The WCR prints it as the sanction number and the DCR as the application number: one number, typed once.",
   },
   {
     key: 'sanction_date',
-    label: 'Sanction date',
+    label: 'Application / sanction date',
     type: 'date',
     group: 'sanction',
     source: 'manual',
-    help: "The date on the DISCOM's sanction letter.",
+    help: 'The date on the DISCOM sanction letter. The WCR prints it after the sanction number and the DCR after the application number.',
   },
   {
     key: 'sanctioned_capacity_kw',
@@ -299,22 +299,6 @@ export const REPORT_FACTS = [
     placeholder: 'e.g. 5',
     help: `Sanctioned load on the electricity bill, in kW, saved on this site. ${OUT_OF_DATE}`,
     edit: { target: 'property', field: 'sanctionedLoad', input: 'number' },
-  },
-  {
-    key: 'application_number',
-    label: 'Application number',
-    type: 'text',
-    group: 'sanction',
-    source: 'manual',
-    help: 'The DISCOM application number for this connection.',
-  },
-  {
-    key: 'application_date',
-    label: 'Application date',
-    type: 'date',
-    group: 'sanction',
-    source: 'manual',
-    help: 'The date the DISCOM application was made.',
   },
   {
     key: 're_arrangement_type',

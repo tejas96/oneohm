@@ -65,14 +65,15 @@ export const DCR_REPORT: ReportDefinition = {
   shortName: 'DCR',
   description: 'Domestic Content Requirement self-declaration for MNRE/MSEDCL submission.',
   documentTag: DocumentTag.DCR,
-  templateVersion: 3,
+  // 4: prints the one application / sanction number and date the WCR prints.
+  templateVersion: 4,
   facts: [
     req('vendor_name'),
     req('installed_capacity_kw'),
     req('consumer_name'),
     req('site_address'),
-    req('application_number'),
-    opt('application_date'),
+    req('sanction_number'),
+    opt('sanction_date'),
     opt('module_wattage'),
     req('module_count'),
     opt('module_serial_numbers'),
