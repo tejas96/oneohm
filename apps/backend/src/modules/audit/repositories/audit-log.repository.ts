@@ -21,7 +21,10 @@ export class AuditLogRepository {
   // BASIC CRUD
   // ============================================
 
-  async create(auditLog: Partial<AuditLogEntity>, manager?: EntityManager): Promise<AuditLogEntity> {
+  async create(
+    auditLog: Partial<AuditLogEntity>,
+    manager?: EntityManager,
+  ): Promise<AuditLogEntity> {
     const repo = manager ? manager.getRepository(AuditLogEntity) : this.repository;
     const entity = repo.create(auditLog);
     return repo.save(entity);

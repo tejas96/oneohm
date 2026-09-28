@@ -15,10 +15,13 @@ export class AuditLogService {
   constructor(private readonly repository: AuditLogRepository) {}
 
   /**
-   * Create an audit log entry
+   * Create an audit log entry. Pass `manager` to write it inside the caller's
+   * transaction.
    */
-  /** Pass `manager` to write the audit row inside the caller's transaction. */
-  async create(createDto: CreateAuditLogDto, manager?: EntityManager): Promise<AuditLogResponseDto> {
+  async create(
+    createDto: CreateAuditLogDto,
+    manager?: EntityManager,
+  ): Promise<AuditLogResponseDto> {
     const auditLog = await this.repository.create(createDto, manager);
 
     return plainToInstance(AuditLogResponseDto, auditLog, {
