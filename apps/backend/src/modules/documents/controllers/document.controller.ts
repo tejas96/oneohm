@@ -209,7 +209,8 @@ export class DocumentController {
     @ResellerScope() resellerId?: string,
   ): Promise<void> {
     if (resellerId) await this.ownership.assertOwns('document', id, resellerId);
-    if (permanent === 'true') {
+    // A reseller's delete is always soft: the office can still recover the file.
+    if (permanent === 'true' && !resellerId) {
       await this.documentService.hardDelete(id);
     } else {
       await this.documentService.delete(id);
