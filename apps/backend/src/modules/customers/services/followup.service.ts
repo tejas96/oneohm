@@ -190,6 +190,16 @@ export class FollowupService {
     // Verify followup exists and belongs to org
     const existingFollowup = await this.findById(id);
 
+    // A followup's customer is fixed at creation and never moves. No client
+    // (web or mobile) ever sends a changed customerId on this route — this
+    // DTO only inherited the field via `PartialType(CreateFollowupDto)`. Left
+    // open, it would let anyone re-parent a followup onto another customer
+    // and, worse for a reseller, read that other customer's name/phone off
+    // the response (found in the reseller-commissions security review).
+    if (updateDto.customerId && updateDto.customerId !== existingFollowup.customerId) {
+      throw new BadRequestException('A follow-up cannot move to another customer.');
+    }
+
     // If propertyId is being updated, validate it
     if (updateDto.propertyId && updateDto.propertyId !== existingFollowup.propertyId) {
       const property = await this.propertyRepository.findById(updateDto.propertyId);
@@ -202,8 +212,11 @@ export class FollowupService {
       }
     }
 
-    // Separate scheduledAt from other fields to handle string -> Date conversion
-    const { scheduledAt, ...restDto } = updateDto;
+    // Separate scheduledAt from other fields to handle string -> Date
+    // conversion. customerId is dropped unconditionally (immutable on this
+    // route, and already rejected above when it would actually change).
+    const { scheduledAt, customerId: customerIdIgnored, ...restDto } = updateDto;
+    void customerIdIgnored;
     const updates: Partial<FollowupEntity> = {
       ...restDto,
       updatedBy,
