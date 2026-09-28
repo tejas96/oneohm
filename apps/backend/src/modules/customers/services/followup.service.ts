@@ -95,6 +95,7 @@ export class FollowupService {
       priority?: string;
       from?: string;
       to?: string;
+      resellerId?: string;
     },
     page = 1,
     limit = 20,
@@ -117,12 +118,14 @@ export class FollowupService {
     status?: FollowupStatus,
     page = 1,
     limit = 20,
+    resellerId?: string,
   ): Promise<{ data: FollowupEntity[]; total: number }> {
     const [data, total] = await this.followupRepository.findByAssignedUser(
       userId,
       status,
       page,
       limit,
+      resellerId,
     );
     return { data, total };
   }
@@ -134,8 +137,14 @@ export class FollowupService {
     userId?: string,
     page = 1,
     limit = 20,
+    resellerId?: string,
   ): Promise<{ data: FollowupEntity[]; total: number }> {
-    const [data, total] = await this.followupRepository.findTodayFollowups(userId, page, limit);
+    const [data, total] = await this.followupRepository.findTodayFollowups(
+      userId,
+      page,
+      limit,
+      resellerId,
+    );
     return { data, total };
   }
 
@@ -146,8 +155,14 @@ export class FollowupService {
     userId?: string,
     page = 1,
     limit = 20,
+    resellerId?: string,
   ): Promise<{ data: FollowupEntity[]; total: number }> {
-    const [data, total] = await this.followupRepository.findOverdueFollowups(userId, page, limit);
+    const [data, total] = await this.followupRepository.findOverdueFollowups(
+      userId,
+      page,
+      limit,
+      resellerId,
+    );
     return { data, total };
   }
 
@@ -391,20 +406,23 @@ export class FollowupService {
   }
 
   /** Open lead units with nobody owing them an action. */
-  async gaps(): Promise<FollowupGapRow[]> {
-    return this.followupRepository.findGaps();
+  async gaps(resellerId?: string): Promise<FollowupGapRow[]> {
+    return this.followupRepository.findGaps(resellerId);
   }
 
   /** Badge counts. Pass null for everyone's followups. */
-  async summary(userId: string | null): Promise<{
+  async summary(
+    userId: string | null,
+    resellerId?: string,
+  ): Promise<{
     overdue: number;
     today: number;
     upcoming: number;
     gaps: number;
   }> {
     const [counts, gapRows] = await Promise.all([
-      this.followupRepository.summaryCounts(userId),
-      this.followupRepository.findGaps(),
+      this.followupRepository.summaryCounts(userId, resellerId),
+      this.followupRepository.findGaps(resellerId),
     ]);
 
     // Gaps must respect the same scope as the date buckets. Counting all of

@@ -20,6 +20,7 @@ import {
   ApiReadOne,
   ApiUpdate,
 } from '../../../common/decorators';
+import { ResellerAllowed, ResellerOwnershipService, ResellerScope } from '../../../common/reseller';
 import { toDto, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -48,11 +49,13 @@ export class FollowupController {
   constructor(
     private readonly followupService: FollowupService,
     private readonly siteWorkService: SiteWorkService,
+    private readonly ownership: ResellerOwnershipService,
   ) {}
 
   /**
    * Create a new followup
    */
+  @ResellerAllowed()
   @ApiCreate({
     summary: 'Create a new followup',
     description: 'Create a followup for a customer or property. Property ID is optional.',
@@ -61,7 +64,9 @@ export class FollowupController {
   async create(
     @Body() createDto: CreateFollowupDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<FollowupResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('customer', createDto.customerId, resellerId);
     const followup = await this.followupService.create(createDto, currentUser.id);
     return toDto(FollowupResponseDto, followup);
   }
@@ -69,6 +74,7 @@ export class FollowupController {
   /**
    * Get all followups with filters
    */
+  @ResellerAllowed()
   @ApiReadAll({
     summary: 'List all followups',
     description:
@@ -82,6 +88,12 @@ export class FollowupController {
   @ApiQuery({ name: 'priority', required: false, type: String })
   @ApiQuery({ name: 'from', required: false, type: String, description: 'Start date (ISO 8601)' })
   @ApiQuery({ name: 'to', required: false, type: String, description: 'End date (ISO 8601)' })
+  @ApiQuery({
+    name: 'resellerId',
+    required: false,
+    type: String,
+    description: 'Only followups on customers brought in by this reseller (employee_profiles.id)',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async findAll(
@@ -92,15 +104,19 @@ export class FollowupController {
     @Query('priority') priority?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
+    @Query('resellerId', new ParseUUIDPipe({ optional: true })) resellerIdParam?: string,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
+    @ResellerScope() resellerScope?: string,
   ): Promise<PaginatedResponse<FollowupResponseDto>> {
+    // Server truth overwrites anything the caller sent for this filter.
+    const resellerId = resellerScope ?? resellerIdParam;
     const hasFilters =
-      status || assignedToUserId || customerId || propertyId || priority || from || to;
+      status || assignedToUserId || customerId || propertyId || priority || from || to || resellerId;
 
     if (hasFilters) {
       const result = await this.followupService.findWithFilters(
-        { status, assignedToUserId, customerId, propertyId, priority, from, to },
+        { status, assignedToUserId, customerId, propertyId, priority, from, to, resellerId },
         page,
         limit,
       );
@@ -116,6 +132,7 @@ export class FollowupController {
    *
    * Declared above any `:id` route, or Nest matches "gaps" as an id.
    */
+  @ResellerAllowed()
   @Get('gaps')
   @ApiOperation({
     summary: 'Open lead units with no pending followup',
@@ -123,13 +140,14 @@ export class FollowupController {
       'Records created by import or direct API call never pass through the UI gates, so anything that slipped appears here with a name against it.',
   })
   @ApiOkResponse({ type: [FollowupGapResponseDto] })
-  async gaps(): Promise<FollowupGapResponseDto[]> {
-    return this.followupService.gaps();
+  async gaps(@ResellerScope() resellerId?: string): Promise<FollowupGapResponseDto[]> {
+    return this.followupService.gaps(resellerId);
   }
 
   /**
    * Badge counts. Declared above any `:id` route for the same reason as gaps.
    */
+  @ResellerAllowed()
   @Get('summary')
   @ApiOperation({ summary: 'Followup counts for the nav badge' })
   @ApiQuery({
@@ -142,8 +160,9 @@ export class FollowupController {
   async summary(
     @CurrentUser() currentUser: CurrentUserType,
     @Query('mine') mine?: string,
+    @ResellerScope() resellerId?: string,
   ): Promise<FollowupSummaryResponseDto> {
-    return this.followupService.summary(mine === 'false' ? null : currentUser.id);
+    return this.followupService.summary(mine === 'false' ? null : currentUser.id, resellerId);
   }
 
   /**
@@ -166,6 +185,7 @@ export class FollowupController {
   /**
    * Get followups assigned to current user
    */
+  @ResellerAllowed()
   @Get('my')
   @ApiReadAll({
     summary: 'Get my followups',
@@ -180,14 +200,22 @@ export class FollowupController {
     @Query('status') status?: FollowupStatus,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
+    @ResellerScope() resellerId?: string,
   ): Promise<PaginatedResponse<FollowupResponseDto>> {
-    const result = await this.followupService.findMyFollowups(currentUser.id, status, page, limit);
+    const result = await this.followupService.findMyFollowups(
+      currentUser.id,
+      status,
+      page,
+      limit,
+      resellerId,
+    );
     return toPaginatedResponse(FollowupResponseDto, result.data, result.total, page, limit);
   }
 
   /**
    * Get today's followups
    */
+  @ResellerAllowed()
   @Get('today')
   @ApiReadAll({
     summary: "Get today's followups",
@@ -206,14 +234,21 @@ export class FollowupController {
     @Query('assignedToUserId') assignedToUserId?: string,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
+    @ResellerScope() resellerId?: string,
   ): Promise<PaginatedResponse<FollowupResponseDto>> {
-    const result = await this.followupService.findTodayFollowups(assignedToUserId, page, limit);
+    const result = await this.followupService.findTodayFollowups(
+      assignedToUserId,
+      page,
+      limit,
+      resellerId,
+    );
     return toPaginatedResponse(FollowupResponseDto, result.data, result.total, page, limit);
   }
 
   /**
    * Get overdue followups
    */
+  @ResellerAllowed()
   @Get('overdue')
   @ApiReadAll({
     summary: 'Get overdue followups',
@@ -232,8 +267,14 @@ export class FollowupController {
     @Query('assignedToUserId') assignedToUserId?: string,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
+    @ResellerScope() resellerId?: string,
   ): Promise<PaginatedResponse<FollowupResponseDto>> {
-    const result = await this.followupService.findOverdueFollowups(assignedToUserId, page, limit);
+    const result = await this.followupService.findOverdueFollowups(
+      assignedToUserId,
+      page,
+      limit,
+      resellerId,
+    );
     return toPaginatedResponse(FollowupResponseDto, result.data, result.total, page, limit);
   }
 
@@ -247,22 +288,31 @@ export class FollowupController {
    * A bare array, not paginated, matching `/followups/gaps`. A rep has a day's
    * work, not a caseload, and the screen filters and counts over what it holds.
    */
+  @ResellerAllowed()
   @Get('my-site-work')
   @ApiOperation({ summary: 'Site visits and surveys assigned to the current user' })
   @ApiOkResponse({ type: [SiteWorkItemDto] })
-  async findMySiteWork(@CurrentUser() currentUser: CurrentUserType): Promise<SiteWorkItemDto[]> {
-    return this.siteWorkService.findMine(currentUser.id);
+  async findMySiteWork(
+    @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
+  ): Promise<SiteWorkItemDto[]> {
+    return this.siteWorkService.findMine(currentUser.id, resellerId);
   }
 
   /**
    * Get followup by ID
    */
+  @ResellerAllowed()
   @ApiReadOne({
     summary: 'Get followup by ID',
     description: 'Get a specific followup by its ID',
     responseType: FollowupResponseDto,
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<FollowupResponseDto> {
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @ResellerScope() resellerId?: string,
+  ): Promise<FollowupResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('followup', id, resellerId);
     const followup = await this.followupService.findById(id);
     return toDto(FollowupResponseDto, followup);
   }
@@ -270,6 +320,7 @@ export class FollowupController {
   /**
    * Update followup
    */
+  @ResellerAllowed()
   @ApiUpdate({
     summary: 'Update followup',
     description: 'Update followup details',
@@ -280,7 +331,9 @@ export class FollowupController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateFollowupDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<FollowupResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('followup', id, resellerId);
     const followup = await this.followupService.update(id, updateDto, currentUser.id);
     return toDto(FollowupResponseDto, followup);
   }
@@ -288,6 +341,7 @@ export class FollowupController {
   /**
    * Complete a followup and open the next one
    */
+  @ResellerAllowed()
   @ApiAction({
     path: 'complete',
     summary: 'Complete a followup',
@@ -299,7 +353,9 @@ export class FollowupController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CompleteFollowupDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<FollowupResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('followup', id, resellerId);
     const followup = await this.followupService.complete(id, dto, currentUser.id);
     return toDto(FollowupResponseDto, followup);
   }
@@ -307,6 +363,7 @@ export class FollowupController {
   /**
    * Reassign a followup — how a lead changes hands
    */
+  @ResellerAllowed()
   @ApiAction({
     path: 'reassign',
     summary: 'Reassign a followup',
@@ -318,7 +375,9 @@ export class FollowupController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ReassignFollowupDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<FollowupResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('followup', id, resellerId);
     const followup = await this.followupService.reassign(id, dto.assignedToUserId, currentUser.id);
     return toDto(FollowupResponseDto, followup);
   }
@@ -326,6 +385,7 @@ export class FollowupController {
   /**
    * Reschedule without completing
    */
+  @ResellerAllowed()
   @ApiAction({
     path: 'reschedule',
     summary: 'Reschedule a followup',
@@ -336,7 +396,9 @@ export class FollowupController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: RescheduleFollowupDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<FollowupResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('followup', id, resellerId);
     const followup = await this.followupService.reschedule(id, dto.scheduledAt, currentUser.id);
     return toDto(FollowupResponseDto, followup);
   }
@@ -344,6 +406,7 @@ export class FollowupController {
   /**
    * Mark followup as cancelled
    */
+  @ResellerAllowed()
   @ApiAction({
     path: 'cancel',
     summary: 'Mark followup as cancelled',
@@ -353,7 +416,9 @@ export class FollowupController {
   async markAsCancelled(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<FollowupResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('followup', id, resellerId);
     const followup = await this.followupService.markAsCancelled(id, currentUser.id);
     return toDto(FollowupResponseDto, followup);
   }

@@ -53,7 +53,7 @@ interface SiteWorkRow {
 export class SiteWorkService {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
-  async findMine(userId: string): Promise<SiteWorkItemDto[]> {
+  async findMine(userId: string, resellerId?: string): Promise<SiteWorkItemDto[]> {
     const rows: SiteWorkRow[] = await this.dataSource.query(
       `WITH jobs AS (
               SELECT f.id AS followup_id, f.type AS kind, f.scheduled_at, f.property_id, f.customer_id
@@ -113,6 +113,7 @@ export class SiteWorkService {
                      v.created_at DESC, v.version_number DESC, v.id DESC
                LIMIT 1
          ) qv ON TRUE
+        WHERE ($8::uuid IS NULL OR c.reseller_id = $8::uuid)
      ORDER BY j.scheduled_at ASC NULLS LAST, p.property_name ASC
         LIMIT 200`,
       [
@@ -123,6 +124,7 @@ export class SiteWorkService {
         FollowupType.SURVEY,
         SiteStatus.PENDING,
         SiteStatus.CANCELLED,
+        resellerId ?? null,
       ],
     );
 

@@ -174,7 +174,8 @@ describe('FollowupRepository', () => {
 
       const result = await repo.summaryCounts('user-1');
 
-      expect(query.mock.calls[0][1]).toEqual(['user-1']);
+      // A trailing null is the "no reseller scope" default, added alongside userId.
+      expect(query.mock.calls[0][1]).toEqual(['user-1', null]);
       // Postgres COUNT comes back as a string; the caller wants numbers.
       expect(result).toEqual({ overdue: 3, today: 1, upcoming: 7 });
     });

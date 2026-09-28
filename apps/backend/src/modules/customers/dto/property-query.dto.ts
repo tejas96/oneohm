@@ -17,6 +17,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   Min,
   MinLength,
@@ -213,6 +214,13 @@ export class PropertyQueryDto {
   @IsNumber()
   @Min(0)
   systemSizeMax?: number;
+
+  @ApiPropertyOptional({
+    description: 'Only properties belonging to customers brought in by this reseller (employee_profiles.id)',
+  })
+  @IsOptional()
+  @IsUUID()
+  resellerId?: string;
 
   // ==================== Sorting ====================
 

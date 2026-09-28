@@ -123,12 +123,20 @@ export class CustomerService {
       throw new ConflictException('Customer profile already exists for this user');
     }
 
+    // resellerChangeReason has no column of its own — it exists only for the
+    // "why did the reseller change" audit trail a later task adds. Meaningless
+    // on create (there is no prior reseller to explain a change from), and the
+    // entity layer would reject an unmapped property outright, so it is
+    // dropped here rather than spread into profileData.
+    const { resellerChangeReason: resellerChangeReasonOnCreate, ...createFields } = createDto;
+    void resellerChangeReasonOnCreate;
+
     // Step 4: Create customer profile using ProfileService (handles role assignment)
     const customer = (await this.profileService.createProfile({
       userId: user.id,
       profileType: UserProfileType.CUSTOMER,
       profileData: {
-        ...createDto,
+        ...createFields,
         phone,
         email,
         firstName: createDto.firstName || user.firstName || 'Unknown',
@@ -348,14 +356,19 @@ export class CustomerService {
     }
 
     // Strip group fields from the base update — group assignment is handled below
-    // to ensure validation (code exists) happens before any DB write
+    // to ensure validation (code exists) happens before any DB write.
+    // resellerChangeReason has no column of its own (see the note in `create`
+    // above) — TypeORM's `.update()` throws EntityPropertyNotFoundError on an
+    // unmapped property, so it must never reach the repository call.
     const {
       groupCode: groupCodeToStrip,
       groupName: groupNameToStrip,
+      resellerChangeReason: resellerChangeReasonToStrip,
       ...profileUpdateFields
     } = updateDto;
     void groupCodeToStrip;
     void groupNameToStrip;
+    void resellerChangeReasonToStrip;
 
     const updated = await this.customerRepository.update(id, {
       ...(profileUpdateFields as Partial<CustomerProfileEntity>),

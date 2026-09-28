@@ -799,6 +799,10 @@ export class CustomerProfileRepository {
       });
     }
 
+    if (query.resellerId) {
+      qb.andWhere('customer.resellerId = :resellerId', { resellerId: query.resellerId });
+    }
+
     if (hasContradictoryCustomerPropertyFilters(query)) {
       // Contradictory: "no properties" cannot match any property-level filter.
       qb.andWhere('1 = 0');

@@ -1,16 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FollowupOutcome, FollowupStatus, FollowupType } from '@tejas96/shared/types';
-import {
-  type EntityManager,
-  In,
-  IsNull,
-  LessThan,
-  MoreThanOrEqual,
-  Not,
-  And,
-  Repository,
-} from 'typeorm';
+import { type EntityManager, IsNull, Not, Repository } from 'typeorm';
 
 import { CUSTOMER_LEAD_NEEDS_FOLLOWUP, PROPERTY_NEEDS_FOLLOWUP } from './followup-predicates';
 import { FollowupEntity } from '../entities/followup.entity';
@@ -148,46 +139,61 @@ export class FollowupRepository {
       priority?: string;
       from?: Date;
       to?: Date;
+      resellerId?: string;
     },
     page = 1,
     limit = 20,
   ): Promise<[FollowupEntity[], number]> {
-    const where: Record<string, unknown> = {
-      deletedAt: IsNull(),
-      type: Not(In([...SITE_WORK_TYPES])),
-    };
+    const qb = this.repository
+      .createQueryBuilder('followup')
+      .leftJoinAndSelect('followup.customer', 'customer')
+      .leftJoinAndSelect('followup.property', 'property')
+      .leftJoinAndSelect('followup.assignedToUser', 'assignedToUser')
+      .where('followup.deletedAt IS NULL')
+      .andWhere('followup.type NOT IN (:...siteWorkTypes)', {
+        siteWorkTypes: [...SITE_WORK_TYPES],
+      });
 
     if (filters.status) {
-      where.status = filters.status;
+      qb.andWhere('followup.status = :status', { status: filters.status });
     }
     if (filters.assignedToUserId) {
-      where.assignedToUserId = filters.assignedToUserId;
+      qb.andWhere('followup.assignedToUserId = :assignedToUserId', {
+        assignedToUserId: filters.assignedToUserId,
+      });
     }
     if (filters.customerId) {
-      where.customerId = filters.customerId;
+      qb.andWhere('followup.customerId = :customerId', { customerId: filters.customerId });
     }
     if (filters.propertyId) {
-      where.propertyId = filters.propertyId;
+      qb.andWhere('followup.propertyId = :propertyId', { propertyId: filters.propertyId });
     }
     if (filters.priority) {
-      where.priority = filters.priority;
+      qb.andWhere('followup.priority = :priority', { priority: filters.priority });
     }
     if (filters.from && filters.to) {
       // Exclusive end on `to` matches `/followups/today` (`< startOfTomorrow`).
-      where.scheduledAt = And(MoreThanOrEqual(filters.from), LessThan(filters.to));
+      qb.andWhere('followup.scheduledAt >= :from AND followup.scheduledAt < :to', {
+        from: filters.from,
+        to: filters.to,
+      });
     } else if (filters.from) {
-      where.scheduledAt = MoreThanOrEqual(filters.from);
+      qb.andWhere('followup.scheduledAt >= :from', { from: filters.from });
     } else if (filters.to) {
-      where.scheduledAt = LessThan(filters.to);
+      qb.andWhere('followup.scheduledAt < :to', { to: filters.to });
+    }
+    if (filters.resellerId) {
+      qb.andWhere(
+        `followup.customerId IN (SELECT cp.id FROM customer_profiles cp WHERE cp.reseller_id = :resellerId)`,
+        { resellerId: filters.resellerId },
+      );
     }
 
-    return this.repository.findAndCount({
-      where,
-      relations: ['customer', 'property', 'assignedToUser'],
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { scheduledAt: 'ASC' },
-    });
+    return qb
+      .orderBy('followup.scheduledAt', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
   }
 
   /**
@@ -198,24 +204,33 @@ export class FollowupRepository {
     status?: FollowupStatus,
     page = 1,
     limit = 20,
+    resellerId?: string,
   ): Promise<[FollowupEntity[], number]> {
-    const where: Record<string, unknown> = {
-      assignedToUserId,
-      deletedAt: IsNull(),
-      type: Not(In([...SITE_WORK_TYPES])),
-    };
+    const qb = this.repository
+      .createQueryBuilder('followup')
+      .leftJoinAndSelect('followup.customer', 'customer')
+      .leftJoinAndSelect('followup.property', 'property')
+      .where('followup.assignedToUserId = :assignedToUserId', { assignedToUserId })
+      .andWhere('followup.deletedAt IS NULL')
+      .andWhere('followup.type NOT IN (:...siteWorkTypes)', {
+        siteWorkTypes: [...SITE_WORK_TYPES],
+      });
 
     if (status) {
-      where.status = status;
+      qb.andWhere('followup.status = :status', { status });
+    }
+    if (resellerId) {
+      qb.andWhere(
+        `followup.customerId IN (SELECT cp.id FROM customer_profiles cp WHERE cp.reseller_id = :resellerId)`,
+        { resellerId },
+      );
     }
 
-    return this.repository.findAndCount({
-      where,
-      relations: ['customer', 'property'],
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { scheduledAt: 'ASC' },
-    });
+    return qb
+      .orderBy('followup.scheduledAt', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
   }
 
   /**
@@ -225,6 +240,7 @@ export class FollowupRepository {
     assignedToUserId?: string,
     page = 1,
     limit = 20,
+    resellerId?: string,
   ): Promise<[FollowupEntity[], number]> {
     /*
       THE DAY BOUNDARY IS COMPUTED BY THE DATABASE, not by this process.
@@ -245,6 +261,7 @@ export class FollowupRepository {
       assignedToUserId,
       page,
       limit,
+      resellerId,
     );
   }
 
@@ -259,6 +276,7 @@ export class FollowupRepository {
     assignedToUserId: string | undefined,
     page: number,
     limit: number,
+    resellerId?: string,
   ): Promise<[FollowupEntity[], number]> {
     const qb = this.repository
       .createQueryBuilder('followup')
@@ -276,6 +294,13 @@ export class FollowupRepository {
       qb.andWhere('followup.assignedToUserId = :assignedToUserId', { assignedToUserId });
     }
 
+    if (resellerId) {
+      qb.andWhere(
+        `followup.customerId IN (SELECT cp.id FROM customer_profiles cp WHERE cp.reseller_id = :resellerId)`,
+        { resellerId },
+      );
+    }
+
     return qb
       .orderBy('followup.scheduledAt', 'ASC')
       .skip((page - 1) * limit)
@@ -290,6 +315,7 @@ export class FollowupRepository {
     assignedToUserId?: string,
     page = 1,
     limit = 20,
+    resellerId?: string,
   ): Promise<[FollowupEntity[], number]> {
     /*
       OVERDUE MEANS BEFORE TODAY, NOT BEFORE NOW.
@@ -304,6 +330,7 @@ export class FollowupRepository {
       assignedToUserId,
       page,
       limit,
+      resellerId,
     );
   }
 
@@ -418,8 +445,9 @@ export class FollowupRepository {
    * Attribution falls back from the most recently completed followup's assignee
    * to whoever created the record, so no gap is ownerless.
    */
-  async findGaps(): Promise<FollowupGapRow[]> {
-    return this.repository.manager.query(`
+  async findGaps(resellerId?: string): Promise<FollowupGapRow[]> {
+    return this.repository.manager.query(
+      `
       SELECT 'property' AS kind,
              p.customer_id AS "customerId",
              p.id          AS "propertyId",
@@ -437,6 +465,8 @@ export class FollowupRepository {
              ) AS "attributedUserId"
         FROM customer_properties p
        WHERE ${PROPERTY_NEEDS_FOLLOWUP('p')}
+         AND ($1::uuid IS NULL OR p.customer_id IN (
+               SELECT id FROM customer_profiles WHERE reseller_id = $1::uuid))
 
       UNION ALL
 
@@ -457,13 +487,19 @@ export class FollowupRepository {
              ) AS "attributedUserId"
         FROM customer_profiles c
        WHERE ${CUSTOMER_LEAD_NEEDS_FOLLOWUP('c')}
-    `);
+         AND ($1::uuid IS NULL OR c.reseller_id = $1::uuid)
+    `,
+      [resellerId ?? null],
+    );
   }
 
   /**
    * Counts for the nav badge. `userId` null means everyone's followups.
    */
-  async summaryCounts(userId: string | null): Promise<{
+  async summaryCounts(
+    userId: string | null,
+    resellerId?: string | null,
+  ): Promise<{
     overdue: number;
     today: number;
     upcoming: number;
@@ -481,8 +517,10 @@ export class FollowupRepository {
         AND f.status = 'pending'
         AND f.type NOT IN ${SITE_WORK_TYPES_SQL}
         AND ($1::uuid IS NULL OR f.assigned_to_user_id = $1::uuid)
+        AND ($2::uuid IS NULL OR f.customer_id IN (
+              SELECT id FROM customer_profiles WHERE reseller_id = $2::uuid))
     `,
-        [userId],
+        [userId, resellerId ?? null],
       );
 
     // Postgres COUNT comes back as a string.
