@@ -43,7 +43,8 @@ import type { CurrentUserType, LocalAuthRequest, OtpAuthRequest } from '../types
 
 @ApiTags('Authentication')
 @Controller('auth')
-@ResellerAllowed()
+// @ResellerAllowed() is per route, not on the class, so a future auth route
+// stays closed to resellers until someone opens it on purpose.
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -58,6 +59,7 @@ export class AuthController {
    * Uses LocalStrategy (Passport)
    * Recommended for admin and employee users
    */
+  @ResellerAllowed()
   @Public()
   @UseGuards(SecurityRateLimitGuard, LocalAuthGuard)
   @SecurityRateLimit({
@@ -99,6 +101,7 @@ export class AuthController {
     return this.authService.generateTokensForUser(req.user);
   }
 
+  @ResellerAllowed()
   @Public()
   @ApiCreate({
     path: 'refresh',
@@ -112,6 +115,7 @@ export class AuthController {
     return this.authService.refreshToken(refreshTokenDto.refreshToken);
   }
 
+  @ResellerAllowed()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiCreate({
@@ -125,6 +129,7 @@ export class AuthController {
     this.authService.logout(user.id);
   }
 
+  @ResellerAllowed()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiGet({
@@ -152,6 +157,7 @@ export class AuthController {
    * Creates user account if doesn't exist (Firebase-like behavior)
    * Rate Limited: 1 per minute, 5 per day per phone/IP
    */
+  @ResellerAllowed()
   @Public()
   @UseGuards(SecurityRateLimitGuard)
   @SecurityRateLimit({
@@ -194,6 +200,7 @@ export class AuthController {
    * Uses OtpStrategy (Passport)
    * Rate Limited: 5 attempts per 5 minutes per phone/IP
    */
+  @ResellerAllowed()
   @Public()
   @UseGuards(SecurityRateLimitGuard, OtpAuthGuard)
   @SecurityRateLimit({
@@ -236,6 +243,7 @@ export class AuthController {
    * Sends reset link to email (email sending is TODO)
    * Always returns success for security
    */
+  @ResellerAllowed()
   @Public()
   @UseGuards(SecurityRateLimitGuard)
   @SecurityRateLimit({
@@ -270,6 +278,7 @@ export class AuthController {
    * Request password reset OTP by phone
    * Throws 400 if phone not found or if user is a customer-only account
    */
+  @ResellerAllowed()
   @Public()
   @UseGuards(SecurityRateLimitGuard)
   @SecurityRateLimit({
@@ -311,6 +320,7 @@ export class AuthController {
    * Verify password reset OTP
    * Returns reset token and masked email on success
    */
+  @ResellerAllowed()
   @Public()
   @UseGuards(SecurityRateLimitGuard)
   @SecurityRateLimit({
@@ -354,6 +364,7 @@ export class AuthController {
    * Reset password with token
    * Validates token and updates password
    */
+  @ResellerAllowed()
   @Public()
   @UseGuards(SecurityRateLimitGuard)
   @SecurityRateLimit({
