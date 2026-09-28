@@ -246,8 +246,8 @@ commission. So:
 | documents | Customer and property documents of his customers. Project documents stay closed (X8). His deletes are always **soft** (`?permanent=true` is ignored). |
 | project sub-reads: milestones, attention, task list, team list, ledger milestones; `tasks/my` | Projects of his customers. GET only. |
 
-Everything else is 403. That covers project writes, documents, inventory, finance, admin, other
-employees, `/commissions` (the admin routes) and quote configuration (margin tiers).
+Everything else is 403. That covers project writes, project documents, inventory, finance, admin,
+other employees' records, `/commissions` (the admin routes) and quote configuration admin routes.
 
 ### 7.3 Redaction on quote data
 
