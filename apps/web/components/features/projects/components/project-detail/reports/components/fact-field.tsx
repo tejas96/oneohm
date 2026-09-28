@@ -57,9 +57,11 @@ export function isChangedFromSource(fact: WorkspaceFact): boolean {
   return !!fact.overridden && !!fact.quoteValue;
 }
 
-/** Where a changeable value came from: the quote, or the BOM (panel serial numbers). */
+/** Where a changeable value came from: the quote, the BOM (panel serial numbers) or the Money tab (system cost). */
 export function sourceWord(fact: WorkspaceFact): string {
-  return fact.source === 'bom' ? 'BOM' : 'quote';
+  if (fact.source === 'bom') return 'BOM';
+  if (fact.source === 'finance') return 'Money tab';
+  return 'quote';
 }
 
 /** Multi-line facts keep their line breaks: a single-line input would join them on any edit. Read-only ones grow to fit. */

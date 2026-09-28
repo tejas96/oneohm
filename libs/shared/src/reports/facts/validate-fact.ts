@@ -1,3 +1,4 @@
+import { normalizeMoney } from './format-fact';
 import { getFact, type ReportFact } from './report-facts';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -89,12 +90,13 @@ export function applyFactPatch(
       errors.set(fact.key, `${fact.label} must be text`);
       continue;
     }
-    const message = validateFactValue(fact, value);
+    const typed = fact.type === 'money' ? normalizeMoney(value) : value.trim();
+    const message = validateFactValue(fact, typed);
     if (message) {
       errors.set(fact.key, message);
       continue;
     }
-    next.set(fact.key, value.trim());
+    next.set(fact.key, typed);
   }
 
   return { next: Object.fromEntries(next), errors: Object.fromEntries(errors) };

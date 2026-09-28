@@ -128,7 +128,9 @@ export function resolveSourceFacts({
     ? (CONNECTION_TYPE_LABELS[property.connectionType] ?? '')
     : '';
 
-  facts.system_cost = contractValue != null && contractValue > 0 ? str(contractValue) : '';
+  // Whole rupees, as printed: a few paise of drift must not turn a filed report Out of date.
+  facts.system_cost =
+    contractValue != null && contractValue > 0 ? str(Math.round(contractValue)) : '';
 
   facts.installed_capacity_kw = str(kw);
   facts.installed_capacity_wp = kw != null ? str(Math.round(kw * 1000)) : '';

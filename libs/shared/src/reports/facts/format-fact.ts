@@ -37,14 +37,22 @@ export function earthingCountMismatch(raw: string): { declared: number; given: n
   return { declared: parsed.declared, given: parsed.values.length };
 }
 
+/** An amount as typed or copied from print ("₹2,15,205/-", "2,15,205") → "215205". */
+export function normalizeMoney(raw: string): string {
+  return raw
+    .trim()
+    .replace(/\/-$/, '')
+    .replace(/[₹,\s]/g, '');
+}
+
 /**
  * Rupees in whole rupees with Indian grouping: 944817.93 prints "₹9,44,818/-"
  * ("/-" means no paise). Anything that is not a number prints as typed.
  */
 export function formatRupees(raw: string): string {
-  const value = raw.trim();
+  const value = normalizeMoney(raw);
   const amount = Number(value);
-  if (!value || !Number.isFinite(amount)) return value;
+  if (!value || !Number.isFinite(amount)) return raw.trim();
   return `₹${Math.round(amount).toLocaleString('en-IN')}/-`;
 }
 

@@ -9,6 +9,8 @@ export type FactSource =
   | 'customer'
   | 'property'
   | 'project'
+  /** The project's Money tab (ledger): the contract value. */
+  | 'finance'
   | 'bom'
   | 'manual'
   | 'fixed';
@@ -519,7 +521,7 @@ export const REPORT_FACTS = [
     label: 'Cost of the system',
     type: 'money',
     group: 'system',
-    source: 'project',
+    source: 'finance',
     overridable: true,
     placeholder: 'e.g. 215205',
     help: `The contract price, as on the Money tab: the approved quote plus agreed change orders. Subsidy is not taken off. A change here prints on the reports only: the Money tab stays the same. Reset brings back the Money tab value. ${OUT_OF_DATE}`,
