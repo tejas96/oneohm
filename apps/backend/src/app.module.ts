@@ -22,6 +22,7 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DiscomsModule } from './modules/discoms/discoms.module';
 import { DocumentsModule } from './modules/documents/documents.module';
+import { CommissionPayoutModule } from './modules/employees/commissions/commission-payout.module';
 import { EmployeesModule } from './modules/employees/employees.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { FinanceCommonModule } from './modules/finance-common/finance-common.module';
@@ -92,6 +93,12 @@ import { UsersModule } from './modules/users/users.module';
     // scripts/ledger-dry-run.ts reads them by design and goes with them.
     LedgerModule,
     PaymentApprovalModule,
+    // Commission payouts need both EmployeeCommissionsModule and
+    // PaymentApprovalModule; living here (not inside EmployeeCommissionsModule)
+    // avoids a cycle back through NotificationsModule -> UsersModule ->
+    // EmployeesModule -> EmployeeCommissionsModule. See
+    // commission-payout.module.ts for the full trace.
+    CommissionPayoutModule,
     FinanceModule,
     CommentsModule,
     DocumentsModule,

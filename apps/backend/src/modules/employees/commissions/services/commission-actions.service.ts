@@ -10,7 +10,7 @@ import type { EditCommissionDto } from '../dto';
 import { COMMISSION_ROW_SQL, toCommissionRow, type CommissionRow } from '../sql/commission-read.sql';
 import { requirePermission } from '../utils/require-permission';
 
-const CHANGED = 'This commission changed while you were looking at it. Reload and try again.';
+export const CHANGED = 'This commission changed while you were looking at it. Reload and try again.';
 
 @Injectable()
 export class CommissionActionsService {
@@ -131,7 +131,7 @@ export class CommissionActionsService {
   }
 
   /** Row lock so two admins cannot race; the conditional UPDATEs are the second line. */
-  protected async lock(m: EntityManager, id: string): Promise<void> {
+  async lock(m: EntityManager, id: string): Promise<void> {
     const rows = await m.query(`SELECT id FROM employee_commissions WHERE id = $1 FOR UPDATE`, [id]);
     if (!rows[0]) throw new NotFoundException('Commission not found');
   }
