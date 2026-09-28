@@ -278,10 +278,16 @@ export class CustomerProfileRepository {
   async update(
     id: string,
     updates: Partial<CustomerProfileEntity>,
+    manager?: EntityManager,
   ): Promise<CustomerProfileEntity | null> {
+    const repo = manager ? manager.getRepository(CustomerProfileEntity) : this.repository;
     // Use type assertion to avoid TypeScript recursion issues with circular entity references
-    await this.repository.update({ id }, updates as Record<string, unknown>);
-    return this.findById(id);
+    await repo.update({ id }, updates as Record<string, unknown>);
+    // Read back on the same manager, so a caller's transaction sees its own write.
+    return repo.findOne({
+      where: { id, deletedAt: IsNull() },
+      relations: ['user', 'creator', 'assignee'],
+    });
   }
 
   /**

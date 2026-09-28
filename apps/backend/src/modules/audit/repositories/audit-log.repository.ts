@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, EntityManager, Repository } from 'typeorm';
 
 import { QueryAuditLogsDto } from '../dto/query-audit-logs.dto';
 import { AuditLogEntity } from '../entities/audit-log.entity';
@@ -21,9 +21,10 @@ export class AuditLogRepository {
   // BASIC CRUD
   // ============================================
 
-  async create(auditLog: Partial<AuditLogEntity>): Promise<AuditLogEntity> {
-    const entity = this.repository.create(auditLog);
-    return this.repository.save(entity);
+  async create(auditLog: Partial<AuditLogEntity>, manager?: EntityManager): Promise<AuditLogEntity> {
+    const repo = manager ? manager.getRepository(AuditLogEntity) : this.repository;
+    const entity = repo.create(auditLog);
+    return repo.save(entity);
   }
 
   async findById(id: string): Promise<AuditLogEntity | null> {

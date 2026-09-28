@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
+import { EntityManager } from 'typeorm';
 
 import { CreateAuditLogDto, QueryAuditLogsDto, AuditLogResponseDto } from '../dto';
 import { AuditLogRepository } from '../repositories/audit-log.repository';
@@ -16,8 +17,9 @@ export class AuditLogService {
   /**
    * Create an audit log entry
    */
-  async create(createDto: CreateAuditLogDto): Promise<AuditLogResponseDto> {
-    const auditLog = await this.repository.create(createDto);
+  /** Pass `manager` to write the audit row inside the caller's transaction. */
+  async create(createDto: CreateAuditLogDto, manager?: EntityManager): Promise<AuditLogResponseDto> {
+    const auditLog = await this.repository.create(createDto, manager);
 
     return plainToInstance(AuditLogResponseDto, auditLog, {
       excludeExtraneousValues: true,

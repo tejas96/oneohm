@@ -390,23 +390,31 @@ export class CustomerService {
     void groupNameToStrip;
     void resellerChangeReasonToStrip;
 
-    // Source "reseller" <=> a reseller is named, enforced on every save.
-    // Moving the source away from Reseller clears the reseller (edge case 49).
-    const nextSource =
-      updateDto.leadSource !== undefined ? updateDto.leadSource : existing.leadSource;
-    const nextResellerInput =
-      updateDto.resellerId !== undefined
-        ? updateDto.resellerId
-        : nextSource === LeadSource.RESELLER
-          ? existing.resellerId
-          : null;
-    // The reseller id itself isn't changing -> skip the existence/active
-    // lookup (R20 #5). The both-ways source<=>reseller consistency check
-    // above still runs unconditionally, on every save.
-    const resellerIdChanging = (existing.resellerId ?? null) !== (nextResellerInput ?? null);
-    const nextResellerId = await this.resolveReseller(nextSource, nextResellerInput, {
-      checkExistence: resellerIdChanging,
-    });
+    // Source "reseller" <=> a reseller is named. Checked only when this update
+    // touches leadSource or resellerId: automated writebacks (report facts)
+    // on a legacy customer with source Reseller and no reseller must keep
+    // working. Moving the source away from Reseller clears the reseller (edge case 35).
+    const touchesReseller =
+      updateDto.leadSource !== undefined || updateDto.resellerId !== undefined;
+    let nextResellerId = existing.resellerId ?? null;
+    if (touchesReseller) {
+      const nextSource =
+        updateDto.leadSource !== undefined ? updateDto.leadSource : existing.leadSource;
+      const nextResellerInput =
+        updateDto.resellerId !== undefined
+          ? updateDto.resellerId
+          : nextSource === LeadSource.RESELLER
+            ? existing.resellerId
+            : null;
+      // The existence/active lookup runs only when the reseller id changes, so
+      // deactivating a reseller doesn't freeze unrelated edits to his customers.
+      const resellerIdChanging = (existing.resellerId ?? null) !== (nextResellerInput ?? null);
+      nextResellerId = await this.resolveReseller(nextSource, nextResellerInput, {
+        checkExistence: resellerIdChanging,
+      });
+      (profileUpdateFields as Partial<CustomerProfileEntity>).resellerId = nextResellerId;
+      (profileUpdateFields as Partial<CustomerProfileEntity>).leadSource = nextSource;
+    }
 
     const resellerChanged = (existing.resellerId ?? null) !== nextResellerId;
     if (resellerChanged) {
@@ -423,33 +431,37 @@ export class CustomerService {
       }
     }
 
-    (profileUpdateFields as Partial<CustomerProfileEntity>).resellerId = nextResellerId;
-    (profileUpdateFields as Partial<CustomerProfileEntity>).leadSource = nextSource;
-
-    const updated = await this.customerRepository.update(id, {
-      ...(profileUpdateFields as Partial<CustomerProfileEntity>),
-      updatedBy,
-    });
-
-    if (!updated) {
-      throw new NotFoundException(`Customer with ID '${id}' not found`);
-    }
-
-    if (resellerChanged) {
-      await this.dataSource.query(
-        `UPDATE quotes SET reseller_id = $2, updated_at = now()
-          WHERE customer_id = $1 AND status = 'draft' AND deleted_at IS NULL`,
-        [id, nextResellerId],
+    // The save, the draft quotes following the new reseller and the audit row
+    // commit together: a half-applied reseller change would pay the wrong person.
+    const updated = await this.dataSource.transaction(async (manager) => {
+      const saved = await this.customerRepository.update(
+        id,
+        { ...(profileUpdateFields as Partial<CustomerProfileEntity>), updatedBy },
+        manager,
       );
-      await this.auditLogService.create({
-        entityType: AuditEntityType.CUSTOMER,
-        entityId: id,
-        action: AuditAction.UPDATE,
-        oldValues: { resellerId: existing.resellerId ?? null },
-        newValues: { resellerId: nextResellerId, reason: updateDto.resellerChangeReason },
-        userId: actor?.id,
-      });
-    }
+      if (!saved) {
+        throw new NotFoundException(`Customer with ID '${id}' not found`);
+      }
+      if (resellerChanged) {
+        await manager.query(
+          `UPDATE quotes SET reseller_id = $2, updated_at = now()
+            WHERE customer_id = $1 AND status = 'draft' AND deleted_at IS NULL`,
+          [id, nextResellerId],
+        );
+        await this.auditLogService.create(
+          {
+            entityType: AuditEntityType.CUSTOMER,
+            entityId: id,
+            action: AuditAction.UPDATE,
+            oldValues: { resellerId: existing.resellerId ?? null },
+            newValues: { resellerId: nextResellerId, reason: updateDto.resellerChangeReason },
+            userId: actor?.id,
+          },
+          manager,
+        );
+      }
+      return saved;
+    });
 
     // Sync name/phone/email to the core user record — keeps the login identity
     // (`users` table) consistent with the customer profile so future duplicate
@@ -798,7 +810,8 @@ export class CustomerService {
   // ==================== PRIVATE HELPERS ====================
 
   /**
-   * Source "reseller" ⇔ a reseller is named. Both ways, on every save.
+   * Source "reseller" ⇔ a reseller is named, both ways. Always on create; on
+   * update only when leadSource or resellerId is in the DTO.
    * Returns the reseller id to store.
    */
   private async resolveReseller(
@@ -814,11 +827,10 @@ export class CustomerService {
       throw new BadRequestException('A reseller can only be set when the lead source is Reseller.');
     }
     if (!resellerId) return null;
-    // Both-ways consistency (above) runs on every save. The existence/active
-    // lookup is the expensive, state-dependent part: skipped when the caller
-    // says the reseller id isn't actually changing (R20 #5), so deactivating a
-    // reseller doesn't freeze every unrelated edit to customers already
-    // attached to him. Always runs on create (no prior state to compare).
+    // The existence/active lookup is skipped when the caller says the reseller
+    // id isn't changing, so deactivating a reseller doesn't freeze every
+    // unrelated edit to customers already attached to him. Always runs on
+    // create (no prior state to compare).
     if (options.checkExistence === false) return resellerId;
     const [row] = await this.dataSource.query(
       `SELECT status FROM employee_profiles
