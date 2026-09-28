@@ -86,6 +86,12 @@ export function ResellerDetailPage({ id }: { id: string }): JSX.Element {
         getRowId={(r) => r.id}
         loading={q.isLoading}
         refetching={q.isFetching && !q.isLoading}
+        // Default `grid-min-width` (1280px) is sized for a full list page —
+        // this table lives in a detail pane (~1100px content) and its four
+        // columns need far less, so the default forced horizontal scroll
+        // with the maths/state/⋮ columns off-screen. Matches
+        // `finance-payables-page.tsx`'s override for the same reason.
+        gridMinWidth="760px"
         enableRowSelection
         bulkActions={[
           {

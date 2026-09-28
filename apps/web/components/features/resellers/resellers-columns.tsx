@@ -81,7 +81,11 @@ export function buildResellerColumns(onOpen: (r: ResellerSummary) => void): CrmC
       field: 'rate',
       header: 'Rate',
       track: crm['col-status'],
-      align: 'right',
+      // Left-aligned: right-aligning a narrow track butted the "5%" straight
+      // against the next (left-aligned) funnel column with no gap between
+      // them — "RATELEADS → QUOTED → WON" in the header, "5%0 → 0 → 0" in
+      // the cells. CrmTable's grid has no column gap, so alignment is the
+      // only thing that keeps adjacent tracks apart.
       renderCell: (r) => (r.ratePercent === null ? <CrmStatusPill tone="warning" label="Not set" /> : `${r.ratePercent}%`),
     },
     {
@@ -97,14 +101,14 @@ export function buildResellerColumns(onOpen: (r: ResellerSummary) => void): CrmC
         </Box>
       ),
     },
-    { field: 'revenue', header: 'Revenue', track: crm['col-pay-payable'], align: 'right', renderCell: (r) => <Money paise={r.revenuePaise} /> },
-    { field: 'pending', header: 'Pending', track: crm['col-pay-payable'], align: 'right', renderCell: (r) => <Money paise={r.pendingPaise} /> },
-    { field: 'owed', header: 'Owed', track: crm['col-pay-payable'], align: 'right', renderCell: (r) => <Money paise={r.owedPaise} /> },
-    { field: 'paid', header: 'Paid', track: crm['col-pay-payable'], align: 'right', renderCell: (r) => <Money paise={r.paidPaise} /> },
+    { field: 'revenue', header: 'Revenue', track: crm['col-reseller-money'], align: 'right', renderCell: (r) => <Money paise={r.revenuePaise} /> },
+    { field: 'pending', header: 'Pending', track: crm['col-reseller-money'], align: 'right', renderCell: (r) => <Money paise={r.pendingPaise} /> },
+    { field: 'owed', header: 'Owed', track: crm['col-reseller-money'], align: 'right', renderCell: (r) => <Money paise={r.owedPaise} /> },
+    { field: 'paid', header: 'Paid', track: crm['col-reseller-money'], align: 'right', renderCell: (r) => <Money paise={r.paidPaise} /> },
     {
       field: 'recover',
       header: 'To recover',
-      track: crm['col-pay-payable'],
+      track: crm['col-reseller-money'],
       align: 'right',
       renderCell: (r) => <Money paise={r.toRecoverPaise} danger />,
     },

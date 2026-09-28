@@ -133,7 +133,7 @@ export function buildCommissionColumns(
     {
       field: 'maths',
       header: 'Base × rate = amount',
-      track: crm['col-portfolio'],
+      track: crm['col-reseller-maths'],
       renderCell: (r) => (
         <Box sx={{ fontVariantNumeric: 'tabular-nums' }}>
           {formatPaise(r.basePaise)} × {r.ratePercent}% = <strong>{formatPaise(r.amountPaise)}</strong>
@@ -152,7 +152,7 @@ export function buildCommissionColumns(
     {
       field: 'state',
       header: 'State',
-      track: crm['col-status'],
+      track: crm['col-reseller-state'],
       renderCell: (r) => (
         <Box>
           <CrmStatusPill tone={COMMISSION_STATE_TONE[r.state]} label={COMMISSION_STATE_LABEL[r.state]} />
