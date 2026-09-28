@@ -90,8 +90,9 @@ export class ProjectCancellationService {
 
       // 2. Commissions nobody has been paid yet.
       await manager.query(
-        `UPDATE employee_commissions SET status = 'cancelled', updated_at = now()
-          WHERE project_id = $1 AND status IN ('pending', 'approved')`,
+        `UPDATE employee_commissions c SET status = 'cancelled', updated_at = now()
+          FROM projects p
+         WHERE p.id = $1 AND p.quote_id = c.quote_id AND c.status IN ('pending', 'approved')`,
         [projectId],
       );
 
@@ -200,9 +201,8 @@ export class ProjectCancellationService {
              AND po.deleted_at IS NULL
              AND po.status NOT IN ('received', 'cancelled'))::int         AS open_purchase_orders,
          (SELECT COUNT(*) FROM employee_commissions c
-           WHERE c.project_id = $1
-             AND c.status = 'paid'
-             AND c.recovered_at IS NULL)::int                             AS unrecovered_commissions,
+            JOIN projects p ON p.quote_id = c.quote_id
+           WHERE p.id = $1 AND c.status = 'paid' AND c.recovered_at IS NULL)::int AS unrecovered_commissions,
          (SELECT settled_at IS NOT NULL FROM projects WHERE id = $1)      AS settled`,
       [projectId],
     );

@@ -194,25 +194,6 @@ export class EmployeeResponseDto {
   @ApiPropertyOptional()
   accountHolderName?: string;
 
-  // ==================== Reseller: Performance Tracking ====================
-  @Expose()
-  @ApiPropertyOptional()
-  totalLeadsGenerated?: number;
-
-  @Expose()
-  @ApiPropertyOptional()
-  totalProjectsConverted?: number;
-
-  @Expose()
-  @ApiPropertyOptional()
-  @Transform(({ value }) => toNum(value))
-  totalRevenueGenerated?: number;
-
-  @Expose()
-  @ApiPropertyOptional()
-  @Transform(({ value }) => toNum(value))
-  totalCommissionEarned?: number;
-
   // ==================== Relations ====================
   @Expose()
   @Type(() => EmployeeUserDto)

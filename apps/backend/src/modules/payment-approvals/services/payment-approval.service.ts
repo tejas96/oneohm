@@ -447,8 +447,14 @@ export class PaymentApprovalService {
           approverId,
           manager,
         );
+      } else if (pending.kind === 'commission') {
+        // Commission payout approval (payout_request_id → employee_commissions)
+        // is built in a later task of the reseller-commissions migration. This
+        // branch only exists so the exhaustiveness guard below still catches a
+        // genuinely new, unhandled PendingKind.
+        throw new BadRequestException('Commission payout approval is not implemented yet.');
       } else {
-        // A `never` here is the point: adding a fifth PendingKind without a
+        // A `never` here is the point: adding another PendingKind without a
         // branch above stops compiling, instead of silently filing that row as
         // an expense with the wrong entry type and its fields dropped.
         const unreachable: never = pending.kind;

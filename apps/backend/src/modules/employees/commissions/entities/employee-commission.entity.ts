@@ -1,9 +1,15 @@
 import { CommissionStatus } from '@tejas96/shared/types';
+import type { CommissionBaseSource, CommissionRateSource } from '@tejas96/shared/utils';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../../common/entities/base.entity';
 import { UserEntity } from '../../../users/entities/user.entity';
 import { EmployeeProfileEntity } from '../../entities/employee-profile.entity';
+
+const money = {
+  to: (v?: number | null) => v,
+  from: (v?: string | null) => (v === null || v === undefined ? null : Number(v)),
+};
 
 /**
  * Employee Commission Entity
@@ -14,21 +20,40 @@ import { EmployeeProfileEntity } from '../../entities/employee-profile.entity';
 @Entity('employee_commissions')
 @Index(['employeeId', 'status'])
 @Index(['status'])
+@Index(['quoteId'], { unique: true })
 export class EmployeeCommissionEntity extends BaseEntity {
   @Column({ name: 'employee_id', type: 'uuid' })
   employeeId!: string;
 
-  @Column({ name: 'project_id', type: 'uuid', nullable: true })
-  projectId?: string;
+  @Column({ name: 'quote_id', type: 'uuid' })
+  quoteId!: string;
 
   // ==================== Commission Calculation ====================
-  @Column({ name: 'project_value', type: 'decimal', precision: 15, scale: 2 })
-  projectValue!: number;
+  @Column({ name: 'base_amount', type: 'decimal', precision: 15, scale: 2, transformer: money })
+  baseAmount!: number;
 
-  @Column({ name: 'commission_percentage', type: 'decimal', precision: 5, scale: 2 })
+  @Column({ name: 'base_source', type: 'varchar', length: 20 })
+  baseSource!: CommissionBaseSource;
+
+  @Column({ name: 'rate_source', type: 'varchar', length: 20 })
+  rateSource!: CommissionRateSource;
+
+  @Column({
+    name: 'commission_percentage',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    transformer: money,
+  })
   commissionPercentage!: number;
 
-  @Column({ name: 'commission_amount', type: 'decimal', precision: 15, scale: 2 })
+  @Column({
+    name: 'commission_amount',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    transformer: money,
+  })
   commissionAmount!: number;
 
   // ==================== Payment Status ====================
@@ -38,6 +63,28 @@ export class EmployeeCommissionEntity extends BaseEntity {
     default: CommissionStatus.PENDING,
   })
   status!: CommissionStatus;
+
+  @Column({ name: 'payout_request_id', type: 'uuid', nullable: true })
+  payoutRequestId?: string | null;
+
+  @Column({ name: 'payout_rejected_reason', type: 'text', nullable: true })
+  payoutRejectedReason?: string | null;
+
+  @Column({ name: 'expense_entry_id', type: 'uuid', nullable: true })
+  expenseEntryId?: string | null;
+
+  @Column({
+    name: 'recovered_amount',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+    transformer: money,
+  })
+  recoveredAmount?: number | null;
+
+  @Column({ name: 'cancel_reason', type: 'text', nullable: true })
+  cancelReason?: string | null;
 
   // ==================== Approval ====================
   @Column({ name: 'approved_at', type: 'timestamptz', nullable: true })

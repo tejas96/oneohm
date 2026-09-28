@@ -4,8 +4,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EmployeesModule } from '../employees.module';
 import { EmployeeCommissionController } from './controllers/employee-commission.controller';
 import { EmployeeCommissionEntity } from './entities/employee-commission.entity';
-import { EmployeeCommissionRepository } from './repositories/employee-commission.repository';
-import { EmployeeCommissionService } from './services/employee-commission.service';
 
 /**
  * Employee Commissions Module
@@ -17,6 +15,9 @@ import { EmployeeCommissionService } from './services/employee-commission.servic
  * forwardRef is used because EmployeesModule imports this module back to
  * register its controller/providers (mirrors the forwardRef pattern already
  * used between UsersModule and the other profile modules in this codebase).
+ *
+ * Stubbed while the service/repository are rebuilt (Task 2 of the
+ * reseller-commissions migration); providers/exports are empty until then.
  */
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { EmployeeCommissionService } from './services/employee-commission.servic
     forwardRef(() => EmployeesModule),
   ],
   controllers: [EmployeeCommissionController],
-  providers: [EmployeeCommissionService, EmployeeCommissionRepository],
-  exports: [EmployeeCommissionService, EmployeeCommissionRepository],
+  providers: [],
+  exports: [],
 })
 export class EmployeeCommissionsModule {}

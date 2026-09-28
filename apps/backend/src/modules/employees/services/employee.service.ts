@@ -403,12 +403,7 @@ export class EmployeeService {
    */
   async updatePerformanceMetrics(
     id: string,
-    metrics: {
-      totalLeadsGenerated?: number;
-      totalProjectsConverted?: number;
-      totalRevenueGenerated?: number;
-      totalCommissionEarned?: number;
-    },
+    metrics: Record<string, never>,
   ): Promise<void> {
     this.logger.log(`Updating performance metrics for employee: ${id}`);
 

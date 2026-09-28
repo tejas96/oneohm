@@ -101,6 +101,10 @@ export class CustomerProfileEntity extends BaseEntity {
   @Column({ name: 'referral_code', type: 'varchar', length: 50, nullable: true })
   referralCode?: string;
 
+  /** The reseller who brought this customer in. Set only by the server (spec §10.4). */
+  @Column({ name: 'reseller_id', type: 'uuid', nullable: true })
+  resellerId?: string | null;
+
   // ==================== Customer Group ====================
   @Column({ name: 'group_code', type: 'varchar', length: 20, nullable: true })
   groupCode?: string;

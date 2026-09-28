@@ -151,12 +151,7 @@ export class EmployeeProfileRepository {
    */
   async updatePerformanceMetrics(
     id: string,
-    metrics: {
-      totalLeadsGenerated?: number;
-      totalProjectsConverted?: number;
-      totalRevenueGenerated?: number;
-      totalCommissionEarned?: number;
-    },
+    metrics: Record<string, never>,
   ): Promise<void> {
     await this.repository.update({ id }, metrics);
   }
