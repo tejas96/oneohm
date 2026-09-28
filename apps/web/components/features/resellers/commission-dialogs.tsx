@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@mui/material';
+import { commissionAmount } from '@tejas96/shared/utils';
 import { type JSX, useState } from 'react';
 
 import { METHOD_OPTIONS, todayIst } from '@/components/features/ledger/pay-vendor-dialog';
@@ -15,13 +16,51 @@ import {
   MUISelect,
 } from '@/components/ui';
 import { useCommissionMutations, type CommissionRow } from '@/lib/hooks/resources/resellers';
-import { formatPaise } from '@/lib/utils/paise';
+import { formatPaise, paiseToRupees, parseRupeeInput, rupeeInputError, type RupeeInput } from '@/lib/utils/paise';
+
+/**
+ * `parseRupeeInput`, but ₹0 is a valid answer here.
+ *
+ * Every other money dialog in the app (a vendor payment, a commission payout)
+ * never wants a ₹0 entry, so `parseRupeeInput` treats it as `'not-positive'`.
+ * Editing a commission's base to ₹0 and writing off a whole recovery are both
+ * real, backend-sanctioned states — `EditCommissionDto.baseAmount` is
+ * `@Min(0)` and `CloseRecoveryDto` documents "0 writes it all off" — so this
+ * re-derives the one case `parseRupeeInput` would otherwise reject, and
+ * defers to it for everything else: comma handling, decimal precision, the
+ * size ceiling, and the exact same error messages.
+ */
+function parseRupeeInputAllowZero(text: string): RupeeInput {
+  const cleaned = text.replace(/[,\s₹]/g, '');
+  if (cleaned !== '' && Number(cleaned) === 0) return { ok: true, paise: 0 };
+  return parseRupeeInput(text);
+}
+
+type RateInput = { ok: true; value: number } | { ok: false; reason: 'empty' | 'invalid' };
+
+/** A commission rate: 0–100, at most 2 decimal places — mirrors `EditCommissionDto.ratePercent`. */
+function parseRatePercent(text: string): RateInput {
+  const cleaned = text.trim();
+  if (cleaned === '') return { ok: false, reason: 'empty' };
+  if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return { ok: false, reason: 'invalid' };
+  const value = Number(cleaned);
+  if (!Number.isFinite(value) || value < 0 || value > 100) return { ok: false, reason: 'invalid' };
+  return { ok: true, value };
+}
+
+function rateInputError(result: RateInput): string | undefined {
+  if (result.ok || result.reason === 'empty') return undefined;
+  return 'Enter a percentage from 0 to 100, with at most 2 decimals.';
+}
 
 /**
  * A reason, required, at least 3 characters — used for Cancel (this file) and
- * Dismiss (`missing-commissions-strip.tsx`). `MUIDialog` only knows
- * `onOpenChange`, not a bare `onClose`, so every dialog here closes through
- * `onOpenChange={(next) => !next && onClose()}` — matching `PayVendorDialog`.
+ * Dismiss (`missing-commissions-strip.tsx`), whose backend limits differ
+ * (`ReasonDto.reason` allows 500 characters, `DismissMissingDto.note` only
+ * 300), hence the `maxLength` prop rather than a hardcoded value. `MUIDialog`
+ * only knows `onOpenChange`, not a bare `onClose`, so every dialog here
+ * closes through `onOpenChange={(next) => !next && onClose()}` — matching
+ * `PayVendorDialog`.
  */
 export function ReasonDialog({
   open,
@@ -31,12 +70,14 @@ export function ReasonDialog({
   onClose,
   onConfirm,
   busy,
+  maxLength = 500,
 }: {
   open: boolean;
   title: string;
   description: string;
   confirmLabel: string;
   busy?: boolean;
+  maxLength?: number;
   onClose: () => void;
   onConfirm: (reason: string) => void;
 }): JSX.Element {
@@ -54,7 +95,7 @@ export function ReasonDialog({
           required
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          inputProps={{ maxLength: 500 }}
+          inputProps={{ maxLength }}
         />
       </MUIDialogBody>
       <MUIDialogFooter>
@@ -76,18 +117,42 @@ export function EditCommissionDialog({
 }): JSX.Element {
   const m = useCommissionMutations();
   const [base, setBase] = useState(String(row.basePaise / 100));
+  const [baseTouched, setBaseTouched] = useState(false);
   const [rate, setRate] = useState(String(row.ratePercent));
+  const [rateTouched, setRateTouched] = useState(false);
   const [reason, setReason] = useState('');
-  const baseN = Number(base);
-  const rateN = Number(rate);
+
+  const parsedBase = parseRupeeInputAllowZero(base);
+  const baseError = baseTouched ? rupeeInputError(parsedBase) : undefined;
+
+  const parsedRate = parseRatePercent(rate);
+  const rateError = rateTouched ? rateInputError(parsedRate) : undefined;
+
+  // Compared in paise / basis points, not floats — and required to actually
+  // differ, or the backend's `EditCommissionDto` handler 400s with "Change
+  // the base, the rate, or both." Computed once, as the payload value itself
+  // (`undefined` when unchanged) rather than a boolean re-checked later
+  // against `.ok` a second time.
+  const baseAmountForSave =
+    parsedBase.ok && parsedBase.paise !== row.basePaise ? paiseToRupees(parsedBase.paise) : undefined;
+  const ratePercentForSave =
+    parsedRate.ok && Math.round(parsedRate.value * 100) !== Math.round(row.ratePercent * 100)
+      ? parsedRate.value
+      : undefined;
+
   const valid =
-    Number.isFinite(baseN) &&
-    baseN >= 0 &&
-    Number.isFinite(rateN) &&
-    rateN >= 0 &&
-    rateN <= 100 &&
+    parsedBase.ok &&
+    parsedRate.ok &&
+    (baseAmountForSave !== undefined || ratePercentForSave !== undefined) &&
     reason.trim().length >= 3;
-  const previewPaise = Math.round((Math.round(baseN * 100) * Math.round(rateN * 100)) / 10_000);
+
+  // The shared, server-matching formula — `commissionAmount` takes and
+  // returns rupees, so the paise preview is derived, never duplicated inline.
+  const previewPaise =
+    parsedBase.ok && parsedRate.ok
+      ? Math.round(commissionAmount(paiseToRupees(parsedBase.paise), parsedRate.value) * 100)
+      : null;
+
   return (
     <MUIDialog open onOpenChange={(next) => !next && onClose()}>
       <MUIDialogHeader>
@@ -101,10 +166,18 @@ export function EditCommissionDialog({
           fieldLabel="Base (₹, before GST, after discount)"
           value={base}
           onChange={(e) => setBase(e.target.value)}
+          onBlur={() => setBaseTouched(true)}
+          error={baseError}
         />
-        <MUIInput fieldLabel="Rate (%)" value={rate} onChange={(e) => setRate(e.target.value)} />
+        <MUIInput
+          fieldLabel="Rate (%)"
+          value={rate}
+          onChange={(e) => setRate(e.target.value)}
+          onBlur={() => setRateTouched(true)}
+          error={rateError}
+        />
         <div>
-          Commission: <strong>{valid ? formatPaise(previewPaise) : '—'}</strong>
+          Commission: <strong>{previewPaise !== null ? formatPaise(previewPaise) : '—'}</strong>
         </div>
         <MUIInput
           fieldLabel="Why"
@@ -123,8 +196,8 @@ export function EditCommissionDialog({
             m.edit.mutate(
               {
                 id: row.id,
-                baseAmount: baseN !== row.basePaise / 100 ? baseN : undefined,
-                ratePercent: rateN !== row.ratePercent ? rateN : undefined,
+                baseAmount: baseAmountForSave,
+                ratePercent: ratePercentForSave,
                 reason: reason.trim(),
               },
               { onSuccess: onClose },
@@ -151,7 +224,10 @@ export function RecordCommissionPaymentDialog({
   const [reference, setReference] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const total = rows.reduce((s, r) => s + r.amountPaise, 0);
-  const valid = reference.trim().length >= 3 && Boolean(valueDate);
+  // The server already refuses a future value date; this is the client-side
+  // guard pay-vendor-dialog.tsx already uses, kept word-for-word.
+  const showFutureDateError = valueDate > todayIst();
+  const valid = reference.trim().length >= 3 && Boolean(valueDate) && !showFutureDateError;
   return (
     <MUIDialog open onOpenChange={(next) => !next && onClose()}>
       <MUIDialogHeader>
@@ -168,6 +244,7 @@ export function RecordCommissionPaymentDialog({
           value={valueDate}
           onChange={(e) => setValueDate(e.target.value)}
           inputProps={{ max: todayIst() }}
+          error={showFutureDateError ? `Pick today or earlier — money cannot arrive in the future.` : undefined}
         />
         <MUISelect
           fieldLabel="Method"
@@ -223,11 +300,23 @@ export function CloseRecoveryDialog({
 }): JSX.Element {
   const m = useCommissionMutations();
   const [amount, setAmount] = useState(String(row.amountPaise / 100));
+  const [amountTouched, setAmountTouched] = useState(false);
   const [date, setDate] = useState(todayIst());
   const [note, setNote] = useState('');
-  const n = Number(amount);
-  const valid = Number.isFinite(n) && n >= 0 && Math.round(n * 100) <= row.amountPaise && note.trim().length >= 3;
-  const writeOff = valid ? row.amountPaise - Math.round(n * 100) : 0;
+
+  const parsedAmount = parseRupeeInputAllowZero(amount);
+  // Cannot recover more than was paid on this commission — a hard rule, not
+  // the "advance" case pay-vendor-dialog allows, so it blocks Close rather
+  // than just warning.
+  const overCap = parsedAmount.ok && parsedAmount.paise > row.amountPaise;
+  const amountError = amountTouched
+    ? (rupeeInputError(parsedAmount) ??
+      (overCap ? `Cannot exceed ${formatPaise(row.amountPaise)} — that is all that was paid.` : undefined))
+    : undefined;
+
+  const valid = parsedAmount.ok && !overCap && note.trim().length >= 3;
+  const writeOff = parsedAmount.ok && !overCap ? row.amountPaise - parsedAmount.paise : 0;
+
   return (
     <MUIDialog open onOpenChange={(next) => !next && onClose()}>
       <MUIDialogHeader>
@@ -241,6 +330,8 @@ export function CloseRecoveryDialog({
           fieldLabel="Received back (₹)"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
+          onBlur={() => setAmountTouched(true)}
+          error={amountError}
         />
         {writeOff > 0 && <div>{formatPaise(writeOff)} will be written off.</div>}
         <MUIInput fieldLabel="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -259,7 +350,12 @@ export function CloseRecoveryDialog({
           disabled={!valid || m.closeRecovery.isPending}
           onClick={() =>
             m.closeRecovery.mutate(
-              { id: row.id, amountReceived: n, date, note: note.trim() },
+              {
+                id: row.id,
+                amountReceived: paiseToRupees(parsedAmount.ok ? parsedAmount.paise : 0),
+                date,
+                note: note.trim(),
+              },
               { onSuccess: onClose },
             )
           }

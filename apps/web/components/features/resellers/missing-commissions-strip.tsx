@@ -129,6 +129,7 @@ export function MissingCommissionsStrip(): JSX.Element | null {
           description="Why does this deal earn no commission?"
           confirmLabel="Dismiss"
           busy={m.dismissMissing.isPending}
+          maxLength={300}
           onClose={() => setDismissing(null)}
           onConfirm={(note) => {
             const quoteId = dismissing.row.quoteId;
