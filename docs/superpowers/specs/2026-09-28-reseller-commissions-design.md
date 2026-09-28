@@ -38,6 +38,7 @@ that we have not first checked on the web.
 | D10 | Reseller app access | Same features as staff, but **projects are view-only**. |
 | D11 | Cost and margin on quotes | Always **hidden** from resellers. The server strips them from responses. |
 | D12 | Where the dashboard opens | A money card at the top of My Day opens the full dashboard. The orb does not change. |
+| D13 | Staff on the current mobile app | Until the Step 2 app ships, staff who choose Lead source "Reseller" on the current app get a 400 (no reseller picker there). Accepted by the owner; see §16. |
 
 ### Defaults chosen in this spec (change before planning if wrong)
 
@@ -90,7 +91,7 @@ One forward-only migration in `oneohm`. Never test its rollback on the shared da
 
 | Change | Detail |
 |---|---|
-| add `quote_id` | uuid NOT NULL → `quotes(id)` RESTRICT. **Unique** (one commission per quote). The migration first counts existing rows. If any exist without a quote, it stops with a clear error. Do not guess a quote. |
+| add `quote_id` | uuid NOT NULL → `quotes(id)` RESTRICT. **Unique** (one commission per quote). The unique index is **not partial** (no `WHERE deleted_at IS NULL`): there is no delete, so a dismissed or cancelled row keeps the quote "handled". The migration first counts existing rows. If any exist without a quote, it stops with a clear error. Do not guess a quote. |
 | rename `project_value` → `base_amount` | decimal(15,2). Frozen at birth. |
 | add `base_source` | varchar: `discounted_base` / `derived` / `manual` / `missing` |
 | add `rate_source` | varchar: `profile` / `manual` / `missing` |
@@ -101,7 +102,7 @@ One forward-only migration in `oneohm`. Never test its rollback on the shared da
 | add `cancel_reason` | text null |
 | drop `project_id` | The project is found through `projects.quote_id = employee_commissions.quote_id`. Nothing to sync, so nothing can go stale. The cancellation service moves to this join. |
 | FK `employee_id` | change ON DELETE CASCADE → **RESTRICT**. Commission history must never disappear. |
-| checks | `commission_percentage BETWEEN 0 AND 100`; `base_amount >= 0`; `commission_amount >= 0` |
+| checks | `commission_percentage BETWEEN 0 AND 100`; `base_amount >= 0`; `commission_amount >= 0`; plus status, base/rate source, paid-has-expense and recovery checks (8 in all). All are added **NOT VALID**: they bind every new write but do not fail on old hand-written rows. Validating them in production is a release step (§16). |
 
 `invoice_*`, `payment_mode`, `payment_reference`, `paid_at`, `paid_by`, `approved_*`, `recovered_at`
 and `recovery_notes` stay.
@@ -116,6 +117,13 @@ computed live from now on. Also remove them from `employee-response.dto.ts` and 
 ### 4.4 Enums (shared package)
 
 - `ExpenseCategory.COMMISSION = 'commission'`, with its label in `EXPENSE_CATEGORY_LABELS`.
+- `MANUAL_EXPENSE_CATEGORIES` = every category except `COMMISSION`. Every manual path (record
+  expense, the queue's expense submit, the web Record money dialog) accepts only these, so
+  `commission` is refused anywhere except the commission payout.
+- A commission expense **cannot be reversed** (queue reversal or `POST ledger/entries/:id/reverse`):
+  400 "A commission payout cannot be reversed here. Use Close recovery on the reseller's page."
+  The web hides Reverse on commission rows. A reversal would undo the money but leave the
+  commission `paid`.
 - `PendingKind` gets `'commission'`, and so do the `IsIn` lists in the approvals DTOs.
 
 ## 5. The amount
@@ -164,8 +172,8 @@ from them:
 ### 6.2 Transitions
 
 Every transition is a conditional `UPDATE … WHERE id = $1 AND status = $expected`. If 0 rows
-change, the caller gets **409 "This commission changed. Reload."**. This handles two admins
-clicking at the same time.
+change, the caller gets **409 "This commission changed while you were looking at it. Reload and
+try again."**. This handles two admins clicking at the same time.
 
 | From | Action | To | Who | Guard |
 |---|---|---|---|---|
@@ -202,11 +210,18 @@ commission. So:
 
 ### 7.1 One global guard, with a deny-by-default rule for resellers
 
-- `ResellerScopeGuard` runs after `JwtAuthGuard` on every route.
+- The wall is a **global interceptor** (`ResellerScopeInterceptor`, `APP_INTERCEPTOR`), not a
+  guard, so it runs after `JwtAuthGuard` and every route guard on every route.
 - It resolves "is this user a reseller?" from `employee_profiles.profile_kind` for the token's
   user. It never uses anything the client sends. The result is cached per user for 60 seconds.
+  The lookup **ignores `deleted_at`**: deleting a reseller only soft-deletes his profile and his
+  login stays active, so he must stay walled off rather than fall through to staff access.
 - If the user is a reseller, the route must carry `@ResellerAllowed()`. If it does not, the
   answer is **403**. New routes are closed to resellers until someone opens them on purpose.
+  `@ResellerAllowed()` sits on each route, never on a class (auth included), so a new route in an
+  opened controller is closed too.
+- `ProjectTeamGuard` would 403 a reseller (he is on no team) before the interceptor runs. On the
+  routes opened to resellers it defers to the wall; ownership is asserted in the handler.
 - Staff and admins are not affected at all.
 
 ### 7.2 Routes opened to resellers, and how each one is scoped
@@ -216,13 +231,20 @@ commission. So:
 | `auth/*`, `employees/me` | Himself only. Bank account number and Aadhaar are masked to the last 4 digits. |
 | customers / leads list, detail, create, update | `reseller_id = me` is forced. On create, `reseller_id = me` is set and any sent value is ignored. |
 | properties under his customers | Through the customer |
-| follow-ups, site visits, surveys | Assigned to him **and** on his own customer |
-| quote calculator, quotes create / view / send | Only his own customers. `reseller_id = me` is forced. **Redacted** (7.3). |
+| follow-ups, site visits, surveys | Scoped to **his customers**. Assigning one to a reseller follows §7.4. |
+| quote calculator, quotes | Only his own customers. **Redacted** (7.3). `POST /quotes` and `PATCH /quotes/:id` are **closed** (they store a client-sent snapshot verbatim); he creates quotes only via `create-from-calculation`, which takes the customer's reseller. Open: list, detail, status, void, delete, share (WhatsApp `to` is ignored: it always goes to the customer), property-lock status, versions. Calculator `config` is open with `profitMarginTiers` stripped. |
 | projects list, project detail, project payments (read) | Project's quote has `reseller_id = me`. **GET only.** |
-| service tickets | Assigned to him and on his own customer |
+| service tickets | Scoped to **his customers**. Assigning one to a reseller follows §7.4. |
 | `commissions/me`, `commissions/me/summary` | Himself |
 | master data needed by these screens (products, product types, DISCOMs, subsidy rules) | Read only. |
 | `GET /quote-calculator/installation-pricing` | Open. It is the customer rate card that line prices are built from, and pricing is blocked without it. The `/all` variant, quote configurations, product prices and subsidy configurations admin routes stay closed. |
+| `GET /employees` | Active **staff** only, as a slim row: id, userId, name, designation, department, status. No phones, emails, DOB, address, bank or KYC. Any `status`, `profileKind` or `department` he sends is ignored. |
+| `PATCH /employees/:id`, `PATCH /users/:id` | His own record only. Privileged fields (profile kind, commission, bank, status, employee id, department, designation, KYC, roles) are stripped. |
+| users `check-availability`, `device-token`; notifications (unread count, list, mark read, mark all read); comments `mentions/count`; storage `presigned-url` | Himself |
+| DISCOMs; customer groups and `check-availability` | Read only |
+| customer status, assignee and lost; property writes, complete visit / survey, lost, reopen | His customers only |
+| documents | Customer and property documents of his customers. Project documents stay closed (X8). His deletes are always **soft** (`?permanent=true` is ignored). |
+| project sub-reads: milestones, attention, task list, team list, ledger milestones; `tasks/my` | Projects of his customers. GET only. |
 
 Everything else is 403. That covers project writes, documents, inventory, finance, admin, other
 employees, `/commissions` (the admin routes) and quote configuration (margin tiers).
@@ -233,6 +255,10 @@ For a reseller, remove these fields at every depth of **every** response (one fi
 `profitabilityAmount`, `profitabilityPercent`, `marginPercent`, `profitMarginTiers`, `actualCost` (project responses carry it)
 and `costMultiplier`. This includes `quote_snapshot.calculation`. Line prices, GST and totals stay, because the customer sees
 them on the PDF.
+
+The same filter masks `accountNumber` and `aadhaarNumber` to the last 4 digits in **every** reseller
+response. `GET /commissions/me` also leaves out office-only text on each row: `notes`,
+`payoutRejectedReason`, `recoveryNotes`, and a `cancelReason` that starts with "Dismissed:".
 
 ### 7.4 Assignment rules
 
@@ -249,6 +275,12 @@ delete and list every commission. Replace it:
 - Remove `POST /commissions`, `DELETE /commissions/:id` and `PATCH /commissions/:id/status`.
 - Keep list and detail for users with `finance.view` (or the admin bypass).
 - Add the actions from §6.2 as explicit routes, each checked in the service.
+- `POST /commissions/record-payment` lives in its own `CommissionPayoutModule`, imported only by
+  `AppModule`: it needs `PaymentApprovalService`, and `PaymentApprovalModule` already reaches
+  `EmployeeCommissionsModule` through Notifications → Users → Employees, so wiring it in there
+  would close an import cycle. A row that is not Approved with a project gets 409
+  "{quote no.}: only an Approved commission with a project can be paid (it is {state})."; a row
+  that changed under the batch gets the §6.2 409.
 
 ### 7.6 Permission codes (from the existing 42-code catalog, nothing new)
 
@@ -317,6 +349,8 @@ books, that is a follow-up.
   Revenue · Pending ₹ · Owed ₹ · Paid ₹ · To recover ₹ · `⋮` (always visible).
 - `⋮`: Open · Edit reseller (the existing user form).
 - An inactive or blocked reseller stays in the list, greyed out, if any money is still open.
+- A **soft-deleted** reseller stays in the list (status `deleted`, greyed out) while any
+  non-cancelled commission is his, and his detail page still opens.
 - Empty state: "No resellers yet" with a link to add a user with Profile Type = Reseller.
 
 ### 10.2 `/resellers/[id]`
@@ -349,7 +383,13 @@ Shown only when the count is above 0: *"N accepted deals have no commission row.
   It sets `customer_profiles.reseller_id`.
 - **Server rule, both ways:** `lead_source = 'reseller'` needs a `reseller_id`, and a
   `reseller_id` needs `lead_source = 'reseller'`. A save that breaks this gets 400 with a clear
-  message. This applies to new saves and edits. Old rows are not rewritten (see Legacy below).
+  message. It always runs on create; on an edit it runs **only when the update carries
+  `leadSource` or `resellerId`**, so automated writebacks (report facts) on a legacy customer
+  keep working. Old rows are not rewritten (see Legacy below).
+- The reseller's existence and active checks run only when the reseller **changes**, so
+  deactivating a reseller does not freeze edits to his existing customers.
+- The profile-kind lock (§10.5) also counts quotes that name the reseller.
+- A follow-up's customer can never change after it is created.
 - Changing the reseller on an existing customer, or changing its source away from Reseller,
   needs `customers.assign` and a reason (audited). Draft quotes of that customer follow the
   change. Sent and accepted quotes do not change.
@@ -495,8 +535,9 @@ before building. (Table names: "customers" in this section means `customer_profi
 39. A reseller reads a quote → cost and margin are removed at every depth (§7.3).
 40. **The discount cap can be probed.** The server rejects a discount above 50% of the margin
     (`quote.service.ts:985`). By trying discounts, someone can guess the margin. v1: every
-    rejected discount attempt by a reseller is written to the audit log. A future option is a fixed
-    reseller discount cap instead.
+    rejected discount attempt by a reseller is written to the audit log. This happens only on
+    `create-from-calculation` (`POST /quotes` and `PATCH /quotes/:id` are closed to him, and
+    `calculate` takes no discount). A future option is a fixed reseller discount cap instead.
 41. A reseller logs in to the web → "Use the mobile app" page (X1). The server wall still applies.
 42. Profile kind switched between staff and reseller → locked once history exists (§10.5).
 43. A cached reseller flag after a profile change → at most 60 seconds stale. The kind rarely
@@ -562,7 +603,18 @@ and SMS reach real phones (use the approved test customer, and "Mark as sent" fo
 
 ## 16. Release
 
-**Step 1:** shared package (enums) published from `oneohm` first → backend + web PR → deploy
-→ set `COMMISSIONS_LIVE_FROM` on Fly **before** the deploy goes live → run the cross-foot.
+**Step 1:** no shared-package publish (backend and web read `libs/shared` from source).
+
+1. Before deploy, run a **read-only** SELECT on production for: `employee_commissions` rows whose
+   project has no quote, duplicate quotes (two rows for one quote), and `paid` rows with no
+   expense. Any hit aborts the migration or fails a later VALIDATE; fix the data first.
+2. Set `COMMISSIONS_LIVE_FROM` (an IST date, `YYYY-MM-DD`) on Fly **before** the deploy goes live.
+   An impossible date is logged and treated as unset.
+3. Deploy the backend + web PR, then run the cross-foot (§15).
+4. With the owner's OK, run the 8 `ALTER TABLE employee_commissions VALIDATE CONSTRAINT …`
+   statements (`chk_ec_status`, `chk_ec_rate`, `chk_ec_base`, `chk_ec_amount`,
+   `chk_ec_base_source`, `chk_ec_rate_source`, `chk_ec_paid_has_expense`, `chk_ec_recovery`).
+5. Known gap until Step 2 ships: staff on the **current** mobile app who choose Lead source
+   "Reseller" get a 400, because that app has no reseller picker (owner decision, §2).
 **Step 2:** mobile PR → release → raise the EPC **min and recommended** versions (Fly secrets on
 `oneohm-epc-backend`).
