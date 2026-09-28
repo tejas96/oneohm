@@ -640,7 +640,11 @@ function pendingKindLabel(p: Pick<PaymentApproval, 'kind' | 'isCredit'>): string
   if (p.kind === 'expense') return p.isCredit ? 'Credit bill' : 'Expense';
   if (p.kind === 'vendor_payment') return 'Vendor payment';
   if (p.kind === 'reversal') return 'Reversal';
-  return 'Receipt';
+  if (p.kind === 'commission') return 'Commission';
+  if (p.kind === 'receipt') return 'Receipt';
+  // Exhaustive: a new ApprovalKind must be added above, not fall through silently.
+  const unreachable: never = p.kind;
+  return String(unreachable);
 }
 
 /** Every ledger entry on the project, newest first. */
