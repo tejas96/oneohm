@@ -283,7 +283,12 @@ export class QuoteController {
     @UploadedFile() file?: UploadedPdfFile,
     @ResellerScope() resellerId?: string,
   ): Promise<ShareQuoteWhatsappResponseDto> {
-    if (resellerId) await this.ownership.assertOwns('quote', id, resellerId);
+    if (resellerId) {
+      await this.ownership.assertOwns('quote', id, resellerId);
+      // A reseller's share always goes to the quote's customer: our WhatsApp
+      // number must not carry a quote to any phone he types.
+      dto.to = undefined;
+    }
     return this.quoteService.shareOnWhatsapp(id, dto, currentUser.id, file);
   }
 
