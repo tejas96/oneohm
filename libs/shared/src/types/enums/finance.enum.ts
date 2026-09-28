@@ -39,6 +39,8 @@ export enum ExpenseCategory {
   SUBCONTRACTOR = 'subcontractor',
   PERMITS = 'permits',
   MISC = 'misc',
+  /** Reseller commission, written only by the commission payout approval. */
+  COMMISSION = 'commission',
 }
 
 /**
