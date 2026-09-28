@@ -54,6 +54,15 @@ export function registerReportHandlebarsHelpers(): void {
     const parts = isoParts(value);
     return parts ? `${parts[2]}-${parts[1]}-${parts[0]}` : toDisplayString(value);
   });
+  /** "610" → "610 Wp"; a value that already ends in the unit prints as typed; blank → a line. */
+  Handlebars.registerHelper('withUnit', (value: unknown, unit: unknown) => {
+    if (isBlank(value)) return new Handlebars.SafeString('<span class="blank-line"></span>');
+    const text = toDisplayString(value);
+    const suffix = typeof unit === 'string' ? unit : '';
+    return suffix && !text.toLowerCase().endsWith(suffix.toLowerCase())
+      ? `${text} ${suffix}`
+      : text;
+  });
   Handlebars.registerHelper('formatAadhaar', (value: unknown) => {
     const digits = typeof value === 'string' ? value.replace(/\D/g, '') : '';
     return digits.length === 12

@@ -81,6 +81,10 @@ export function resolveSourceFacts({
   const kw = getSystemSizeKw(project);
 
   facts.vendor_name = COMPANY.legalName;
+  facts.signatory_name = COMPANY.reportSignatory.name;
+  facts.signatory_designation = COMPANY.reportSignatory.designation;
+  facts.signatory_phone = COMPANY.reportSignatory.phone;
+  facts.signatory_email = COMPANY.reportSignatory.email;
 
   facts.consumer_name = customerDisplayName(property);
   facts.consumer_number = str(property.consumerNumber);

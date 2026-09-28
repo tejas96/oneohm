@@ -28,6 +28,14 @@ export const COMPANY = {
   country: 'India',
   pincode: '416416',
 
+  /** Who signs the DISCOM declarations (the DCR) for the company. */
+  reportSignatory: {
+    name: 'Sneha Sanjay Patil',
+    designation: 'Director',
+    phone: '8788275659',
+    email: 'sneha.oneohm@gmail.com',
+  },
+
   /**
    * Held for reference only. NOT printed on receipts: a receipt is a payment
    * acknowledgement and says so explicitly, not a tax invoice.

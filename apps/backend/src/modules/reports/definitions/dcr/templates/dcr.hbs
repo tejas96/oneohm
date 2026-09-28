@@ -146,7 +146,7 @@
         </p>
 
         <ul class="module-list">
-          <li>1) <strong>PV Module Capacity:</strong> <strong>{{module_wattage}}</strong></li>
+          <li>1) <strong>PV Module Capacity:</strong> <strong>{{withUnit module_wattage "Wp"}}</strong></li>
           <li>2) <strong>Number of PV Modules:</strong> <strong>{{module_count}}</strong></li>
           <li>3) <strong>Sr No of PV Module:</strong> <strong>{{module_serial_numbers}}</strong></li>
           <li>4) <strong>PV Module Make:</strong> <strong>{{module_make}}</strong></li>
@@ -162,7 +162,7 @@
 
         <!-- Clause 4 -->
         <p class="clause">
-          4. I,  <strong>{{consumer_name}}</strong> on behalf of M/S <strong>{{vendor_name}}</strong> further declare that the
+          4. I, <strong>{{signatory_name}}</strong> on behalf of M/S <strong>{{vendor_name}}</strong> further declare that the
           information given above is true and correct and nothing has been concealed therein. If
           anything is found incorrect at any stage then the due Central Financial Assistance (CFA)
           that I have not charged from the consumer can be withheld and appropriate action may be

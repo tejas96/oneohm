@@ -29,7 +29,8 @@ export const WCR_REPORT: ReportDefinition = {
   shortName: 'WCR',
   description: 'Solar plant installation completion certificate (WCR).',
   documentTag: DocumentTag.WCR,
-  templateVersion: 2,
+  // 3: lightning arrester "Standard", CMC 5 years, printed as fixed values.
+  templateVersion: 3,
   pages: 2,
   facts: [
     req('vendor_name'),
@@ -66,7 +67,8 @@ export const DCR_REPORT: ReportDefinition = {
   description: 'Domestic Content Requirement self-declaration for MNRE/MSEDCL submission.',
   documentTag: DocumentTag.DCR,
   // 4: prints the one application / sanction number and date the WCR prints.
-  templateVersion: 4,
+  // 6: the company signatory makes the declaration (not the customer); module capacity in Wp.
+  templateVersion: 6,
   facts: [
     req('vendor_name'),
     req('installed_capacity_kw'),
