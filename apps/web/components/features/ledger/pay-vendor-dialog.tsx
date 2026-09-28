@@ -35,7 +35,7 @@ export interface PayVendorDialogProps {
 }
 
 /** Today as an IST date, matching how the backend stamps a value date. */
-function todayIst(): string {
+export function todayIst(): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Kolkata',
     year: 'numeric',
@@ -54,7 +54,7 @@ function todayIst(): string {
  * credit bill with more credit is not a payment"), so leaving it off this list
  * means the operator never reaches that rejection in the first place.
  */
-const METHOD_OPTIONS = Object.values(PaymentMethod)
+export const METHOD_OPTIONS = Object.values(PaymentMethod)
   .filter((m) => m !== PaymentMethod.CREDIT)
   // The app's method labels ("UPI", "Demand draft"), not the raw value upper-cased.
   .map((m) => ({ value: m, label: formatPaymentMethod(m) }));
