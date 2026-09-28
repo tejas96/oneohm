@@ -400,7 +400,13 @@ export class CustomerService {
         : nextSource === LeadSource.RESELLER
           ? existing.resellerId
           : null;
-    const nextResellerId = await this.resolveReseller(nextSource, nextResellerInput);
+    // The reseller id itself isn't changing -> skip the existence/active
+    // lookup (R20 #5). The both-ways source<=>reseller consistency check
+    // above still runs unconditionally, on every save.
+    const resellerIdChanging = (existing.resellerId ?? null) !== (nextResellerInput ?? null);
+    const nextResellerId = await this.resolveReseller(nextSource, nextResellerInput, {
+      checkExistence: resellerIdChanging,
+    });
 
     const resellerChanged = (existing.resellerId ?? null) !== nextResellerId;
     if (resellerChanged) {
@@ -798,6 +804,7 @@ export class CustomerService {
   private async resolveReseller(
     leadSource: string | null | undefined,
     resellerId: string | null | undefined,
+    options: { checkExistence?: boolean } = {},
   ): Promise<string | null> {
     const isResellerSource = leadSource === LeadSource.RESELLER;
     if (isResellerSource && !resellerId) {
@@ -807,6 +814,12 @@ export class CustomerService {
       throw new BadRequestException('A reseller can only be set when the lead source is Reseller.');
     }
     if (!resellerId) return null;
+    // Both-ways consistency (above) runs on every save. The existence/active
+    // lookup is the expensive, state-dependent part: skipped when the caller
+    // says the reseller id isn't actually changing (R20 #5), so deactivating a
+    // reseller doesn't freeze every unrelated edit to customers already
+    // attached to him. Always runs on create (no prior state to compare).
+    if (options.checkExistence === false) return resellerId;
     const [row] = await this.dataSource.query(
       `SELECT status FROM employee_profiles
         WHERE id = $1 AND profile_kind = 'reseller' AND deleted_at IS NULL`,

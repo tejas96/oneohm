@@ -64,6 +64,12 @@ export class DocumentController {
   ): Promise<DocumentResponseDto> {
     if (resellerId) {
       await this.ownership.assertOwnsDocumentParent(dto.entityType, dto.entityId, resellerId);
+      // `propertyId` is a separate, independently-trusted field (DocumentService.create
+      // uses it verbatim when set, only resolving one from entityId otherwise) — a
+      // reseller could otherwise file a document into another customer's property.
+      if (dto.propertyId) {
+        await this.ownership.assertOwns('property', dto.propertyId, resellerId);
+      }
     }
     const document = await this.documentService.create(dto, currentUser.id);
     return toDto(DocumentResponseDto, document);
@@ -82,6 +88,9 @@ export class DocumentController {
     if (resellerId) {
       for (const doc of dto.documents) {
         await this.ownership.assertOwnsDocumentParent(doc.entityType, doc.entityId, resellerId);
+        if (doc.propertyId) {
+          await this.ownership.assertOwns('property', doc.propertyId, resellerId);
+        }
       }
     }
     const documents = await this.documentService.createBulk(dto.documents, currentUser.id);

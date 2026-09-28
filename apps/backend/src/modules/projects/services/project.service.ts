@@ -27,6 +27,7 @@ import { DataSource, type EntityManager } from 'typeorm';
 
 import { ChangeRequestTaskService } from './change-request-task.service';
 import { TaskScheduleService } from './task-schedule.service';
+import { ResellerContextService } from '../../../common/reseller';
 import { systemSizeKwOf } from '../../../common/utils';
 import { BomBaselineService } from '../../bom/services/bom-baseline.service';
 import { BomReadService } from '../../bom/services/bom-read.service';
@@ -87,6 +88,7 @@ export class ProjectService {
     private readonly dataSource: DataSource,
     private readonly eventEmitter: EventEmitter2,
     private readonly leadClosureService: LeadClosureService,
+    private readonly resellerContext: ResellerContextService,
   ) {}
 
   /**
@@ -1069,6 +1071,21 @@ export class ProjectService {
     await this.taskSchedule.onDependenciesEdited(projectId, [...codeToTaskId.values()], manager);
   }
 
+  /**
+   * A reseller can never end up on a project team — he sees his own projects
+   * read-only (spec §7.4). Checked here so both the direct "add team member"
+   * route and a quote→project conversion's PM/team fields go through the same
+   * gate, rather than only the former.
+   */
+  private async assertNotReseller(userId: string): Promise<void> {
+    const memberResellerId = await this.resellerContext.resellerIdForUser(userId);
+    if (memberResellerId) {
+      throw new BadRequestException(
+        'Resellers cannot be added to a project team; they see their projects read-only.',
+      );
+    }
+  }
+
   private async addTeamMembers(
     projectId: string,
     teamConfig?: {
@@ -1077,6 +1094,19 @@ export class ProjectService {
     },
     manager?: EntityManager,
   ): Promise<void> {
+    // Validate every id before writing any row — a quote→project conversion
+    // must not seat a reseller on the team any more than the direct
+    // "add team member" route does (that route's own check lives in
+    // ProjectTeamService.addMember; this is the same rule for this path).
+    if (teamConfig?.pmId) {
+      await this.assertNotReseller(teamConfig.pmId);
+    }
+    if (teamConfig?.members) {
+      for (const member of teamConfig.members) {
+        await this.assertNotReseller(member.userId);
+      }
+    }
+
     if (teamConfig?.pmId) {
       const existing = await this.teamRepository.findOneByUserAndProject(
         teamConfig.pmId,

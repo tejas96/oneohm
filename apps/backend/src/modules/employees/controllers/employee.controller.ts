@@ -107,7 +107,11 @@ export class EmployeeController {
     // only ever sees staff, never other resellers' profiles.
     if (resellerId) profileKind = EmployeeProfileKind.STAFF;
 
-    if (department) {
+    // The department branch below bypasses `findByOrganization` (and the
+    // profileKind filter applied just above) entirely — a reseller sending
+    // `?department=Sales` would see every reseller in that department, not
+    // just staff. Simplest correct fix: a reseller never takes this branch.
+    if (department && !resellerId) {
       const employees = await this.employeeService.findByDepartment(department);
       const paged = employees.slice((page - 1) * limit, page * limit);
       return {
@@ -183,13 +187,23 @@ export class EmployeeController {
         throw new NotFoundException('Employee not found');
       }
       // profileKind is locked separately (Step 4); commission and bank fields
-      // are staff/finance-controlled, never self-editable.
+      // are staff/finance-controlled, never self-editable. status, employeeId,
+      // department, designation and the KYC fields (aadhaarNumber/pan/gstin)
+      // are likewise admin-managed facts — left in, a reseller could
+      // self-reactivate (status) or rewrite his own HR/compliance record.
       delete updateDto.profileKind;
       delete updateDto.commissionPercentage;
       delete updateDto.bankName;
       delete updateDto.accountNumber;
       delete updateDto.ifscCode;
       delete updateDto.accountHolderName;
+      delete updateDto.status;
+      delete updateDto.employeeId;
+      delete updateDto.department;
+      delete updateDto.designation;
+      delete updateDto.aadhaarNumber;
+      delete updateDto.pan;
+      delete updateDto.gstin;
     }
     return this.employeeService.update(id, updateDto, currentUser?.id);
   }
