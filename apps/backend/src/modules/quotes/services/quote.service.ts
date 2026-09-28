@@ -579,12 +579,6 @@ export class QuoteService {
       discountAmount: pricingBreakdown.discountAmount ?? 0,
     };
 
-    // `create` has always capped the discount at 50% of the margin; `update`
-    // never did, so raising the discount on an existing draft (or resizing it
-    // in a way that shrinks the margin) was a hole in the same cap edge case
-    // 38 is guarding against everywhere else this snapshot shape is accepted.
-    this.assertDiscountWithinMargin(newSnapshot);
-
     const sourceMilestones = updateDto.paymentMilestones || latestVersion.paymentMilestones;
     const contractTotal = Number(finalPrice);
     const paymentMilestones = sourceMilestones?.length

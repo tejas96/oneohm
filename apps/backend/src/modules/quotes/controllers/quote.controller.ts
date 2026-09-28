@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -15,12 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import {
-  AuditAction,
-  AuditEntityType,
-  IntegrationProvider,
-  type PaginatedResponse,
-} from '@tejas96/shared/types';
+import { IntegrationProvider, type PaginatedResponse } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -32,7 +26,6 @@ import {
 } from '../../../common/decorators';
 import { ResellerAllowed, ResellerOwnershipService, ResellerScope } from '../../../common/reseller';
 import { toPaginatedResponse } from '../../../common/utils';
-import { AuditLogService } from '../../audit/services';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -50,9 +43,6 @@ import {
 import { QuoteService } from '../services/quote.service';
 import type { UploadedPdfFile } from '../types/uploaded-pdf-file.interface';
 
-/** Matches the message `assertDiscountWithinMargin` throws (quote.service.ts). */
-const MARGIN_CAP_MESSAGE = /exceed 50% of the margin/;
-
 /**
  * Quote Controller
  * Handles HTTP requests for quote management
@@ -66,13 +56,18 @@ export class QuoteController {
     private readonly quoteService: QuoteService,
     private readonly integrationService: IntegrationService,
     private readonly ownership: ResellerOwnershipService,
-    private readonly auditLogService: AuditLogService,
   ) {}
 
   /**
    * Create a new quote
+   *
+   * R17: closed to resellers (X). POST /quotes stores whatever quoteSnapshot/
+   * finalPrice/effectivePrice the client sends verbatim — a reseller hitting
+   * this route directly could author his own commission base and self-attest
+   * a profitability figure that clears the margin cap. A reseller creates
+   * quotes only via POST /quote-calculator/create-from-calculation, where
+   * those fields are always server-computed.
    */
-  @ResellerAllowed()
   @Post()
   @ApiCreate({
     summary: 'Create a new quote',
@@ -82,41 +77,12 @@ export class QuoteController {
   async create(
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateQuoteDto,
-    @ResellerScope() resellerId?: string,
   ): Promise<QuoteResponseDto> {
-    if (resellerId) {
-      await this.ownership.assertOwns('customer', createDto.customerId, resellerId);
-      if (createDto.propertyId) {
-        await this.ownership.assertOwns('property', createDto.propertyId, resellerId);
-      }
-    }
+    const quote = await this.quoteService.create(createDto, currentUser.id);
 
-    try {
-      const quote = await this.quoteService.create(createDto, currentUser.id);
-
-      return plainToInstance(QuoteResponseDto, quote, {
-        excludeExtraneousValues: true,
-      });
-    } catch (error) {
-      // Edge case 38: the 50%-of-margin cap can be probed to guess the margin
-      // itself (accept/reject is a bit of signal profitabilityAmount would
-      // otherwise never leak). A reseller hitting it is logged before the
-      // error is rethrown unchanged.
-      if (resellerId && error instanceof BadRequestException && MARGIN_CAP_MESSAGE.test(error.message)) {
-        await this.auditLogService.create({
-          entityType: AuditEntityType.QUOTE,
-          entityId: createDto.customerId,
-          action: AuditAction.REJECT,
-          newValues: {
-            reason: 'Reseller discount above the margin cap',
-            discountAmount: createDto.quoteSnapshot?.discountAmount ?? 0,
-            resellerId,
-          },
-          userId: currentUser.id,
-        });
-      }
-      throw error;
-    }
+    return plainToInstance(QuoteResponseDto, quote, {
+      excludeExtraneousValues: true,
+    });
   }
 
   /**
@@ -230,8 +196,11 @@ export class QuoteController {
 
   /**
    * Update quote (creates new version)
+   *
+   * R17: closed to resellers (X), same reasoning as `create` above — the
+   * client-supplied quoteSnapshot/finalPrice/effectivePrice are stored
+   * verbatim here.
    */
-  @ResellerAllowed()
   @Patch(':id')
   @ApiUpdate({
     summary: 'Update quote',
@@ -243,32 +212,12 @@ export class QuoteController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateQuoteDto,
-    @ResellerScope() resellerId?: string,
   ): Promise<QuoteResponseDto> {
-    if (resellerId) await this.ownership.assertOwns('quote', id, resellerId);
+    const quote = await this.quoteService.update(id, updateDto, currentUser.id);
 
-    try {
-      const quote = await this.quoteService.update(id, updateDto, currentUser.id);
-
-      return plainToInstance(QuoteResponseDto, quote, {
-        excludeExtraneousValues: true,
-      });
-    } catch (error) {
-      if (resellerId && error instanceof BadRequestException && MARGIN_CAP_MESSAGE.test(error.message)) {
-        await this.auditLogService.create({
-          entityType: AuditEntityType.QUOTE,
-          entityId: id,
-          action: AuditAction.REJECT,
-          newValues: {
-            reason: 'Reseller discount above the margin cap',
-            discountAmount: updateDto.quoteSnapshot?.discountAmount ?? 0,
-            resellerId,
-          },
-          userId: currentUser.id,
-        });
-      }
-      throw error;
-    }
+    return plainToInstance(QuoteResponseDto, quote, {
+      excludeExtraneousValues: true,
+    });
   }
 
   /**

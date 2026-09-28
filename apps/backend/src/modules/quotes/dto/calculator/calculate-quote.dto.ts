@@ -322,18 +322,6 @@ export class CalculateQuoteDto {
   @IsUUID()
   @IsOptional()
   warehouseId?: string;
-
-  @ApiPropertyOptional({
-    description:
-      'Discount amount in INR, previewed against the 50%-of-margin cap. Not otherwise applied ' +
-      'to the returned pricing — this is a preview of whether the discount would be accepted.',
-    example: 5000,
-    minimum: 0,
-  })
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  discountAmount?: number;
 }
 
 /**
@@ -366,7 +354,7 @@ export class CreateQuoteFromCalculationDto extends CalculateQuoteDto {
   @IsNumber()
   @IsOptional()
   @Min(0)
-  override discountAmount?: number;
+  discountAmount?: number;
 
   @ApiPropertyOptional({
     description: 'Internal notes for the quote',

@@ -52,9 +52,6 @@ import { QuoteRepository } from '../repositories';
 import { QuoteCalculatorService } from '../services/quote-calculator.service';
 import { QuoteService } from '../services/quote.service';
 
-/** Matches the message thrown for the 50%-of-margin discount cap. */
-const MARGIN_CAP_MESSAGE = /exceed 50% of the margin/;
-
 /**
  * Quote Calculator Controller
  * Handles HTTP requests for quote calculation
@@ -114,43 +111,9 @@ export class QuoteCalculatorController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid input or missing products/pricing',
   })
-  async calculate(
-    @CurrentUser() currentUser: CurrentUserType,
-    @Body() input: CalculateQuoteDto,
-    @ResellerScope() resellerId?: string,
-  ): Promise<CalculateQuoteResponseDto> {
-    try {
-      const result = await this.calculatorService.calculateQuote(input);
-
-      // Edge case 38: this is a dry run with no persisted quote, but it still
-      // returns `profitabilityAmount` (stripped for a reseller only by the
-      // wall's redaction) and, unguarded, would let a reseller binary-search
-      // the margin by watching accept/reject on discountAmount alone.
-      // create() and create-from-calculation both cap the same way already;
-      // this closes the one route that previewed the number without capping it.
-      const discountAmount = input.discountAmount ?? 0;
-      const maxAllowedDiscount = Math.max(0, result.profitabilityAmount * 0.5);
-      if (discountAmount > maxAllowedDiscount) {
-        throw new BadRequestException('Discount cannot exceed 50% of the margin');
-      }
-
-      return result;
-    } catch (error) {
-      if (resellerId && error instanceof BadRequestException && MARGIN_CAP_MESSAGE.test(error.message)) {
-        await this.auditLogService.create({
-          entityType: AuditEntityType.QUOTE,
-          entityId: input.customerId ?? resellerId,
-          action: AuditAction.REJECT,
-          newValues: {
-            reason: 'Reseller discount above the margin cap',
-            discountAmount: input.discountAmount ?? 0,
-            resellerId,
-          },
-          userId: currentUser.id,
-        });
-      }
-      throw error;
-    }
+  async calculate(@Body() input: CalculateQuoteDto): Promise<CalculateQuoteResponseDto> {
+    const result = await this.calculatorService.calculateQuote(input);
+    return result;
   }
 
   /**
@@ -197,165 +160,153 @@ export class QuoteCalculatorController {
       if (input.propertyId) await this.ownership.assertOwns('property', input.propertyId, resellerId);
     }
 
-    try {
-      const calculation = await this.calculatorService.calculateQuote(input);
+    const calculation = await this.calculatorService.calculateQuote(input);
 
-      const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault();
-      const validUntil = new Date();
-      validUntil.setDate(validUntil.getDate() + quoteConfig.defaultValidityDays);
+    const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault();
+    const validUntil = new Date();
+    validUntil.setDate(validUntil.getDate() + quoteConfig.defaultValidityDays);
 
-      if (!input.customerId) {
-        throw new BadRequestException('Customer ID is required to save a quote');
-      }
-      if (!input.propertyId) {
-        throw new BadRequestException('Property ID is required to save a quote');
-      }
-
-      if (input.paymentMilestones && input.paymentMilestones.length > 0) {
-        const totalPercent = input.paymentMilestones.reduce((sum, m) => sum + m.percentage, 0);
-        if (Math.abs(totalPercent - 100) > 0.01) {
-          throw new BadRequestException(
-            `Payment milestone percentages must total 100% (currently ${totalPercent}%)`,
-          );
-        }
-      }
-
-      const discountAmount = input.discountAmount || 0;
-      const maxAllowedDiscount = Math.max(0, calculation.profitabilityAmount * 0.5);
-      if (discountAmount > maxAllowedDiscount) {
-        throw new BadRequestException('Discount cannot exceed 50% of the margin');
-      }
-
-      let discounted: ReturnType<typeof applyPreGstDiscount>;
-      try {
-        discounted = applyPreGstDiscount(
-          calculation.pricing.basePrice,
-          discountAmount,
-          quoteConfig.gstConfig,
-        );
-      } catch (err: unknown) {
-        if (err instanceof GstSplitPercentagesInvalidError) {
-          throw new BadRequestException(err.message);
-        }
-        throw err;
-      }
-      const finalPrice = discounted.grossTotal;
-      // BUG-3: Round to 2 decimal places to prevent floating-point display errors
-      const effectivePrice =
-        Math.round(Math.max(0, finalPrice - calculation.subsidy.amount) * 100) / 100;
-
-      const systemType = input.systemType ?? SystemType.ON_GRID;
-
-      const calculatorInputs: CalculatorInputs = {
-        phaseType: input.phaseType,
-        dcrPreference: input.dcrPreference ?? DcrPreference.DCR_ONLY,
-        // Hardcoded AUTO until now, so every hand-picked quote recorded itself as
-        // one the server chose. Nothing rebuilds a form from these inputs today,
-        // so nothing was visibly wrong — the record was simply false.
-        calculationMode: input.inverterOverrides?.length
-          ? QuoteCalculationMode.MANUAL
-          : QuoteCalculationMode.AUTO,
-        dcrSystemSizeKw: calculation.systemConfig.dcrSizeKw,
-        nonDcrSystemSizeKw: calculation.systemConfig.nonDcrSizeKw,
-        floorNumber: input.floorNumber ?? 0,
-        distanceKm: input.distanceKm,
-        structureType: input.structureType,
-        preferredPanelBrand: input.preferredPanelBrand,
-        preferredPanelTechnology: input.preferredPanelTechnology,
-        preferredPanelWattage: input.preferredPanelWattage,
-        preferredInverterBrand: input.preferredInverterBrand,
-        preferredInverterCapacityKw: input.preferredInverterCapacityKw,
-        subsidyApplicable: input.subsidyApplicable,
-        selectedSubsidyIds: input.selectedSubsidyIds,
-        manualDcrPanelCount: input.manualDcrPanelCount,
-        manualNonDcrPanelCount: input.manualNonDcrPanelCount,
-        manualInverterCount: input.manualInverterCount,
-        inverterOverrides: input.inverterOverrides,
-        projectType: input.projectType,
-        actualSystemSizeKw: calculation.actualTotalWattage / 1000,
-        actualDcrSizeKw: calculation.systemConfig.dcrSizeKw,
-        actualNonDcrSizeKw: calculation.systemConfig.nonDcrSizeKw,
-      };
-
-      const pricingBreakdown: PricingBreakdown = {
-        basePrice: calculation.pricing.basePrice,
-        discountedBasePrice: discounted.discountedBase,
-        gst5OnEquipment: discounted.gst5,
-        gst18OnServices: discounted.gst18,
-        totalGst: discounted.totalGst,
-        totalPrice: discounted.grossTotal,
-        discountAmount,
-        subsidyAmount: calculation.subsidy.amount,
-        isSubsidyApplicable: calculation.subsidy.isApplicable,
-      };
-
-      const quoteSnapshot: QuoteSnapshot = {
-        inputs: calculatorInputs,
-        calculation: calculation as unknown as QuoteCalculationOutput,
-        pricing: pricingBreakdown,
-        discountAmount,
-      };
-
-      // Property-level versioning model:
-      // every save creates a brand-new quote record for the property.
-      if (input.propertyId) {
-        const accepted = await this.quoteRepository.findAcceptedByPropertyId(input.propertyId);
-        if (accepted) {
-          throw new BadRequestException(
-            `Property already has a live accepted quote (${accepted.quoteNumber}). No new quotes can be created.`,
-          );
-        }
-      }
-
-      const createDto: CreateQuoteDto = {
-        customerId: input.customerId,
-        propertyId: input.propertyId,
-        salesPersonId: input.salesPersonId,
-        // A quote's reseller comes from its customer (Spec §10.4, amended) —
-        // `create` derives and ignores whatever is set here.
-        systemType,
-        totalWattageWp: calculation.actualTotalWattage,
-        projectType: input.projectType,
-        validUntil: validUntil.toISOString().split('T')[0] as string,
-        quoteSnapshot,
-        finalPrice,
-        effectivePrice,
-        discountAmount,
-        internalNotes: input.internalNotes,
-        customerNotes: input.customerNotes,
-        projectCompletionWeeks: calculation.completionWeeks,
-        paymentMilestones: input.paymentMilestones,
-      };
-
-      const quote = await this.quoteService.create(createDto, currentUser.id);
-
-      return {
-        quoteId: quote.id,
-        quoteNumber: quote.quoteNumber,
-        finalPrice,
-        effectivePrice,
-        discountAmount,
-        subsidyAmount: calculation.subsidy.amount,
-        calculation,
-      };
-    } catch (error) {
-      // Edge case 38: same probe-and-log defense as POST /quotes and PATCH
-      // /quotes/:id, for the margin cap this method also enforces above.
-      if (resellerId && error instanceof BadRequestException && MARGIN_CAP_MESSAGE.test(error.message)) {
-        await this.auditLogService.create({
-          entityType: AuditEntityType.QUOTE,
-          entityId: input.customerId ?? resellerId,
-          action: AuditAction.REJECT,
-          newValues: {
-            reason: 'Reseller discount above the margin cap',
-            discountAmount: input.discountAmount ?? 0,
-            resellerId,
-          },
-          userId: currentUser.id,
-        });
-      }
-      throw error;
+    if (!input.customerId) {
+      throw new BadRequestException('Customer ID is required to save a quote');
     }
+    if (!input.propertyId) {
+      throw new BadRequestException('Property ID is required to save a quote');
+    }
+
+    if (input.paymentMilestones && input.paymentMilestones.length > 0) {
+      const totalPercent = input.paymentMilestones.reduce((sum, m) => sum + m.percentage, 0);
+      if (Math.abs(totalPercent - 100) > 0.01) {
+        throw new BadRequestException(
+          `Payment milestone percentages must total 100% (currently ${totalPercent}%)`,
+        );
+      }
+    }
+
+    const discountAmount = input.discountAmount || 0;
+    const maxAllowedDiscount = Math.max(0, calculation.profitabilityAmount * 0.5);
+    if (discountAmount > maxAllowedDiscount) {
+      // Edge case 38: this is the one route left where a reseller can still
+      // probe the margin cap — POST /quotes and PATCH /quotes/:id are closed
+      // to him entirely now (R17), so the audit hook lives only here. Logs
+      // the exact `discountAmount` the check above just used.
+      if (resellerId) {
+        await this.auditRejectedDiscount(resellerId, input.customerId, discountAmount, currentUser.id);
+      }
+      throw new BadRequestException('Discount cannot exceed 50% of the margin');
+    }
+
+    let discounted: ReturnType<typeof applyPreGstDiscount>;
+    try {
+      discounted = applyPreGstDiscount(
+        calculation.pricing.basePrice,
+        discountAmount,
+        quoteConfig.gstConfig,
+      );
+    } catch (err: unknown) {
+      if (err instanceof GstSplitPercentagesInvalidError) {
+        throw new BadRequestException(err.message);
+      }
+      throw err;
+    }
+    const finalPrice = discounted.grossTotal;
+    // BUG-3: Round to 2 decimal places to prevent floating-point display errors
+    const effectivePrice =
+      Math.round(Math.max(0, finalPrice - calculation.subsidy.amount) * 100) / 100;
+
+    const systemType = input.systemType ?? SystemType.ON_GRID;
+
+    const calculatorInputs: CalculatorInputs = {
+      phaseType: input.phaseType,
+      dcrPreference: input.dcrPreference ?? DcrPreference.DCR_ONLY,
+      // Hardcoded AUTO until now, so every hand-picked quote recorded itself as
+      // one the server chose. Nothing rebuilds a form from these inputs today,
+      // so nothing was visibly wrong — the record was simply false.
+      calculationMode: input.inverterOverrides?.length
+        ? QuoteCalculationMode.MANUAL
+        : QuoteCalculationMode.AUTO,
+      dcrSystemSizeKw: calculation.systemConfig.dcrSizeKw,
+      nonDcrSystemSizeKw: calculation.systemConfig.nonDcrSizeKw,
+      floorNumber: input.floorNumber ?? 0,
+      distanceKm: input.distanceKm,
+      structureType: input.structureType,
+      preferredPanelBrand: input.preferredPanelBrand,
+      preferredPanelTechnology: input.preferredPanelTechnology,
+      preferredPanelWattage: input.preferredPanelWattage,
+      preferredInverterBrand: input.preferredInverterBrand,
+      preferredInverterCapacityKw: input.preferredInverterCapacityKw,
+      subsidyApplicable: input.subsidyApplicable,
+      selectedSubsidyIds: input.selectedSubsidyIds,
+      manualDcrPanelCount: input.manualDcrPanelCount,
+      manualNonDcrPanelCount: input.manualNonDcrPanelCount,
+      manualInverterCount: input.manualInverterCount,
+      inverterOverrides: input.inverterOverrides,
+      projectType: input.projectType,
+      actualSystemSizeKw: calculation.actualTotalWattage / 1000,
+      actualDcrSizeKw: calculation.systemConfig.dcrSizeKw,
+      actualNonDcrSizeKw: calculation.systemConfig.nonDcrSizeKw,
+    };
+
+    const pricingBreakdown: PricingBreakdown = {
+      basePrice: calculation.pricing.basePrice,
+      discountedBasePrice: discounted.discountedBase,
+      gst5OnEquipment: discounted.gst5,
+      gst18OnServices: discounted.gst18,
+      totalGst: discounted.totalGst,
+      totalPrice: discounted.grossTotal,
+      discountAmount,
+      subsidyAmount: calculation.subsidy.amount,
+      isSubsidyApplicable: calculation.subsidy.isApplicable,
+    };
+
+    const quoteSnapshot: QuoteSnapshot = {
+      inputs: calculatorInputs,
+      calculation: calculation as unknown as QuoteCalculationOutput,
+      pricing: pricingBreakdown,
+      discountAmount,
+    };
+
+    // Property-level versioning model:
+    // every save creates a brand-new quote record for the property.
+    if (input.propertyId) {
+      const accepted = await this.quoteRepository.findAcceptedByPropertyId(input.propertyId);
+      if (accepted) {
+        throw new BadRequestException(
+          `Property already has a live accepted quote (${accepted.quoteNumber}). No new quotes can be created.`,
+        );
+      }
+    }
+
+    const createDto: CreateQuoteDto = {
+      customerId: input.customerId,
+      propertyId: input.propertyId,
+      salesPersonId: input.salesPersonId,
+      // A quote's reseller comes from its customer (Spec §10.4, amended) —
+      // `create` derives and ignores whatever is set here.
+      systemType,
+      totalWattageWp: calculation.actualTotalWattage,
+      projectType: input.projectType,
+      validUntil: validUntil.toISOString().split('T')[0] as string,
+      quoteSnapshot,
+      finalPrice,
+      effectivePrice,
+      discountAmount,
+      internalNotes: input.internalNotes,
+      customerNotes: input.customerNotes,
+      projectCompletionWeeks: calculation.completionWeeks,
+      paymentMilestones: input.paymentMilestones,
+    };
+
+    const quote = await this.quoteService.create(createDto, currentUser.id);
+
+    return {
+      quoteId: quote.id,
+      quoteNumber: quote.quoteNumber,
+      finalPrice,
+      effectivePrice,
+      discountAmount,
+      subsidyAmount: calculation.subsidy.amount,
+      calculation,
+    };
   }
 
   /**
@@ -508,5 +459,41 @@ export class QuoteCalculatorController {
     return plainToInstance(InstallationPricingResponseDto, result.data, {
       excludeExtraneousValues: true,
     });
+  }
+
+  /**
+   * Edge case 38: a reseller hit the margin cap on the one route he can still
+   * reach it from. Logged, not thrown — an audit-write failure (DB hiccup,
+   * whatever) must never turn the caller's correct 400 into a 500. `entityId`
+   * falls back through "the quote id if there is one" (there never is one
+   * here — the cap always rejects before `quoteService.create` runs), "the
+   * customer id from the body", to the reseller id itself, so the row is
+   * always a valid, traceable record.
+   */
+  private async auditRejectedDiscount(
+    resellerId: string,
+    customerId: string | undefined,
+    discountAmount: number,
+    userId: string,
+  ): Promise<void> {
+    try {
+      await this.auditLogService.create({
+        entityType: AuditEntityType.QUOTE,
+        entityId: customerId ?? resellerId,
+        action: AuditAction.REJECT,
+        newValues: {
+          reason: 'Reseller discount above the margin cap',
+          discountAmount,
+          resellerId,
+        },
+        userId,
+      });
+    } catch (auditError) {
+      this.logger.error(
+        `Failed to audit-log a reseller margin-cap rejection (resellerId=${resellerId}): ${
+          auditError instanceof Error ? auditError.message : String(auditError)
+        }`,
+      );
+    }
   }
 }
