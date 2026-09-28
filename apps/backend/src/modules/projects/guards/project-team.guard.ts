@@ -17,7 +17,7 @@ const TEAM_GUARD_READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
  * A reseller is never a project team member (he has no `project_team_members`
  * row and no `projects.view`), so unmodified this guard would 403 every route
  * here before the reseller wall's own interceptor — which runs later, as an
- * interceptor rather than a guard — ever gets a say. Task 11 opens exactly one
+ * interceptor rather than a guard — ever gets a say. The wall opens exactly one
  * read per controller behind this guard (the team/task LIST); ownership of the
  * project is asserted in the handler itself (`ResellerOwnershipService`), same
  * as every other opened route, so this guard only needs to stop treating a

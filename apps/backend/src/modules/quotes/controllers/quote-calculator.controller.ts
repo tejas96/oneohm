@@ -152,9 +152,9 @@ export class QuoteCalculatorController {
     calculation: CalculateQuoteResponseDto;
   }> {
     // Own both parent records before any calculation runs, mirroring `create`
-    // on the quote itself (Pattern O). Deliberately before the DTO-shape
-    // checks below: a reseller's ownership must fail closed on an id he does
-    // not hold, whatever else is wrong with the rest of the body.
+    // on the quote itself. Deliberately before the DTO-shape checks below: a
+    // reseller's ownership must fail closed on an id he does not hold,
+    // whatever else is wrong with the rest of the body.
     if (resellerId) {
       if (input.customerId) await this.ownership.assertOwns('customer', input.customerId, resellerId);
       if (input.propertyId) await this.ownership.assertOwns('property', input.propertyId, resellerId);
@@ -185,9 +185,9 @@ export class QuoteCalculatorController {
     const discountAmount = input.discountAmount || 0;
     const maxAllowedDiscount = Math.max(0, calculation.profitabilityAmount * 0.5);
     if (discountAmount > maxAllowedDiscount) {
-      // Edge case 38: this is the one route left where a reseller can still
+      // Edge case 40: this is the one route left where a reseller can still
       // probe the margin cap — POST /quotes and PATCH /quotes/:id are closed
-      // to him entirely now (R17), so the audit hook lives only here. Logs
+      // to him entirely, so the audit hook lives only here. Logs
       // the exact `discountAmount` the check above just used.
       if (resellerId) {
         await this.auditRejectedDiscount(resellerId, input.customerId, discountAmount, currentUser.id);
@@ -462,7 +462,7 @@ export class QuoteCalculatorController {
   }
 
   /**
-   * Edge case 38: a reseller hit the margin cap on the one route he can still
+   * Edge case 40: a reseller hit the margin cap on the one route he can still
    * reach it from. Logged, not thrown — an audit-write failure (DB hiccup,
    * whatever) must never turn the caller's correct 400 into a 500. `entityId`
    * falls back through "the quote id if there is one" (there never is one

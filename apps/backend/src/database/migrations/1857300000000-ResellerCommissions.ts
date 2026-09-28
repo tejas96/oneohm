@@ -12,7 +12,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * - pending_ledger_entries accepts kind 'commission'.
  *
  * New CHECKs are NOT VALID: they bind every new write without failing on
- * rows written by hand before this existed. Task 17 validates them locally.
+ * rows written by hand before this existed. Validating them is a release
+ * step (spec §16).
  *
  * Forward-only in practice. Never revert this on the shared database.
  */

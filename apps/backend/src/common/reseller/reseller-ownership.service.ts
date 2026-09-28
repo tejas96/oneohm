@@ -6,7 +6,7 @@ export type OwnedKind = 'customer' | 'property' | 'quote' | 'project' | 'followu
 
 /**
  * One SQL per kind: does this id belong to this reseller? 404 when not —
- * never 403, so an id he guessed does not confirm it exists (edge case 35).
+ * never 403, so an id he guessed does not confirm it exists (edge case 37).
  */
 const OWNS: Record<OwnedKind, string> = {
   customer: `SELECT 1 FROM customer_profiles WHERE id = $1 AND reseller_id = $2 AND deleted_at IS NULL`,

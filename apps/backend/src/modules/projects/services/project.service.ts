@@ -120,7 +120,7 @@ export class ProjectService {
       systemSizeMax?: number;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
-      /** Pattern S: employee_profiles.id, server-set for a reseller caller. */
+      /** employee_profiles.id, server-set for a reseller caller; scopes to his customers. */
       resellerId?: string;
     },
   ): Promise<{

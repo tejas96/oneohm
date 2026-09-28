@@ -61,7 +61,7 @@ export class QuoteController {
   /**
    * Create a new quote
    *
-   * R17: closed to resellers (X). POST /quotes stores whatever quoteSnapshot/
+   * Closed to resellers. POST /quotes stores whatever quoteSnapshot/
    * finalPrice/effectivePrice the client sends verbatim — a reseller hitting
    * this route directly could author his own commission base and self-attest
    * a profitability figure that clears the margin cap. A reseller creates
@@ -197,7 +197,7 @@ export class QuoteController {
   /**
    * Update quote (creates new version)
    *
-   * R17: closed to resellers (X), same reasoning as `create` above — the
+   * Closed to resellers, same reasoning as `create` above — the
    * client-supplied quoteSnapshot/finalPrice/effectivePrice are stored
    * verbatim here.
    */

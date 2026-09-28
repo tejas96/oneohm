@@ -299,7 +299,7 @@ export class ProjectController {
     // A bare customerId is not an authorization token — without one of those
     // grants the list stays team-scoped even if the query names a customer.
     //
-    // A reseller is a third case, added for Pattern S: he is on no project's
+    // A reseller is a third case, scoped to his own customers: he is on no project's
     // crew by definition, so pinning him to "my team" would always return
     // nothing. `resellerId` (server truth, below) is what scopes his list
     // instead, so the member pin is skipped entirely rather than resolved.

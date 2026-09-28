@@ -139,7 +139,7 @@ export class CustomerService {
     }
 
     // resellerChangeReason has no column of its own — it exists only for the
-    // "why did the reseller change" audit trail a later task adds. Meaningless
+    // "why did the reseller change" audit row written by `update`. Meaningless
     // on create (there is no prior reseller to explain a change from), and the
     // entity layer would reject an unmapped property outright, so it is
     // dropped here rather than spread into profileData.

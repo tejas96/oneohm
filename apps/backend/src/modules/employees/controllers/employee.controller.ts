@@ -193,7 +193,7 @@ export class EmployeeController {
       if (id !== resellerId) {
         throw new NotFoundException('Employee not found');
       }
-      // profileKind is locked separately (Step 4); commission and bank fields
+      // profileKind is locked by EmployeeService.update; commission and bank fields
       // are staff/finance-controlled, never self-editable. status, employeeId,
       // department, designation and the KYC fields (aadhaarNumber/pan/gstin)
       // are likewise admin-managed facts — left in, a reseller could

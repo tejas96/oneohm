@@ -32,8 +32,8 @@ function MissingCommissionRow({
   dismissing: boolean;
 }): JSX.Element {
   const create = useGatedAction('finance.payments.record', () => onCreate(r.quoteId), 'Fix missing commissions');
-  // Opens the confirm dialog rather than prompting inline — `ReasonDialog`
-  // (Task 15) replaces the `window.prompt` this strip used to call directly.
+  // Opens the confirm dialog (`ReasonDialog`) rather than prompting inline,
+  // so the dismissal note is validated like every other reason.
   const dismiss = useGatedAction('finance.payments.record', () => onDismissRequest(r), 'Fix missing commissions');
 
   return (
