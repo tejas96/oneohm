@@ -12,6 +12,23 @@ import type { CommissionRow } from '../sql/commission-read.sql';
 import { requirePermission } from '../utils/require-permission';
 
 /**
+ * A commission row as its reseller sees it: office-only text (notes, the
+ * rejection and recovery notes, a Fix-strip dismissal) never reaches him.
+ */
+function forReseller(
+  row: CommissionRow,
+): Omit<CommissionRow, 'notes' | 'payoutRejectedReason' | 'recoveryNotes'> {
+  const { notes, payoutRejectedReason, recoveryNotes, ...rest } = row;
+  void notes;
+  void payoutRejectedReason;
+  void recoveryNotes;
+  return {
+    ...rest,
+    cancelReason: rest.cancelReason?.startsWith('Dismissed:') ? null : rest.cancelReason,
+  };
+}
+
+/**
  * Commissions, office side. There is no create, no delete and no "set status":
  * a commission is born from an accepted quote, dies by cancel, and reaches
  * `paid` only through the approval queue (spec §6.2, §7.5).
@@ -29,9 +46,10 @@ export class EmployeeCommissionController {
   /** The reseller's own dashboard. */
   @ResellerAllowed()
   @Get('me')
-  me(@Query() q: ResellerPeriodQueryDto, @ResellerScope() resellerId?: string) {
+  async me(@Query() q: ResellerPeriodQueryDto, @ResellerScope() resellerId?: string) {
     if (!resellerId) throw new NotFoundException('Only resellers have commissions');
-    return this.dashboard.detail(resellerId, q.period);
+    const detail = await this.dashboard.detail(resellerId, q.period);
+    return { ...detail, commissions: detail.commissions.map(forReseller) };
   }
 
   @Get()
