@@ -36,10 +36,16 @@ export function periodStart(period: 'month' | 'fy' | 'all' | undefined, now = ne
  */
 export const RESELLER_SUMMARY_SQL = (commissionRowSql: string): string => `
 WITH r AS (
-  SELECT ep.id, ep.status, ep.company_code AS code, ep.commission_percentage AS rate,
+  SELECT ep.id, CASE WHEN ep.deleted_at IS NOT NULL THEN 'deleted' ELSE ep.status END AS status,
+         ep.company_code AS code, ep.commission_percentage AS rate,
          COALESCE(NULLIF(ep.company_name, ''), TRIM(u.first_name || ' ' || COALESCE(u.last_name, ''))) AS name
     FROM employee_profiles ep JOIN users u ON u.id = ep.user_id
-   WHERE ep.profile_kind = 'reseller' AND ep.deleted_at IS NULL
+   WHERE ep.profile_kind = 'reseller'
+     -- A soft-deleted reseller stays listed while any live commission is his,
+     -- so money owed to (or recoverable from) him never drops off the page.
+     AND (ep.deleted_at IS NULL OR EXISTS (
+           SELECT 1 FROM employee_commissions ec
+            WHERE ec.employee_id = ep.id AND ec.status <> 'cancelled' AND ec.deleted_at IS NULL))
      AND ($2::uuid IS NULL OR ep.id = $2)
 ), leads AS (
   SELECT cp.id, cp.reseller_id FROM customer_profiles cp
