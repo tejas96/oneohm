@@ -8,12 +8,7 @@ import { RecordCommissionPaymentDto } from '../dto';
 import { CommissionPayoutService } from '../services/commission-payout.service';
 import type { CommissionRow } from '../sql/commission-read.sql';
 
-/**
- * Lives apart from `EmployeeCommissionController` (same `/commissions` path)
- * because `CommissionPayoutService` needs `PaymentApprovalService`, and
- * wiring that into `EmployeeCommissionsModule` would close an import cycle —
- * see the comment on `CommissionPayoutService` for the traced graph.
- */
+/** Apart from `EmployeeCommissionController` to avoid an import cycle; see commission-payout.module.ts. */
 @ApiTags('Commissions')
 @ApiBearerAuth()
 @Controller('commissions')

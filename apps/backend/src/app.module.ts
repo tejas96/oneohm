@@ -95,11 +95,7 @@ import { UsersModule } from './modules/users/users.module';
     // scripts/ledger-dry-run.ts reads them by design and goes with them.
     LedgerModule,
     PaymentApprovalModule,
-    // Commission payouts need both EmployeeCommissionsModule and
-    // PaymentApprovalModule; living here (not inside EmployeeCommissionsModule)
-    // avoids a cycle back through NotificationsModule -> UsersModule ->
-    // EmployeesModule -> EmployeeCommissionsModule. See
-    // commission-payout.module.ts for the full trace.
+    // Imported here to avoid an import cycle; see commission-payout.module.ts.
     CommissionPayoutModule,
     FinanceModule,
     CommentsModule,

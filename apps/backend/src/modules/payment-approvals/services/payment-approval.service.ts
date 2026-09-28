@@ -634,7 +634,7 @@ export class PaymentApprovalService {
         throw new ForbiddenException('You submitted this payment — another user must review it');
       }
       if (row.kind === 'commission') {
-        await releaseCommissionPayout(repo.manager, row.id, reason);
+        await releaseCommissionPayout(repo.manager, row.id, reason, approverId);
       }
       return repo.update(row.id, {
         status: 'rejected',
@@ -659,6 +659,7 @@ export class PaymentApprovalService {
           repo.manager,
           row.id,
           'Withdrawn by the person who recorded it',
+          userId,
         );
       }
       return repo.update(row.id, { status: 'cancelled' });

@@ -9,20 +9,7 @@ import type { RecordCommissionPaymentDto } from '../dto';
 import type { CommissionRow } from '../sql/commission-read.sql';
 import { requirePermission } from '../utils/require-permission';
 
-/**
- * Split out of `CommissionActionsService` on purpose: this service depends on
- * `PaymentApprovalService`, and `PaymentApprovalModule` transitively imports
- * `EmployeesModule` (PaymentApprovalModule -> NotificationsModule ->
- * UsersModule -> EmployeesModule -> EmployeeCommissionsModule). Registering
- * this service and its controller in `EmployeeCommissionsModule` itself would
- * close that loop back on `EmployeeCommissionsModule`, and `forwardRef`
- * cannot safely paper over it — the plain (non-forwardRef) `import`
- * statement in `employees.module.ts` (`EmployeeCommissionsModule`) and in
- * `users.module.ts`/`employees.module.ts` mid-chain would still eagerly walk
- * the cycle at file-load time. Living in its own module, imported only by
- * `AppModule`, keeps `EmployeeCommissionsModule` a leaf with zero outgoing
- * imports, exactly as Task 4 left it.
- */
+/** Its own module to avoid an import cycle; see commission-payout.module.ts. */
 @Injectable()
 export class CommissionPayoutService {
   constructor(
@@ -38,7 +25,9 @@ export class CommissionPayoutService {
    */
   async recordPayment(dto: RecordCommissionPaymentDto, user: CurrentUserType): Promise<CommissionRow[]> {
     requirePermission(user, 'finance.payments.record');
-    const ids = [...new Set(dto.commissionIds)];
+    // Sorted, so two overlapping batches lock rows in the same order and
+    // cannot deadlock each other.
+    const ids = [...new Set(dto.commissionIds)].sort();
 
     const { rows, requestIds } = await this.dataSource.transaction(async (m) => {
       const requestIds: string[] = [];

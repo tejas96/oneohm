@@ -35,15 +35,18 @@ export async function markCommissionPaid(
   }
 }
 
+/** `updatedBy`: the approver who rejected, or the submitter who withdrew. */
 export async function releaseCommissionPayout(
   m: EntityManager,
   payoutRequestId: string,
   reason: string,
+  updatedBy: string | null,
 ): Promise<void> {
   await m.query(
     `UPDATE employee_commissions
-        SET payout_request_id = NULL, payout_rejected_reason = $2, updated_at = now()
+        SET payout_request_id = NULL, payout_rejected_reason = $2,
+            updated_by = COALESCE($3, updated_by), updated_at = now()
       WHERE payout_request_id = $1 AND status = 'approved'`,
-    [payoutRequestId, reason],
+    [payoutRequestId, reason, updatedBy],
   );
 }
