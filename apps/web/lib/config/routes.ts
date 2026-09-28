@@ -234,6 +234,7 @@ interface RouteParamTypes {
   '/admin/users/[id]': { id: string };
   '/admin/roles/[id]': { id: string };
   '/employees/[id]': { id: string };
+  '/resellers/[id]': { id: string };
 
   // Routes with query filters
   '/quotes': { status?: 'draft' | 'sent' | 'viewed' | 'accepted' | 'rejected' | 'expired' };
