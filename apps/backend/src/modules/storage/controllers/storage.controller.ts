@@ -28,6 +28,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { ResellerAllowed } from '../../../common/reseller';
 import { JwtAuthGuard } from '../../auth/guards';
 import {
   DeleteFileDto,
@@ -59,6 +60,7 @@ export class StorageController {
   /**
    * Get a presigned URL for uploading a file
    */
+  @ResellerAllowed()
   @Post('presigned-url')
   @ApiOperation({
     summary: 'Get presigned URL for file upload',

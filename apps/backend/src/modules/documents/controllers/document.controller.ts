@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -15,6 +16,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+import { ResellerAllowed, ResellerOwnershipService, ResellerScope } from '../../../common/reseller';
 import { toDto, toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -38,6 +40,7 @@ export class DocumentController {
   constructor(
     private readonly documentService: DocumentService,
     private readonly documentPrintService: DocumentPrintService,
+    private readonly ownership: ResellerOwnershipService,
   ) {}
 
   private parseCsv(value?: string): string[] | undefined {
@@ -49,6 +52,7 @@ export class DocumentController {
     return items.length > 0 ? [...new Set(items)] : undefined;
   }
 
+  @ResellerAllowed()
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a document record' })
@@ -56,11 +60,16 @@ export class DocumentController {
   async create(
     @Body() dto: CreateDocumentDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<DocumentResponseDto> {
+    if (resellerId) {
+      await this.ownership.assertOwnsDocumentParent(dto.entityType, dto.entityId, resellerId);
+    }
     const document = await this.documentService.create(dto, currentUser.id);
     return toDto(DocumentResponseDto, document);
   }
 
+  @ResellerAllowed()
   @Post('bulk')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Batch-create document records' })
@@ -68,7 +77,13 @@ export class DocumentController {
   async createBulk(
     @Body() dto: BulkCreateDocumentDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<DocumentResponseDto[]> {
+    if (resellerId) {
+      for (const doc of dto.documents) {
+        await this.ownership.assertOwnsDocumentParent(doc.entityType, doc.entityId, resellerId);
+      }
+    }
     const documents = await this.documentService.createBulk(dto.documents, currentUser.id);
     return toDtoArray(DocumentResponseDto, documents);
   }
@@ -85,13 +100,33 @@ export class DocumentController {
     });
   }
 
+  @ResellerAllowed()
   @Get()
   @ApiOperation({ summary: 'List documents by entity with filters' })
   @ApiResponse({ status: HttpStatus.OK, type: [DocumentResponseDto] })
-  async findAll(@Query() queryDto: QueryDocumentsDto): Promise<DocumentResponseDto[]> {
+  async findAll(
+    @Query() queryDto: QueryDocumentsDto,
+    @ResellerScope() resellerId?: string,
+  ): Promise<DocumentResponseDto[]> {
     const page = queryDto.page ?? 1;
     const limit = queryDto.limit ?? 50;
     const tags = this.parseCsv(queryDto.tags);
+
+    if (resellerId) {
+      // A reseller may only ask for one customer's or property's documents,
+      // never the property-wide, batch, or org-wide listings — those have no
+      // single parent to check ownership against.
+      if (!queryDto.entityType || !queryDto.entityId) {
+        throw new BadRequestException('entityType and entityId are required.');
+      }
+      await this.ownership.assertOwnsDocumentParent(queryDto.entityType, queryDto.entityId, resellerId);
+      const docs = await this.documentService.findByEntity(queryDto.entityType, queryDto.entityId, {
+        tag: queryDto.tag,
+        tags,
+        category: queryDto.category,
+      });
+      return toDtoArray(DocumentResponseDto, docs);
+    }
 
     // Property-wide query (all entity types for a property)
     if (queryDto.propertyId) {
@@ -154,6 +189,7 @@ export class DocumentController {
     return toDto(DocumentResponseDto, document);
   }
 
+  @ResellerAllowed()
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a document (soft by default, permanent with ?permanent=true)' })
@@ -161,7 +197,9 @@ export class DocumentController {
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
     @Query('permanent') permanent?: string,
+    @ResellerScope() resellerId?: string,
   ): Promise<void> {
+    if (resellerId) await this.ownership.assertOwns('document', id, resellerId);
     if (permanent === 'true') {
       await this.documentService.hardDelete(id);
     } else {

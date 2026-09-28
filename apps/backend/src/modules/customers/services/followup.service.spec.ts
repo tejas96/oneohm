@@ -13,6 +13,7 @@ import { FollowupOutcome, FollowupStatus } from '@tejas96/shared/types';
 
 import { FollowupService } from './followup.service';
 import { LeadClosureService } from './lead-closure.service';
+import { ResellerContextService } from '../../../common/reseller';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
 import { CustomerPropertyRepository } from '../repositories/customer-property.repository';
@@ -78,6 +79,14 @@ async function makeService(overrides: { roles?: unknown[] } = {}): Promise<Harne
         provide: UserRoleRepository,
         useValue: {
           findByUserAndOrganization: anyFn().mockResolvedValue(overrides.roles ?? [{ id: 'r' }]),
+        },
+      },
+      {
+        provide: ResellerContextService,
+        useValue: {
+          assertAssignableUser: anyFn().mockResolvedValue(undefined),
+          assertAssignableProfile: anyFn().mockResolvedValue(undefined),
+          resellerIdForUser: anyFn().mockResolvedValue(null),
         },
       },
     ],

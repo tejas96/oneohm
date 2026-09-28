@@ -8,6 +8,7 @@ import {
 } from '@tejas96/shared/types';
 
 import { LeadClosureService } from './lead-closure.service';
+import { ResellerContextService } from '../../../common/reseller';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { CompleteFollowupDto } from '../dto/complete-followup.dto';
 import { CreateFollowupDto } from '../dto/create-followup.dto';
@@ -31,6 +32,7 @@ export class FollowupService {
     private readonly propertyRepository: CustomerPropertyRepository,
     private readonly userRoleRepository: UserRoleRepository,
     private readonly leadClosureService: LeadClosureService,
+    private readonly resellerContext: ResellerContextService,
   ) {}
 
   /**
@@ -64,6 +66,11 @@ export class FollowupService {
     if (userRoles.length === 0) {
       throw new BadRequestException('Assigned user not found');
     }
+
+    await this.resellerContext.assertAssignableUser(
+      createDto.assignedToUserId,
+      createDto.customerId,
+    );
 
     const followup = await this.followupRepository.create({
       ...createDto,
@@ -210,6 +217,13 @@ export class FollowupService {
       if (property.customerId !== existingFollowup.customerId) {
         throw new BadRequestException('Property does not belong to this customer');
       }
+    }
+
+    if (updateDto.assignedToUserId !== undefined) {
+      await this.resellerContext.assertAssignableUser(
+        updateDto.assignedToUserId,
+        existingFollowup.customerId,
+      );
     }
 
     // Separate scheduledAt from other fields to handle string -> Date
@@ -361,8 +375,9 @@ export class FollowupService {
    * Deliberately unrestricted: no RBAC in this feature.
    */
   async reassign(id: string, assignedToUserId: string, userId: string): Promise<FollowupEntity> {
-    await this.findById(id);
+    const followup = await this.findById(id);
     await this.assertUserExists(assignedToUserId);
+    await this.resellerContext.assertAssignableUser(assignedToUserId, followup.customerId);
 
     const updated = await this.followupRepository.update(id, {
       assignedToUserId,
@@ -381,6 +396,15 @@ export class FollowupService {
     userId: string,
   ): Promise<{ updated: number }> {
     await this.assertUserExists(assignedToUserId);
+
+    // Validate every affected follow-up before writing any of them — fail the
+    // whole batch on the first violation rather than leaving it half-applied.
+    for (const id of ids) {
+      const followup = await this.followupRepository.findById(id);
+      if (followup) {
+        await this.resellerContext.assertAssignableUser(assignedToUserId, followup.customerId);
+      }
+    }
 
     let updated = 0;
     for (const id of ids) {

@@ -25,6 +25,7 @@ import {
 import { CommentEntityType } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
+import { ResellerAllowed } from '../../../common/reseller';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -109,6 +110,7 @@ export class CommentController {
     return plainToInstance(CommentResponseDto, comments, { excludeExtraneousValues: true });
   }
 
+  @ResellerAllowed()
   @Get('mentions/count')
   @ApiOperation({ summary: 'Get count of unread mentions' })
   @ApiResponse({ status: 200, description: 'Mentions count retrieved successfully' })

@@ -306,7 +306,7 @@ export class CustomerController {
       delete updateDto.leadSource;
       delete updateDto.resellerChangeReason;
     }
-    const customer = await this.customerService.update(id, updateDto, currentUser.id);
+    const customer = await this.customerService.update(id, updateDto, currentUser.id, currentUser);
     return toDto(CustomerResponseDto, customer, { groups: ['detail'] });
   }
 

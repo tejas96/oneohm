@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   Logger,
@@ -8,14 +9,26 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { COMPANY } from '@tejas96/shared/constants';
-import { CustomerStatus, LossReason, UserProfileType, UserStatus } from '@tejas96/shared/types';
+import {
+  AuditAction,
+  AuditEntityType,
+  CustomerStatus,
+  LeadSource,
+  LossReason,
+  UserProfileType,
+  UserStatus,
+} from '@tejas96/shared/types';
 import { normalizePhoneToE164 } from '@tejas96/shared/utils';
 import { DataSource, In, IsNull } from 'typeorm';
 
 import { LeadClosureService } from './lead-closure.service';
+import { ResellerContextService } from '../../../common/reseller';
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
+import { AuditLogService } from '../../audit/services';
+import type { CurrentUserType } from '../../auth/types';
 import { DocumentEntity } from '../../documents/entities/document.entity';
 import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
+import { hasAdminBypassRole } from '../../iam/constants';
 import { QuoteEntity } from '../../quotes/entities/quote.entity';
 import { StorageService } from '../../storage/services/storage.service';
 import { UserRepository } from '../../users/repositories/user.repository';
@@ -99,6 +112,8 @@ export class CustomerService {
     private readonly dataSource: DataSource,
     private readonly leadClosureService: LeadClosureService,
     private readonly followupRepository: FollowupRepository,
+    private readonly auditLogService: AuditLogService,
+    private readonly resellerContext: ResellerContextService,
   ) {}
 
   /**
@@ -131,6 +146,9 @@ export class CustomerService {
     const { resellerChangeReason: resellerChangeReasonOnCreate, ...createFields } = createDto;
     void resellerChangeReasonOnCreate;
 
+    // Source "reseller" <=> a reseller is named, enforced on the way in too.
+    const resellerId = await this.resolveReseller(createDto.leadSource, createDto.resellerId);
+
     // Step 4: Create customer profile using ProfileService (handles role assignment)
     const customer = (await this.profileService.createProfile({
       userId: user.id,
@@ -142,6 +160,7 @@ export class CustomerService {
         firstName: createDto.firstName || user.firstName || 'Unknown',
         lastName: createDto.lastName || user.lastName,
         status: createDto.status || CustomerStatus.ACTIVE,
+        resellerId,
       },
       createdBy,
     })) as CustomerProfileEntity;
@@ -284,10 +303,11 @@ export class CustomerService {
     id: string,
     updateDto: UpdateCustomerDto,
     updatedBy?: string,
+    actor?: CurrentUserType,
   ): Promise<CustomerProfileEntity> {
     this.logger.log(`Updating customer: ${id}`);
 
-    await this.findById(id);
+    const existing = await this.findById(id);
 
     // Normalize email: null = explicit clear (→ null in DB), string = normalize, undefined = skip
     if (updateDto.email === null) {
@@ -370,6 +390,36 @@ export class CustomerService {
     void groupNameToStrip;
     void resellerChangeReasonToStrip;
 
+    // Source "reseller" <=> a reseller is named, enforced on every save.
+    // Moving the source away from Reseller clears the reseller (edge case 49).
+    const nextSource =
+      updateDto.leadSource !== undefined ? updateDto.leadSource : existing.leadSource;
+    const nextResellerInput =
+      updateDto.resellerId !== undefined
+        ? updateDto.resellerId
+        : nextSource === LeadSource.RESELLER
+          ? existing.resellerId
+          : null;
+    const nextResellerId = await this.resolveReseller(nextSource, nextResellerInput);
+
+    const resellerChanged = (existing.resellerId ?? null) !== nextResellerId;
+    if (resellerChanged) {
+      if (
+        !actor ||
+        !(hasAdminBypassRole(actor.roles) || actor.permissions.includes('customers.assign'))
+      ) {
+        throw new ForbiddenException(
+          'Changing a customer\'s reseller needs the "customers.assign" permission.',
+        );
+      }
+      if (!updateDto.resellerChangeReason || updateDto.resellerChangeReason.trim().length < 3) {
+        throw new BadRequestException('Say why the reseller is changing.');
+      }
+    }
+
+    (profileUpdateFields as Partial<CustomerProfileEntity>).resellerId = nextResellerId;
+    (profileUpdateFields as Partial<CustomerProfileEntity>).leadSource = nextSource;
+
     const updated = await this.customerRepository.update(id, {
       ...(profileUpdateFields as Partial<CustomerProfileEntity>),
       updatedBy,
@@ -377,6 +427,22 @@ export class CustomerService {
 
     if (!updated) {
       throw new NotFoundException(`Customer with ID '${id}' not found`);
+    }
+
+    if (resellerChanged) {
+      await this.dataSource.query(
+        `UPDATE quotes SET reseller_id = $2, updated_at = now()
+          WHERE customer_id = $1 AND status = 'draft' AND deleted_at IS NULL`,
+        [id, nextResellerId],
+      );
+      await this.auditLogService.create({
+        entityType: AuditEntityType.CUSTOMER,
+        entityId: id,
+        action: AuditAction.UPDATE,
+        oldValues: { resellerId: existing.resellerId ?? null },
+        newValues: { resellerId: nextResellerId, reason: updateDto.resellerChangeReason },
+        userId: actor?.id,
+      });
     }
 
     // Sync name/phone/email to the core user record — keeps the login identity
@@ -687,6 +753,7 @@ export class CustomerService {
     this.logger.log(`Assigning customer ${id} to user ${assigneeId ?? 'null (unassign)'}`);
 
     await this.findById(id);
+    await this.resellerContext.assertAssignableUser(assigneeId, id);
 
     if (assigneeId !== null) {
       // Validate assignee user exists
@@ -723,6 +790,32 @@ export class CustomerService {
   }
 
   // ==================== PRIVATE HELPERS ====================
+
+  /**
+   * Source "reseller" ⇔ a reseller is named. Both ways, on every save.
+   * Returns the reseller id to store.
+   */
+  private async resolveReseller(
+    leadSource: string | null | undefined,
+    resellerId: string | null | undefined,
+  ): Promise<string | null> {
+    const isResellerSource = leadSource === LeadSource.RESELLER;
+    if (isResellerSource && !resellerId) {
+      throw new BadRequestException('Lead source is Reseller — choose which reseller.');
+    }
+    if (!isResellerSource && resellerId) {
+      throw new BadRequestException('A reseller can only be set when the lead source is Reseller.');
+    }
+    if (!resellerId) return null;
+    const [row] = await this.dataSource.query(
+      `SELECT status FROM employee_profiles
+        WHERE id = $1 AND profile_kind = 'reseller' AND deleted_at IS NULL`,
+      [resellerId],
+    );
+    if (!row) throw new BadRequestException('That reseller does not exist.');
+    if (row.status !== 'active') throw new BadRequestException('That reseller is not active.');
+    return resellerId;
+  }
 
   /** Guard against duplicate phone/email within an org's customer_profiles */
   private async guardOrgDuplicates(phone: string, email?: string): Promise<void> {

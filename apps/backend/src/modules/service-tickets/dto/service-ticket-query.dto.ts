@@ -77,6 +77,14 @@ export class ServiceTicketQueryDto {
   @IsUUID()
   createdBy?: string;
 
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description: 'Only tickets on customers brought in by this reseller (employee_profiles.id)',
+  })
+  @IsOptional()
+  @IsUUID()
+  resellerId?: string;
+
   @ApiPropertyOptional({ description: 'Matches title or ticket number, case-insensitive' })
   @IsOptional()
   @IsString()

@@ -18,6 +18,7 @@ import {
 import { missingMaintenanceChecklist } from '@tejas96/shared/utils';
 import { DataSource, Repository } from 'typeorm';
 
+import { ResellerContextService } from '../../../common/reseller';
 import { EmployeeProfileEntity } from '../../employees/entities/employee-profile.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 import {
@@ -43,6 +44,7 @@ export class ServiceTicketService {
     private readonly projectRepository: Repository<ProjectEntity>,
     @InjectRepository(EmployeeProfileEntity)
     private readonly employeeRepository: Repository<EmployeeProfileEntity>,
+    private readonly resellerContext: ResellerContextService,
   ) {}
 
   // ============================================
@@ -52,6 +54,7 @@ export class ServiceTicketService {
   async create(dto: CreateServiceTicketDto, userId: string): Promise<ServiceTicketEntity> {
     await this.assertProjectBelongsToCustomer(dto.projectId, dto.customerId);
     await this.assertEmployeeExists(dto.assignedToEmployeeId);
+    await this.resellerContext.assertAssignableProfile(dto.assignedToEmployeeId, dto.customerId);
 
     return this.dataSource.transaction(async (manager) => {
       const ticketNumber = await this.ticketRepository.generateTicketNumber(COMPANY.code, manager);
@@ -160,6 +163,12 @@ export class ServiceTicketService {
     const ticket = await this.findById(id);
     this.assertNotClosed(ticket);
     await this.assertEmployeeExists(dto.assignedToEmployeeId);
+    if (dto.assignedToEmployeeId !== undefined) {
+      await this.resellerContext.assertAssignableProfile(
+        dto.assignedToEmployeeId,
+        ticket.customerId,
+      );
+    }
 
     const assigneeChanged =
       dto.assignedToEmployeeId !== undefined &&

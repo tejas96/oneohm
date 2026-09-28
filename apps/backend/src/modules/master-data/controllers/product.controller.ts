@@ -23,6 +23,7 @@ import {
   ApiReadOne,
   ApiUpdate,
 } from '../../../common/decorators';
+import { ResellerAllowed } from '../../../common/reseller';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
@@ -58,6 +59,7 @@ export class ProductController {
     });
   }
 
+  @ResellerAllowed()
   @Get()
   @ApiReadAll({
     summary: 'Get all products',
@@ -139,6 +141,7 @@ export class ProductController {
     };
   }
 
+  @ResellerAllowed()
   @Get(':id')
   @ApiReadOne({
     summary: 'Get product by ID',

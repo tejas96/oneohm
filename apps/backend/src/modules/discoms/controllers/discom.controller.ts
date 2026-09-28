@@ -21,6 +21,7 @@ import {
   ApiReadOne,
   ApiUpdate,
 } from '../../../common/decorators';
+import { ResellerAllowed } from '../../../common/reseller';
 import { toDto, toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -49,6 +50,7 @@ export class DiscomController {
     return toDto(DiscomResponseDto, discom);
   }
 
+  @ResellerAllowed()
   @Get()
   @ApiReadAll({
     summary: 'Get all discoms',
@@ -126,6 +128,7 @@ export class DiscomController {
     };
   }
 
+  @ResellerAllowed()
   @Get(':id')
   @ApiReadOne({
     summary: 'Get discom by ID',
