@@ -20,6 +20,10 @@ import { DataSource, EntityManager, Repository } from 'typeorm';
 
 import { PaymentApprovalNotifier } from './payment-approval-notifier.service';
 import { DocumentEntity } from '../../documents/entities/document.entity';
+import {
+  markCommissionPaid,
+  releaseCommissionPayout,
+} from '../../employees/commissions/sql/commission-payout.sql';
 import { SequenceService } from '../../finance-common/services/sequence.service';
 import { allocateWaterfall } from '../../ledger/domain/allocation';
 import { isFutureIst, pgDateToIso, toIsoDate, todayIst } from '../../ledger/domain/dates';
@@ -286,6 +290,69 @@ export class PaymentApprovalService {
   }
 
   /**
+   * A reseller commission payout, queued inside the CALLER's transaction so
+   * the commission's `payout_request_id` and this row are written together.
+   * Not reachable through POST /payment-approvals — only through
+   * /commissions/record-payment, which owns the commission-side guards.
+   */
+  async submitCommissionPayout(
+    input: {
+      projectId: string;
+      customerId: string | null;
+      amountPaise: number;
+      valueDate: string;
+      paymentMethod: string;
+      reference: string;
+      counterparty: string;
+      notes: string | null;
+    },
+    userId: string,
+    manager: EntityManager,
+  ): Promise<string> {
+    const valueDate = toIsoDate(input.valueDate);
+    if (isFutureIst(valueDate)) {
+      throw new BadRequestException(`Value date ${valueDate} is in the future`);
+    }
+    if ((input.paymentMethod as PaymentMethod) === PaymentMethod.CREDIT) {
+      throw new BadRequestException('A commission is paid, not taken on credit');
+    }
+    if (!(input.amountPaise > 0)) {
+      throw new BadRequestException('A commission payout must be more than ₹0');
+    }
+
+    const requestNo = await this.sequenceService.getNextNumber(
+      FinanceSequenceScope.PAYMENT_APPROVAL,
+      manager,
+    );
+    const inserted = await manager.getRepository(PendingLedgerEntryEntity).insert({
+      requestNo,
+      status: 'pending',
+      submittedBy: userId,
+      submittedAt: new Date(),
+      valueDate,
+      notes: input.notes,
+      reference: input.reference,
+      paymentMethod: input.paymentMethod,
+      counterparty: input.counterparty,
+      vendorId: null,
+      kind: 'commission',
+      projectId: input.projectId,
+      customerId: input.customerId,
+      entryType: 'expense',
+      direction: 'out',
+      amountPaise: -input.amountPaise,
+      category: ExpenseCategory.COMMISSION,
+      allocations: null,
+    });
+    return inserted.identifiers[0]?.id as string;
+  }
+
+  /** After the caller's commit — never tell anyone about a payout that rolled back. */
+  notifySubmitted(id: string): void {
+    this.notifier.submitted(id);
+  }
+
+  /**
    * Store one piece of the customer's evidence against the pending row.
    *
    * `documents` is already polymorphic, so a payment can carry as many images as
@@ -448,11 +515,28 @@ export class PaymentApprovalService {
           manager,
         );
       } else if (pending.kind === 'commission') {
-        // Commission payout approval (payout_request_id → employee_commissions)
-        // is built in a later task of the reseller-commissions migration. This
-        // branch only exists so the exhaustiveness guard below still catches a
-        // genuinely new, unhandled PendingKind.
-        throw new BadRequestException('Commission payout approval is not implemented yet.');
+        entry = await this.ledgerWrite.recordExpense(
+          {
+            projectId: pending.projectId,
+            amountPaise: Math.abs(pending.amountPaise),
+            valueDate: pending.valueDate,
+            category: ExpenseCategory.COMMISSION,
+            payee: pending.counterparty ?? undefined,
+            paymentMethod: pending.paymentMethod ?? undefined,
+            reference: pending.reference ?? undefined,
+            notes: pending.notes ?? undefined,
+          },
+          approverId,
+          manager,
+        );
+        await markCommissionPaid(manager, {
+          payoutRequestId: pending.id,
+          ledgerEntryId: entry.id,
+          approverId,
+          valueDate: entry.valueDate,
+          paymentMethod: pending.paymentMethod ?? null,
+          reference: pending.reference ?? null,
+        });
       } else {
         // A `never` here is the point: adding another PendingKind without a
         // branch above stops compiling, instead of silently filing that row as
@@ -539,9 +623,12 @@ export class PaymentApprovalService {
   // ============================================
 
   async reject(id: string, reason: string, approverId: string): Promise<PendingLedgerEntryEntity> {
-    const rejected = await this.transitionPending(id, (row, repo) => {
+    const rejected = await this.transitionPending(id, async (row, repo) => {
       if (row.submittedBy === approverId) {
         throw new ForbiddenException('You submitted this payment — another user must review it');
+      }
+      if (row.kind === 'commission') {
+        await releaseCommissionPayout(repo.manager, row.id, reason);
       }
       return repo.update(row.id, {
         status: 'rejected',
@@ -557,9 +644,16 @@ export class PaymentApprovalService {
 
   /** Withdrawing your own submission. Terminal, and needs no approver. */
   async cancel(id: string, userId: string): Promise<PendingLedgerEntryEntity> {
-    return this.transitionPending(id, (row, repo) => {
+    return this.transitionPending(id, async (row, repo) => {
       if (row.submittedBy !== userId) {
         throw new ForbiddenException('Only the person who submitted this can cancel it');
+      }
+      if (row.kind === 'commission') {
+        await releaseCommissionPayout(
+          repo.manager,
+          row.id,
+          'Withdrawn by the person who recorded it',
+        );
       }
       return repo.update(row.id, { status: 'cancelled' });
     });

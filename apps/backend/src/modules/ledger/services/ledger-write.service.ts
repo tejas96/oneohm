@@ -85,6 +85,7 @@ export interface RecordExpenseInput {
   category: string;
   payee?: string;
   paymentMethod?: string;
+  reference?: string;
   notes?: string;
   proofDocument?: ProofDocumentInput;
   /** Required when `paymentMethod` is `credit`. A bill is owed to someone. */
@@ -242,6 +243,7 @@ export class LedgerWriteService {
         paymentMethod: input.paymentMethod ?? null,
         counterparty: input.payee ?? null,
         category: input.category,
+        reference: input.reference ?? null,
         notes: input.notes ?? null,
         vendorId: input.vendorId ?? null,
         // A bill on credit is a cost taken on, not cash gone. Every money-out
