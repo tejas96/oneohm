@@ -184,13 +184,14 @@ export class PaymentApprovalNotifier {
   }
 }
 
-/** "₹25,000 receipt", "₹4,500.50 credit bill". */
+/** "₹25,000 receipt", "₹4,500.50 credit bill", "₹12,000 commission". */
 function describePayment(row: ApprovalRow): string {
   const amount = formatCurrencyDecimal(Math.abs(Number(row.amountPaise)) / 100);
   let kind: string;
   if (row.kind === 'receipt') kind = 'receipt';
   else if (row.kind === 'vendor_payment') kind = 'vendor payment';
   else if (row.kind === 'reversal') kind = 'reversal';
+  else if (row.kind === 'commission') kind = 'commission';
   else kind = row.isCredit ? 'credit bill' : 'expense';
   return `${amount} ${kind}`;
 }
