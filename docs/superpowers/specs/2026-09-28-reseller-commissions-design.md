@@ -38,7 +38,9 @@ that we have not first checked on the web.
 | D10 | Reseller app access | Same features as staff, but **projects are view-only**. |
 | D11 | Cost and margin on quotes | Always **hidden** from resellers. The server strips them from responses. |
 | D12 | Where the dashboard opens | A money card at the top of My Day opens the full dashboard. The orb does not change. |
-| D13 | Staff on the current mobile app | Until the Step 2 app ships, staff who choose Lead source "Reseller" on the current app get a 400 (no reseller picker there). Accepted by the owner; see §16. |
+| D13 | Staff on the current mobile app | Until the Step 2 app ships, staff who choose Lead source "Reseller" on the current app get a 400 (no reseller picker there). Accepted by the owner (2026-09-28): ship the Step 2 app soon rather than patch the old one; see §16. |
+| D14 | Payout recorded by mistake on a live deal | There is no in-app undo. Reversing a commission expense is refused, and Close recovery only applies to dead deals. Accepted by the owner (2026-09-28). |
+| D15 | Soft-deleted reseller | Stays on `/resellers` (status "deleted") while any non-cancelled commission exists, including paid ones, so the money history stays visible. Accepted by the owner (2026-09-28). |
 
 ### Defaults chosen in this spec (change before planning if wrong)
 
