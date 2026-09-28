@@ -1,4 +1,4 @@
-# Reseller Commissions and Partner Dashboard — Design
+# Reseller Commissions and Reseller Dashboard — Design
 
 **Date:** 2026-09-28
 **Branch:** `feat/reseller-commissions`
@@ -7,19 +7,19 @@
 
 ## 1. What this is for
 
-A reseller (partner) sends us customers. When a deal is won, he earns a commission.
+A reseller sends us customers. When a deal is won, he earns a commission.
 Today the `employee_commissions` table exists, but nothing fills it and nothing shows it.
 
 We build three things:
 
 1. **The money.** A commission row is made when a quote is accepted. Admin approves it. It is
    paid through the existing finance approval queue.
-2. **The partner app.** A reseller logs in to the EPC mobile app. He uses the app the same way
+2. **The reseller app.** A reseller logs in to the EPC mobile app. He uses the app the same way
    staff do, but he sees projects in read-only mode. He also gets his own dashboard.
-3. **The admin view.** Superadmin and admin see every partner, his performance and his money on
+3. **The admin view.** Superadmin and admin see every reseller, his performance and his money on
    the web.
 
-We ship in two steps. Step 1 is backend + web. Step 2 is mobile. A partner never sees a number
+We ship in two steps. Step 1 is backend + web. Step 2 is mobile. A reseller never sees a number
 that we have not first checked on the web.
 
 ## 2. Decisions (locked)
@@ -44,8 +44,8 @@ that we have not first checked on the web.
 | # | Default |
 |---|---|
 | X1 | A reseller **cannot use the web app**. He sees a "Use the mobile app" page. |
-| X2 | If a returning customer gets a second roof, the partner tag carries over. Staff can remove the partner on the **draft** quote. |
-| X3 | The first partner to add a customer owns that customer. Only staff can change the owner, on the web, and must give a reason. |
+| X2 | If a returning customer gets a second roof, the reseller tag carries over. Staff can remove the reseller on the **draft** quote. |
+| X3 | The first reseller to add a customer owns that customer. Only staff can change the owner, on the web, and must give a reason. |
 | X4 | Money that a reseller pays back is recorded on the commission row only. No ledger entry in v1 (see §9). |
 | X5 | Deals accepted before launch get no automatic commission. They appear under "Before launch" in the Fix strip. Admin creates or dismisses each one. |
 | X6 | No push notifications in v1. The reseller sees changes when he opens the app. |
@@ -59,17 +59,17 @@ that we have not first checked on the web.
 |---|---|---|
 | My Day sections | His own work | His own work (same code). Usually empty. |
 | My Day money card | — | Yes, at the top. It shows even when "Nothing assigned" shows. |
-| Partner dashboard | — | Yes |
+| Reseller dashboard | — | Yes |
 | Leads: list and detail | As his role allows | **Only customers where `reseller_id` = him** |
-| Add lead | Picks a partner or leaves it blank | Partner is set to himself. He cannot change it. |
+| Add lead | Lead source = **Reseller** → must pick **which reseller** (required). Any other source → no reseller. | Source = Reseller and reseller = himself, set by the server. Both fields are hidden. |
 | Follow-ups, site visits, surveys | As assigned | As assigned, **only on his own customers** |
-| Quotes: build, send, discount | Yes | Yes, only for his own customers. Partner = himself. |
+| Quotes: build, send, discount | Yes | Yes, only for his own customers. Reseller = himself. |
 | Quote cost and margin | As today | **Never.** The server removes these fields. |
 | Projects: list | As his role allows | **Only projects whose quote has `reseller_id` = him** |
 | Project detail | As his role allows | **Read-only.** No tasks, phases, team or document changes. No documents list. |
 | Customer payment status on the project | Yes | Yes (what the customer still owes. Not our costs.) |
 | Service tickets | As assigned | As assigned, only on his own customers |
-| Other partners' anything | Admin only | Never |
+| Other resellers' anything | Admin only | Never |
 | Bank account number and Aadhaar | Admin only | Last 4 digits of his own only |
 | Web app | Yes | No (X1) |
 
@@ -132,7 +132,7 @@ amount = round_half_up(base × rate / 100, 2)
 - If the snapshot is missing, or `basePrice` is missing: `base_amount = 0`,
   `base_source = 'missing'`.
 - If the reseller's rate is NULL: `rate = 0`, `rate_source = 'missing'`.
-- If the rate is exactly 0 (a partner with no commission): the row is born `cancelled` with
+- If the rate is exactly 0 (a reseller with no commission): the row is born `cancelled` with
   `cancel_reason = 'Rate is 0%'`. The quote is then "handled", so it does not show in the Fix strip.
 - `base`, `rate` and `amount` are frozen at birth. A later change to the rate, a change order
   or a subsidy change never moves them.
@@ -237,7 +237,7 @@ them on the PDF.
 - A reseller can only be assigned a follow-up, visit, survey or ticket on his own customer. The
   server rejects anything else, with a clear message for the staff user who tried.
 - A reseller cannot be added to a project team (server rejects).
-- A partner picker only lists **active** resellers.
+- A reseller picker only lists **active** resellers.
 
 ### 7.5 Existing `/commissions` routes
 
@@ -255,7 +255,7 @@ delete and list every commission. Replace it:
 | See `/resellers` pages, list commissions | `finance.view` |
 | Approve, edit, cancel, record payment, close recovery, Fix strip | `finance.payments.record` |
 | Approve or reject the payout in the queue | `finance.approvals.process` (already used by the queue) |
-| Tag or change a lead's partner (staff) | `customers.assign` |
+| Tag or change a lead's reseller (staff) | `customers.assign` |
 
 `admin` and `super_admin` pass by bypass, as they do today. The backend checks these in the
 service, reading the permissions in the JWT, in the same way that `canViewAllProjects` does.
@@ -312,11 +312,11 @@ books, that is a follow-up.
 - Add the route to `lib/rbac/route-map.ts` with `finance.view`. Add a nav entry under People.
 - Period chips: **This month · This FY · All time**. They filter the funnel and the revenue.
   The money columns are always "right now".
-- Table: Partner (name, code, status) · Rate · Funnel `leads → quoted → won` + win rate ·
+- Table: Reseller (name, code, status) · Rate · Funnel `leads → quoted → won` + win rate ·
   Revenue · Pending ₹ · Owed ₹ · Paid ₹ · To recover ₹ · `⋮` (always visible).
-- `⋮`: Open · Edit partner (the existing user form).
-- An inactive or blocked partner stays in the list, greyed out, if any money is still open.
-- Empty state: "No partners yet" with a link to add a user with Profile Type = Reseller.
+- `⋮`: Open · Edit reseller (the existing user form).
+- An inactive or blocked reseller stays in the list, greyed out, if any money is still open.
+- Empty state: "No resellers yet" with a link to add a user with Profile Type = Reseller.
 
 ### 10.2 `/resellers/[id]`
 
@@ -342,19 +342,25 @@ Shown only when the count is above 0: *"N accepted deals have no commission row.
 
 ### 10.4 Lead and quote forms
 
-- Lead form (web onboarding wizard and CRM): a **Partner** picker (active resellers only),
-  optional. It sets `customers.reseller_id`.
-- Changing the partner on an existing customer needs `customers.assign` and a reason (audited).
-  It changes **draft** quotes of that customer to the new partner. Sent and accepted quotes do
-  not change.
+- Lead form (web onboarding wizard, CRM, and the mobile Add lead flow for staff): the existing
+  **Lead source** field drives it. When the source is **Reseller**, a **"Which reseller?"**
+  dropdown appears (active resellers only) and is **required**. Any other source hides it.
+  It sets `customer_profiles.reseller_id`.
+- **Server rule, both ways:** `lead_source = 'reseller'` needs a `reseller_id`, and a
+  `reseller_id` needs `lead_source = 'reseller'`. A save that breaks this gets 400 with a clear
+  message. This applies to new saves and edits. Old rows are not rewritten (see Legacy below).
+- Changing the reseller on an existing customer, or changing its source away from Reseller,
+  needs `customers.assign` and a reason (audited). Draft quotes of that customer follow the
+  change. Sent and accepted quotes do not change.
 - A new quote copies `reseller_id` from the customer. Staff can clear it on a **draft** quote
   only (X2).
 - Legacy: customers with `lead_source = 'reseller'` and no `reseller_id` are counted as
-  "Partner unknown" on `/resellers`, with a link to fix them.
+  "Reseller unknown" on `/resellers`, with a link to fix them. The next edit of such a customer
+  must pick a reseller or change the source.
 
 ### 10.5 Existing screens that change
 
-- `/finance/approvals`: new kind label, and it links to the partner page.
+- `/finance/approvals`: new kind label, and it links to the reseller page.
 - Project → Money tab: the commission expense appears there by itself (category label
   "Commission").
 - Admin users form: `profile_kind` is locked once the profile has a tagged customer or a
@@ -370,13 +376,13 @@ decides what to **draw**. The server has already decided what he can **get**.
 ### 11.1 My Day
 
 - A money card sits at the top: **YOU ARE OWED ₹X** (Approved, including payment in review),
-  and under it "₹Y pending approval". Tap → the Partner Dashboard.
+  and under it "₹Y pending approval". Tap → the Reseller Dashboard.
 - The card renders **above** the "Nothing assigned" state (`MyDayScreen.tsx:218`) and above
   the "everything failed" state. A reseller will hit these states often.
 - If the card fails to load, it shows its own retry. The rest of My Day is not affected.
 - Staff: no change at all.
 
-### 11.2 Partner Dashboard (new screen)
+### 11.2 Reseller Dashboard (new screen)
 
 - Top: Owed · Pending · Paid lifetime · To recover (only if > 0).
 - Period chips: This month · This FY · All time. Funnel: `leads → quoted → won`, win rate,
@@ -389,7 +395,10 @@ decides what to **draw**. The server has already decided what he can **get**.
 
 ### 11.3 Other screens
 
-- **Add lead:** no partner field. The server sets it.
+- **Add lead (reseller):** the Lead source and reseller fields are hidden. The server sets
+  source = Reseller and reseller = him, and ignores any value the app sends.
+- **Add lead (staff on mobile):** same rule as the web form (§10.4): source Reseller → required
+  "Which reseller?" dropdown.
 - **Quote price screen:** the Cost and margin reveal (`priceSections.tsx:271`) does not render.
   The server does not send the data anyway. A new line shows **"Your commission at this price:
   ₹X"**, computed from the discounted base and his rate (X9).
@@ -437,7 +446,7 @@ before building. (Table names: "customers" in this section means `customer_profi
 **Changes after birth**
 11. The rate is changed on the profile → old rows do not move. Only new deals use it.
 12. A change order adds money to the contract → the commission does not move (frozen). If the
-    owner wants more for the partner, admin uses Edit while pending, with a reason.
+    owner wants more for the reseller, admin uses Edit while pending, with a reason.
 13. The subsidy changes → it was never used.
 14. Two admins act on the same row at once → 409 on the second (§6.2).
 15. Edit after approval → allowed only while no payout is in review, and it sends the row back to Pending (§6.2). Once paid, the amount never changes. A cancelled row can never be re-created, because the quote is already "handled".
@@ -452,7 +461,7 @@ before building. (Table names: "customers" in this section means `customer_profi
 21. One transfer for many deals → many queue rows with the same UTR (§8).
 22. Partial payment of one commission → not supported. One commission is paid in one payment.
 23. A reseller with no bank details → Record payment still works (cash and cheque exist). The
-    partner page shows "No bank details" in the header.
+    reseller page shows "No bank details" in the header.
 
 **Deal death**
 24. The project is cancelled, commission unpaid → cancelled.
@@ -465,38 +474,42 @@ before building. (Table names: "customers" in this section means `customer_profi
 **Attribution**
 29. A reseller adds a customer whose phone already exists → the existing "already exists" message.
     No other details are shown. He cannot claim the customer (X3).
-30. Staff moves a customer to another partner → reason required, audited. Draft quotes follow.
-    Sent and accepted quotes and their commissions stay with the original partner.
+30. Staff moves a customer to another reseller → reason required, audited. Draft quotes follow.
+    Sent and accepted quotes and their commissions stay with the original reseller.
 31. A returning customer with a new roof → the tag carries over. Staff can clear it on the draft quote (X2).
-32. Legacy leads with `lead_source = reseller` and no `reseller_id` → "Partner unknown" count (§10.4).
-33. A lead added by staff with no partner, and later a partner is set → the draft quotes pick up
-    the partner. An already-accepted quote does not (use the Fix strip if the owner agrees).
+32. Legacy leads with `lead_source = reseller` and no `reseller_id` → "Reseller unknown" count. The next edit must fix it (§10.4).
+33. A lead added with another source, later changed to Reseller → the draft quotes pick up the
+    reseller. An already-accepted quote does not (use the Fix strip if the owner agrees).
+34. Source = Reseller but no reseller picked → the form will not save, and the server returns 400.
+35. A reseller is picked, then the source is changed to something else → the reseller is cleared
+    (the form shows this before saving). For an existing customer this needs `customers.assign`
+    and a reason.
 
 **Access and privacy**
-34. A reseller calls any route not on the allowlist → 403 (§7.1).
-35. A reseller asks for another customer's, project's or commission's id directly → 404 (not 403,
+36. A reseller calls any route not on the allowlist → 403 (§7.1).
+37. A reseller asks for another customer's, project's or commission's id directly → 404 (not 403,
     so he cannot learn that the id exists).
-36. A reseller tries to write to a project → 403, even if he were on the team (he cannot be, §7.4).
-37. A reseller reads a quote → cost and margin are removed at every depth (§7.3).
-38. **The discount cap can be probed.** The server rejects a discount above 50% of the margin
+38. A reseller tries to write to a project → 403, even if he were on the team (he cannot be, §7.4).
+39. A reseller reads a quote → cost and margin are removed at every depth (§7.3).
+40. **The discount cap can be probed.** The server rejects a discount above 50% of the margin
     (`quote.service.ts:985`). By trying discounts, someone can guess the margin. v1: every
     rejected discount attempt by a reseller is written to the audit log. A future option is a fixed
     reseller discount cap instead.
-39. A reseller logs in to the web → "Use the mobile app" page (X1). The server wall still applies.
-40. Profile kind switched between staff and reseller → locked once history exists (§10.5).
-41. A cached reseller flag after a profile change → at most 60 seconds stale. The kind rarely
+41. A reseller logs in to the web → "Use the mobile app" page (X1). The server wall still applies.
+42. Profile kind switched between staff and reseller → locked once history exists (§10.5).
+43. A cached reseller flag after a profile change → at most 60 seconds stale. The kind rarely
     changes and is locked once history exists.
-42. The token belongs to a user with a customer role only → the existing web rule still applies.
+44. The token belongs to a user with a customer role only → the existing web rule still applies.
     No change.
 
 **Display**
-43. A win rate with 0 quoted → "—".
-44. A period with no data → zeros with a one-line explanation, not an empty table.
-45. Dates are in IST. The period boundaries (month, FY April to March) are in IST.
-46. Old app versions (before Step 2) used by a reseller → the server wall still protects the data.
+45. A win rate with 0 quoted → "—".
+46. A period with no data → zeros with a one-line explanation, not an empty table.
+47. Dates are in IST. The period boundaries (month, FY April to March) are in IST.
+48. Old app versions (before Step 2) used by a reseller → the server wall still protects the data.
     Screens that call blocked routes show their normal error state. Step 2 raises the EPC
     minimum and recommended versions.
-47. The phone is offline → the dashboard shows cached data with "Updated {time}".
+49. The phone is offline → the dashboard shows cached data with "Updated {time}".
 
 ## 14. Out of scope (v1)
 
@@ -524,7 +537,7 @@ No new unit test files. Verify by running each screen.
 | Sum of `commission` expenses = sum of paid amounts | equal |
 | Rows with `missing` sources that are approved or paid | 0 |
 
-**Web walk (Step 1), through the UI only:** add a lead with partner Ramesh → build and accept a
+**Web walk (Step 1), through the UI only:** add a lead with reseller Ramesh → build and accept a
 quote → the row appears (Pending, correct base × rate) → `/resellers` numbers are correct →
 Approve → create the project → Record payment → the row appears in `/finance/approvals` →
 approve it as the finance head → the project Money tab shows the Commission expense and the
