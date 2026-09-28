@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 
+import { CommissionBirthModule } from './commission-birth.module';
 import { EmployeeCommissionController } from './controllers/employee-commission.controller';
+import { ResellerDashboardController } from './controllers/reseller-dashboard.controller';
 import { CommissionActionsService } from './services/commission-actions.service';
+import { ResellerDashboardService } from './services/reseller-dashboard.service';
 
 /**
  * Employee Commissions Module
@@ -16,8 +19,9 @@ import { CommissionActionsService } from './services/commission-actions.service'
  * with EmployeesModule any more.
  */
 @Module({
-  controllers: [EmployeeCommissionController],
-  providers: [CommissionActionsService],
+  imports: [CommissionBirthModule],
+  controllers: [EmployeeCommissionController, ResellerDashboardController],
+  providers: [CommissionActionsService, ResellerDashboardService],
   exports: [CommissionActionsService],
 })
 export class EmployeeCommissionsModule {}

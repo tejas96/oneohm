@@ -1,11 +1,12 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../../auth/decorators';
 import { JwtAuthGuard } from '../../../auth/guards';
 import type { CurrentUserType } from '../../../auth/types';
-import { CloseRecoveryDto, CommissionListQueryDto, EditCommissionDto, ReasonDto } from '../dto';
+import { CloseRecoveryDto, CommissionListQueryDto, EditCommissionDto, ReasonDto, ResellerPeriodQueryDto } from '../dto';
 import { CommissionActionsService } from '../services/commission-actions.service';
+import { ResellerDashboardService } from '../services/reseller-dashboard.service';
 import type { CommissionRow } from '../sql/commission-read.sql';
 import { requirePermission } from '../utils/require-permission';
 
@@ -19,7 +20,18 @@ import { requirePermission } from '../utils/require-permission';
 @Controller('commissions')
 @UseGuards(JwtAuthGuard)
 export class EmployeeCommissionController {
-  constructor(private readonly actions: CommissionActionsService) {}
+  constructor(
+    private readonly actions: CommissionActionsService,
+    private readonly dashboard: ResellerDashboardService,
+  ) {}
+
+  /** The reseller's own dashboard. Opened to resellers in Task 9 (`@ResellerAllowed`). */
+  @Get('me')
+  async me(@Query() q: ResellerPeriodQueryDto, @CurrentUser() user: CurrentUserType) {
+    const resellerId = await this.dashboard.resellerIdForUser(user.id);
+    if (!resellerId) throw new NotFoundException('Only resellers have commissions');
+    return this.dashboard.detail(resellerId, q.period);
+  }
 
   @Get()
   list(@Query() query: CommissionListQueryDto, @CurrentUser() user: CurrentUserType): Promise<CommissionRow[]> {
