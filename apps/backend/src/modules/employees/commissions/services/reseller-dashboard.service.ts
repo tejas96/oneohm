@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
@@ -15,6 +15,8 @@ const toInt = (v: unknown): number => (v === null || v === undefined ? 0 : Numbe
 
 @Injectable()
 export class ResellerDashboardService {
+  private readonly logger = new Logger(ResellerDashboardService.name);
+
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly actions: CommissionActionsService,
@@ -60,7 +62,9 @@ export class ResellerDashboardService {
     const [summary] = await this.summaries(period, resellerId);
     if (!summary) throw new NotFoundException('Reseller not found');
     const [h] = await this.dataSource.query(
-      `SELECT ep.id AS "resellerId", ep.status, ep.company_code AS code, ep.commission_percentage::float8 AS "ratePercent",
+      `SELECT ep.id AS "resellerId",
+              CASE WHEN ep.deleted_at IS NOT NULL THEN 'deleted' ELSE ep.status END AS status,
+              ep.company_code AS code, ep.commission_percentage::float8 AS "ratePercent",
               COALESCE(NULLIF(ep.company_name, ''), TRIM(u.first_name || ' ' || COALESCE(u.last_name, ''))) AS name,
               ep.bank_name AS "bankName", RIGHT(ep.account_number, 4) AS "accountLast4", ep.gstin, u.phone
          FROM employee_profiles ep JOIN users u ON u.id = ep.user_id WHERE ep.id = $1`,
@@ -72,12 +76,18 @@ export class ResellerDashboardService {
 
   async missing() {
     const liveFromRaw = process.env.COMMISSIONS_LIVE_FROM ?? null; // 'YYYY-MM-DD', IST
-    const liveFrom = liveFromRaw && /^\d{4}-\d{2}-\d{2}$/.test(liveFromRaw)
+    let liveFrom = liveFromRaw && /^\d{4}-\d{2}-\d{2}$/.test(liveFromRaw)
       ? new Date(`${liveFromRaw}T00:00:00+05:30`)
       : null;
+    // '2026-13-01' passes the pattern but is no date; an Invalid Date would
+    // compare false both ways and drop every row from both lists.
+    if (liveFrom && Number.isNaN(liveFrom.getTime())) {
+      this.logger.warn(`COMMISSIONS_LIVE_FROM="${liveFromRaw}" is not a real date; treating it as unset`);
+      liveFrom = null;
+    }
     const rows: MissingRow[] = await this.dataSource.query(MISSING_COMMISSIONS_SQL);
     const since = rows.filter((r) => !liveFrom || new Date(r.acceptedAt) >= liveFrom);
     const before = rows.filter((r) => liveFrom && new Date(r.acceptedAt) < liveFrom);
-    return { sinceLaunch: since, beforeLaunch: before, liveFrom: liveFromRaw };
+    return { sinceLaunch: since, beforeLaunch: before, liveFrom: liveFrom ? liveFromRaw : null };
   }
 }
