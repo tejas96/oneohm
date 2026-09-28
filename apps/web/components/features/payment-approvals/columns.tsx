@@ -81,14 +81,38 @@ export const APPROVAL_COLUMNS: CrmColumn<ApprovalRow>[] = [
     field: 'kind',
     header: 'Type',
     track: crm['col-approval-type'],
-    renderCell: (row) => (
-      <CrmStatusPill
-        label={KIND_LABEL[row.kind]}
-        tone={KIND_TONE[row.kind]}
-        dot={false}
-        size="sm"
-      />
-    ),
+    // A commission names its reseller here (spec §8.3): the project and
+    // customer columns say whose roof, not who is being paid.
+    renderCell: (row) =>
+      row.kind === 'commission' && row.counterparty ? (
+        <Box sx={{ minWidth: 0 }} title={`Commission · ${row.counterparty}`}>
+          <CrmStatusPill
+            label={KIND_LABEL.commission}
+            tone={KIND_TONE.commission}
+            dot={false}
+            size="sm"
+          />
+          <Box
+            sx={{
+              mt: 0.25,
+              fontSize: crm['text-row-xs'],
+              color: color['text-tertiary'],
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {row.counterparty}
+          </Box>
+        </Box>
+      ) : (
+        <CrmStatusPill
+          label={KIND_LABEL[row.kind]}
+          tone={KIND_TONE[row.kind]}
+          dot={false}
+          size="sm"
+        />
+      ),
   },
   {
     field: 'projectNumber',
@@ -155,7 +179,9 @@ export const APPROVAL_COLUMNS: CrmColumn<ApprovalRow>[] = [
     // in full, and at a glance the approver needs who/what/how much. Still
     // searchable, and revealable from the column menu.
     defaultHidden: true,
-    renderCell: (row) => row.reference ?? row.counterparty ?? <Empty />,
+    // A commission's counterparty already shows under its Type.
+    renderCell: (row) =>
+      row.reference ?? (row.kind === 'commission' ? null : row.counterparty) ?? <Empty />,
   },
   {
     field: 'submittedByName',

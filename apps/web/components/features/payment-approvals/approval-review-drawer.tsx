@@ -132,7 +132,11 @@ export function ApprovalReviewDrawer({
           <Stack spacing={2} sx={{ mt: 2 }}>
             <Stack direction="row" spacing={1} alignItems="center">
               <MUIStatusChip label={data.status} colorSeed={data.status} size="small" />
-              <Typography variant="body2">{KIND_LABEL[data.kind]}</Typography>
+              <Typography variant="body2">
+                {data.kind === 'commission' && data.counterparty
+                  ? `${KIND_LABEL.commission} · ${data.counterparty}`
+                  : KIND_LABEL[data.kind]}
+              </Typography>
             </Stack>
 
             {/* An approver must know which of the two they are signing off:
