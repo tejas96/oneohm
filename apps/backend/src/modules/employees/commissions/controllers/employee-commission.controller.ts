@@ -1,9 +1,58 @@
-import { Controller } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+
+import { CurrentUser } from '../../../auth/decorators';
+import { JwtAuthGuard } from '../../../auth/guards';
+import type { CurrentUserType } from '../../../auth/types';
+import { CommissionListQueryDto, EditCommissionDto, ReasonDto } from '../dto';
+import { CommissionActionsService } from '../services/commission-actions.service';
+import type { CommissionRow } from '../sql/commission-read.sql';
+import { requirePermission } from '../utils/require-permission';
 
 /**
- * Employee Commission Controller
- * Stubbed out while the commissions module is rebuilt (Task 2 of the
- * reseller-commissions migration). Tasks 3-6 restore the real endpoints.
+ * Commissions, office side. There is no create, no delete and no "set status":
+ * a commission is born from an accepted quote, dies by cancel, and reaches
+ * `paid` only through the approval queue (spec §6.2, §7.5).
  */
+@ApiTags('Commissions')
+@ApiBearerAuth()
 @Controller('commissions')
-export class EmployeeCommissionController {}
+@UseGuards(JwtAuthGuard)
+export class EmployeeCommissionController {
+  constructor(private readonly actions: CommissionActionsService) {}
+
+  @Get()
+  list(@Query() query: CommissionListQueryDto, @CurrentUser() user: CurrentUserType): Promise<CommissionRow[]> {
+    requirePermission(user, 'finance.view');
+    return this.actions.list(query);
+  }
+
+  @Get(':id')
+  getOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: CurrentUserType): Promise<CommissionRow> {
+    requirePermission(user, 'finance.view');
+    return this.actions.getOne(id);
+  }
+
+  @Post(':id/approve')
+  approve(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: CurrentUserType): Promise<CommissionRow> {
+    return this.actions.approve(id, user);
+  }
+
+  @Patch(':id')
+  edit(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: EditCommissionDto,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<CommissionRow> {
+    return this.actions.edit(id, dto, user);
+  }
+
+  @Post(':id/cancel')
+  cancel(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReasonDto,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<CommissionRow> {
+    return this.actions.cancel(id, dto.reason, user);
+  }
+}

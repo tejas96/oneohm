@@ -1,1 +1,1 @@
-export {};
+export * from './commission-actions.dto';

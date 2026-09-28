@@ -19,7 +19,7 @@ import { EmployeeService } from './services/employee.service';
   imports: [
     TypeOrmModule.forFeature([EmployeeProfileEntity]),
     forwardRef(() => UsersModule),
-    forwardRef(() => EmployeeCommissionsModule),
+    EmployeeCommissionsModule,
   ],
   controllers: [EmployeeController],
   providers: [EmployeeService, EmployeeProfileRepository],
