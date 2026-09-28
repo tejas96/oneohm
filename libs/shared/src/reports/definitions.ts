@@ -67,8 +67,8 @@ export const DCR_REPORT: ReportDefinition = {
   description: 'Domestic Content Requirement self-declaration for MNRE/MSEDCL submission.',
   documentTag: DocumentTag.DCR,
   // 4: prints the one application / sanction number and date the WCR prints.
-  // 5: cell maker and GST invoice "Not applicable"; the company signatory from company details.
-  templateVersion: 5,
+  // 6: the company signatory makes the declaration (not the customer); module capacity in Wp.
+  templateVersion: 6,
   facts: [
     req('vendor_name'),
     req('installed_capacity_kw'),
