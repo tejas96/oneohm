@@ -31,6 +31,8 @@ import type { CurrentUserType } from '../../auth/types';
 import {
   CreateEmployeeDto,
   EmployeeResponseDto,
+  type EmployeeSlimResponseDto,
+  toEmployeeSlim,
   UpdateEmployeeDto,
   UpdateEmployeeStatusDto,
 } from '../dto';
@@ -98,20 +100,25 @@ export class EmployeeController {
     @Query('profileKind') profileKind?: EmployeeProfileKind,
     @ResellerScope() resellerId?: string,
   ): Promise<{
-    items: EmployeeResponseDto[];
+    items: EmployeeResponseDto[] | EmployeeSlimResponseDto[];
     total: number;
     page: number;
     limit: number;
   }> {
-    // Server truth overwrites anything a reseller sent for this filter — he
-    // only ever sees staff, never other resellers' profiles.
-    if (resellerId) profileKind = EmployeeProfileKind.STAFF;
+    // A reseller sees active staff only, never other resellers' profiles, and
+    // only the slim row his pickers need (no phones, emails, bank or KYC).
+    // Server truth overwrites anything he sent for these filters.
+    if (resellerId) {
+      const staff = await this.employeeService.findByOrganization(
+        page,
+        limit,
+        UserStatus.ACTIVE,
+        EmployeeProfileKind.STAFF,
+      );
+      return { ...staff, items: staff.items.map(toEmployeeSlim) };
+    }
 
-    // The department branch below bypasses `findByOrganization` (and the
-    // profileKind filter applied just above) entirely — a reseller sending
-    // `?department=Sales` would see every reseller in that department, not
-    // just staff. Simplest correct fix: a reseller never takes this branch.
-    if (department && !resellerId) {
+    if (department) {
       const employees = await this.employeeService.findByDepartment(department);
       const paged = employees.slice((page - 1) * limit, page * limit);
       return {

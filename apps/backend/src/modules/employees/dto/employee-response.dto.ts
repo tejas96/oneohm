@@ -227,3 +227,26 @@ export class EmployeeResponseDto {
   @ApiPropertyOptional()
   updatedBy?: string;
 }
+
+/** The staff row a reseller's people-pickers get: who, not how to reach them. */
+export interface EmployeeSlimResponseDto {
+  id: string;
+  userId: string;
+  designation?: string;
+  department?: string;
+  status: UserStatus;
+  user?: { id: string; firstName: string; lastName?: string };
+}
+
+export function toEmployeeSlim(e: EmployeeResponseDto): EmployeeSlimResponseDto {
+  return {
+    id: e.id,
+    userId: e.userId,
+    designation: e.designation,
+    department: e.department,
+    status: e.status,
+    user: e.user
+      ? { id: e.user.id, firstName: e.user.firstName, lastName: e.user.lastName }
+      : undefined,
+  };
+}
