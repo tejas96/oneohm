@@ -144,15 +144,4 @@ export class EmployeeProfileRepository {
       where: { phone, profileKind, deletedAt: IsNull() },
     });
   }
-
-  /**
-   * Update reseller performance metrics
-   * Ported from ResellerProfileRepository.updatePerformanceMetrics
-   */
-  async updatePerformanceMetrics(
-    id: string,
-    metrics: Record<string, never>,
-  ): Promise<void> {
-    await this.repository.update({ id }, metrics);
-  }
 }

@@ -401,38 +401,6 @@ export class EmployeeService {
   }
 
   /**
-   * Find employee by ID, verifying it belongs to the given organization.
-   * Used by the commissions submodule (ported from ResellerService.findById).
-   */
-  async findByIdInOrganization(id: string): Promise<EmployeeProfileEntity> {
-    const employee = await this.employeeRepository.findById(id);
-    if (!employee) {
-      throw new NotFoundException('Employee not found');
-    }
-
-    return employee;
-  }
-
-  /**
-   * Update reseller performance metrics.
-   * Called by the commission service when commissions are paid.
-   * Ported from ResellerService.updatePerformanceMetrics.
-   */
-  async updatePerformanceMetrics(
-    id: string,
-    metrics: Record<string, never>,
-  ): Promise<void> {
-    this.logger.log(`Updating performance metrics for employee: ${id}`);
-
-    // Verify employee exists and belongs to organization
-    await this.findByIdInOrganization(id);
-
-    await this.employeeRepository.updatePerformanceMetrics(id, metrics);
-
-    this.logger.log(`Performance metrics updated for employee: ${id}`);
-  }
-
-  /**
    * Convert entity to response DTO
    */
   private toResponseDto(entity: EmployeeProfileEntity): EmployeeResponseDto {
