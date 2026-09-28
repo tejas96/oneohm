@@ -8,6 +8,12 @@ const TTL_MS = 60_000;
  * "Is this user a reseller?" from employee_profiles.profile_kind, cached per
  * user for a minute (spec §7.1, edge case 41). profile_kind is locked once
  * history exists (Task 12), so the cache cannot hide a meaningful change.
+ *
+ * Deliberately ignores `deleted_at`: DELETE /employees/:id only soft-deletes
+ * the profile, the user's account stays active, and auth only checks
+ * `users.status`. A removed reseller must stay walled off, not fall through
+ * to staff-level access — so his identity as a reseller has to survive his
+ * profile being soft-deleted (R14).
  */
 @Injectable()
 export class ResellerContextService {
@@ -20,7 +26,7 @@ export class ResellerContextService {
     if (hit && Date.now() - hit.at < TTL_MS) return hit.id;
     const [row] = await this.dataSource.query(
       `SELECT id FROM employee_profiles
-        WHERE user_id = $1 AND profile_kind = 'reseller' AND deleted_at IS NULL`,
+        WHERE user_id = $1 AND profile_kind = 'reseller'`,
       [userId],
     );
     const id = (row?.id as string | undefined) ?? null;
