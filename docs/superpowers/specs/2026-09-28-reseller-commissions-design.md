@@ -150,6 +150,7 @@ from them:
 |---|---|---|
 | Pending | `status = pending` | Pending |
 | Needs amount | `pending` and (`base_source = missing` or `rate_source = missing`) | Pending |
+| On hold | `pending`/`approved`, no project yet, and the quote's site is marked **lost**. Approve and Record payment are blocked. Reopening the site clears it. | On hold |
 | Waiting for project | `approved`, and no project exists for the quote yet | Approved |
 | Approved | `approved`, project exists, no `payout_request_id` | Approved |
 | Payment in review | `approved` and `payout_request_id` set | Approved |
@@ -220,16 +221,17 @@ commission. So:
 | projects list, project detail, project payments (read) | Project's quote has `reseller_id = me`. **GET only.** |
 | service tickets | Assigned to him and on his own customer |
 | `commissions/me`, `commissions/me/summary` | Himself |
-| master data needed by these screens (product lists and so on) | Read only. Must not include cost or price-config tables. |
+| master data needed by these screens (products, product types, DISCOMs, subsidy rules) | Read only. |
+| `GET /quote-calculator/installation-pricing` | Open. It is the customer rate card that line prices are built from, and pricing is blocked without it. The `/all` variant, quote configurations, product prices and subsidy configurations admin routes stay closed. |
 
 Everything else is 403. That covers project writes, documents, inventory, finance, admin, other
 employees, `/commissions` (the admin routes) and quote configuration (margin tiers).
 
 ### 7.3 Redaction on quote data
 
-For a reseller, remove these fields at every depth of every quote and calculator response:
-`profitabilityAmount`, `profitabilityPercent`, and any tier `marginPercent`. This includes
-`quote_snapshot.calculation`. Line prices, GST and totals stay, because the customer sees
+For a reseller, remove these fields at every depth of **every** response (one filter on the wall, not per route):
+`profitabilityAmount`, `profitabilityPercent`, `marginPercent`, `profitMarginTiers`, `actualCost` (project responses carry it)
+and `costMultiplier`. This includes `quote_snapshot.calculation`. Line prices, GST and totals stay, because the customer sees
 them on the PDF.
 
 ### 7.4 Assignment rules
@@ -272,9 +274,7 @@ service, reading the permissions in the JWT, in the same way that `canViewAllPro
 4. **Approve** does what an approved expense does today: it writes the ledger entry and the
    expense record (category `commission`, payee = reseller). Then it sets the commission to
    `paid`, `paid_at`, `paid_by`, `payment_mode`, `payment_reference` and `expense_entry_id`, all
-   in one transaction. Before that, it re-checks that the commission is still `approved` with
-   the same payout_request_id. If the check fails, the request is rejected with "Commission was
-   cancelled".
+   in one transaction. Before that, it re-checks that the commission is still `approved` with the same payout_request_id. If not, approval stops with **409 "This commission was cancelled or changed. Reject this request."** and nothing is posted.
 5. **Reject** keeps the commission `approved`, clears payout_request_id and stores the reason.
    The web row shows the reason until the next payment is recorded.
 
@@ -309,7 +309,8 @@ books, that is a follow-up.
 
 ### 10.1 `/resellers` (route exists in `routes.ts`, but no page was ever built)
 
-- Add the route to `lib/rbac/route-map.ts` with `finance.view`. Add a nav entry under People.
+- Add the route to `lib/rbac/route-map.ts` with `finance.view`. Add a nav entry in the **Finance** panel,
+  in a "RESELLERS" section (the web app has no People panel).
 - Period chips: **This month · This FY · All time**. They filter the funnel and the revenue.
   The money columns are always "right now".
 - Table: Reseller (name, code, status) · Rate · Funnel `leads → quoted → won` + win rate ·
@@ -352,8 +353,8 @@ Shown only when the count is above 0: *"N accepted deals have no commission row.
 - Changing the reseller on an existing customer, or changing its source away from Reseller,
   needs `customers.assign` and a reason (audited). Draft quotes of that customer follow the
   change. Sent and accepted quotes do not change.
-- A new quote copies `reseller_id` from the customer. Staff can clear it on a **draft** quote
-  only (X2).
+- A new quote **always** takes `reseller_id` from its customer. Any value the client sends is ignored.
+  On update, a quote's reseller can only be **cleared**, and only while the quote is `draft` (X2).
 - Legacy: customers with `lead_source = 'reseller'` and no `reseller_id` are counted as
   "Reseller unknown" on `/resellers`, with a link to fix them. The next edit of such a customer
   must pick a reseller or change the source.
@@ -467,7 +468,8 @@ before building. (Table names: "customers" in this section means `customer_profi
 24. The project is cancelled, commission unpaid → cancelled.
 25. The project is cancelled, commission paid → To recover. Close recovery handles full, partial
     or write-off (§9).
-26. The quote is voided before a project exists → cancelled.
+26. The quote is voided before a project exists → cannot happen: an accepted quote is voided only by
+    project cancellation (`quote.service.ts:817`). The site being marked lost is the real case → **On hold** (§6.1).
 27. The roof is reopened and re-quoted → a new, separate commission.
 28. A lead is marked lost → no quote accepted, so no commission. The funnel counts it as a lead only.
 
