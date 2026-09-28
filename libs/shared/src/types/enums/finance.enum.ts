@@ -43,6 +43,11 @@ export enum ExpenseCategory {
   COMMISSION = 'commission',
 }
 
+/** Categories that may be recorded manually; COMMISSION is excluded. */
+export const MANUAL_EXPENSE_CATEGORIES: readonly ExpenseCategory[] = Object.values(
+  ExpenseCategory
+).filter((c) => c !== ExpenseCategory.COMMISSION);
+
 /**
  * Who paid for an expense out-of-pocket.
  */
