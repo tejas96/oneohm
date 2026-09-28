@@ -28,6 +28,8 @@ export interface Employee {
   user?: EmployeeUser;
   /** Reseller profiles only — `EmployeeResponseDto.companyName`. */
   companyName?: string;
+  /** Reseller profiles only — tells two resellers with the same name apart. */
+  companyCode?: string;
 }
 
 interface EmployeeListResponse {

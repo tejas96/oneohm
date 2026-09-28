@@ -445,7 +445,7 @@ export function UserFormModal({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="staff">Staff Employee</SelectItem>
-                      <SelectItem value="reseller">Reseller Partner</SelectItem>
+                      <SelectItem value="reseller">Reseller</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

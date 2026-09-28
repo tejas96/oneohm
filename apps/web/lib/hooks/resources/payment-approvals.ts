@@ -216,8 +216,11 @@ export function useApprovalImpact(id: string | null): UseQueryResult<ApprovalImp
   });
 }
 
-export function useApprovalSummary(): UseQueryResult<ApprovalSummary, AxiosError> {
+export function useApprovalSummary(
+  options: { enabled?: boolean } = {},
+): UseQueryResult<ApprovalSummary, AxiosError> {
   return useQuery({
+    enabled: options.enabled ?? true,
     queryKey: approvalKeys.summary(),
     queryFn: async ({ signal }): Promise<ApprovalSummary> => {
       const { data } = await apiClient.get<ApprovalSummary>('/payment-approvals/summary', {

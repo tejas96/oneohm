@@ -1,15 +1,20 @@
 'use client';
 
-import { Box } from '@mui/material';
+import { Alert, Box } from '@mui/material';
+import Link from 'next/link';
 import { type JSX, useMemo, useState } from 'react';
 
 import { buildCommissionColumns, type CommissionAction } from './commission-columns';
 import { CloseRecoveryDialog, EditCommissionDialog, ReasonDialog, RecordCommissionPaymentDialog } from './commission-dialogs';
 import { PeriodChips, StatCard } from './stat-card';
+import { useClientPage } from './use-client-page';
 
 import { CrmTable } from '@/components/shared/crm-table';
+import { showToast } from '@/components/ui/sonner';
+import { ROUTES } from '@/lib/config/routes';
 import { useCommissionMutations, useReseller, type CommissionRow, type ResellerPeriod } from '@/lib/hooks/resources/resellers';
 import { color, crm } from '@/lib/theme/tokens';
+import { getErrorMessage } from '@/lib/utils/error';
 import { formatPaise } from '@/lib/utils/paise';
 
 type Open =
@@ -24,6 +29,9 @@ export function ResellerDetailPage({ id }: { id: string }): JSX.Element {
   const q = useReseller(id, period);
   const m = useCommissionMutations();
   const [open, setOpen] = useState<Open>(null);
+  // Bumped after a payment is sent so the table remounts with nothing
+  // selected — the rows it held are now "in review" and cannot be paid again.
+  const [tableKey, setTableKey] = useState(0);
 
   const onAction = (a: CommissionAction, row: CommissionRow): void => {
     if (a === 'approve') m.approve.mutate(row.id);
@@ -37,6 +45,19 @@ export function ResellerDetailPage({ id }: { id: string }): JSX.Element {
   const h = q.data?.reseller;
   const s = q.data?.summary;
   const rows = q.data?.commissions ?? [];
+  const paged = useClientPage(rows);
+
+  if (q.isError) {
+    const notFound = q.error?.response?.status === 404;
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: { xs: 2, lg: 3 } }}>
+        <Link href={ROUTES.ORG.RESELLERS}>← All resellers</Link>
+        <Alert severity={notFound ? 'warning' : 'error'}>
+          {notFound ? 'Reseller not found. The link may be wrong, or this is not a reseller.' : getErrorMessage(q.error)}
+        </Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: { xs: 2, lg: 3 } }}>
@@ -81,8 +102,10 @@ export function ResellerDetailPage({ id }: { id: string }): JSX.Element {
       <PeriodChips value={period} onChange={setPeriod} />
 
       <CrmTable<CommissionRow>
+        key={tableKey}
         columns={columns}
-        rows={rows}
+        rows={paged.pageRows}
+        {...paged.tableProps}
         getRowId={(r) => r.id}
         loading={q.isLoading}
         refetching={q.isFetching && !q.isLoading}
@@ -100,6 +123,7 @@ export function ResellerDetailPage({ id }: { id: string }): JSX.Element {
             onClick: (sel) => {
               const ok = sel.filter((r) => r.state === 'approved');
               if (ok.length > 0) setOpen({ kind: 'pay', rows: ok });
+              else showToast.info('None of the selected rows is Approved. Only Approved rows can be paid.');
             },
           },
         ]}
@@ -109,7 +133,13 @@ export function ResellerDetailPage({ id }: { id: string }): JSX.Element {
       />
 
       {open?.kind === 'edit' && <EditCommissionDialog row={open.row} onClose={() => setOpen(null)} />}
-      {open?.kind === 'pay' && <RecordCommissionPaymentDialog rows={open.rows} onClose={() => setOpen(null)} />}
+      {open?.kind === 'pay' && (
+        <RecordCommissionPaymentDialog
+          rows={open.rows}
+          onClose={() => setOpen(null)}
+          onSent={() => setTableKey((k) => k + 1)}
+        />
+      )}
       {open?.kind === 'recover' && <CloseRecoveryDialog row={open.row} onClose={() => setOpen(null)} />}
       {open?.kind === 'cancel' && (
         <ReasonDialog

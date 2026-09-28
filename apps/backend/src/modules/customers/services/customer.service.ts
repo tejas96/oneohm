@@ -833,8 +833,11 @@ export class CustomerService {
     // create (no prior state to compare).
     if (options.checkExistence === false) return resellerId;
     const [row] = await this.dataSource.query(
-      `SELECT status FROM employee_profiles
-        WHERE id = $1 AND profile_kind = 'reseller' AND deleted_at IS NULL`,
+      // A deactivated user makes the reseller inactive too: Admin → Users
+      // "Deactivate" never touches the profile row.
+      `SELECT CASE WHEN u.status <> 'active' THEN u.status ELSE ep.status END AS status
+         FROM employee_profiles ep JOIN users u ON u.id = ep.user_id
+        WHERE ep.id = $1 AND ep.profile_kind = 'reseller' AND ep.deleted_at IS NULL`,
       [resellerId],
     );
     if (!row) throw new BadRequestException('That reseller does not exist.');

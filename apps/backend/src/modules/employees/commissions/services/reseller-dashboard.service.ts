@@ -63,7 +63,9 @@ export class ResellerDashboardService {
     if (!summary) throw new NotFoundException('Reseller not found');
     const [h] = await this.dataSource.query(
       `SELECT ep.id AS "resellerId",
-              CASE WHEN ep.deleted_at IS NOT NULL THEN 'deleted' ELSE ep.status END AS status,
+              CASE WHEN ep.deleted_at IS NOT NULL THEN 'deleted'
+                   WHEN u.status <> 'active' THEN 'inactive'
+                   ELSE ep.status END AS status,
               ep.company_code AS code, ep.commission_percentage::float8 AS "ratePercent",
               COALESCE(NULLIF(ep.company_name, ''), TRIM(u.first_name || ' ' || COALESCE(u.last_name, ''))) AS name,
               ep.bank_name AS "bankName", RIGHT(ep.account_number, 4) AS "accountLast4", ep.gstin, u.phone

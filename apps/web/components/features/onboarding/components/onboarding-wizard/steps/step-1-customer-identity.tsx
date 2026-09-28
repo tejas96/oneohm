@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { EmployeeProfileKind, LeadSource, UserStatus } from '@tejas96/shared/types';
 import * as React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
@@ -11,9 +12,10 @@ import {
   useCustomerGroups,
   type Customer,
 } from '@/components/features/customers';
-import { useEmployees } from '@/components/features/employees';
+import { useEmployees, type Employee } from '@/components/features/employees';
 import { Alert } from '@/components/shared';
 import { Button, MUIInput, MUISelect, MUITypography } from '@/components/ui';
+import { apiClient } from '@/lib/api/client';
 
 const LEAD_SOURCE_OPTIONS = [
   { value: LeadSource.REFERRAL, label: 'Referral' },
@@ -56,15 +58,37 @@ export function Step1CustomerIdentity({
     profileKind: EmployeeProfileKind.RESELLER,
     status: UserStatus.ACTIVE,
   });
-  const resellerOptions = React.useMemo(
-    () =>
-      (resellers ?? []).map((r) => ({
-        value: r.id,
-        label:
-          r.companyName || `${r.user?.firstName ?? ''} ${r.user?.lastName ?? ''}`.trim() || r.id,
-      })),
-    [resellers],
+  // The customer's current reseller may no longer be active, so he is not in
+  // the list above; without this the picker showed his raw id.
+  const currentResellerId = watch('customer.resellerId') as string | null | undefined;
+  const currentMissing = Boolean(
+    currentResellerId && resellers && !resellers.some((r) => r.id === currentResellerId),
   );
+  const { data: currentReseller } = useQuery({
+    queryKey: ['employees', 'one', currentResellerId],
+    queryFn: async (): Promise<Employee> =>
+      (await apiClient.get<Employee>(`/employees/${currentResellerId}`)).data,
+    enabled: currentMissing,
+    staleTime: 5 * 60 * 1000,
+  });
+  const resellerOptions = React.useMemo(() => {
+    const label = (r: Employee): string => {
+      const name =
+        r.companyName || `${r.user?.firstName ?? ''} ${r.user?.lastName ?? ''}`.trim() || r.id;
+      // Two resellers can share a company name; the code tells them apart.
+      return r.companyCode ? `${name} · ${r.companyCode}` : name;
+    };
+    const options = (resellers ?? []).map((r) => ({ value: r.id, label: label(r) }));
+    if (currentMissing && currentResellerId) {
+      options.unshift({
+        value: currentResellerId,
+        label: currentReseller
+          ? `${label(currentReseller)} (inactive)`
+          : 'Current reseller (inactive)',
+      });
+    }
+    return options;
+  }, [resellers, currentMissing, currentResellerId, currentReseller]);
 
   const phone = (watch('customer.phone') as string | undefined) ?? '';
   const email = (watch('customer.email') as string | undefined) ?? '';

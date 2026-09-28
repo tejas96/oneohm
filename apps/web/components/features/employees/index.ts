@@ -1,2 +1,2 @@
 // Hooks
-export { useEmployees } from './hooks/use-employees';
+export { useEmployees, type Employee } from './hooks/use-employees';

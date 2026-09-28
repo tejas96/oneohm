@@ -61,7 +61,11 @@ function Actions({
         key="q"
         permission="finance.approvals.view"
         subject="Payment Approvals"
-        onAction={go(ROUTES.FINANCE.APPROVALS)}
+        onAction={go(
+          row.payoutRequestId
+            ? `${ROUTES.FINANCE.APPROVALS}?open=${encodeURIComponent(row.payoutRequestId)}`
+            : ROUTES.FINANCE.APPROVALS,
+        )}
       >
         Open in Payment Approvals
       </GatedMenuItem>,
@@ -69,6 +73,19 @@ function Actions({
   }
   if (row.state === 'to_recover') {
     items.push(g('r', 'Close recovery', act('recover')));
+  }
+  // The expense this payout posted sits on the project's Money tab.
+  if (row.expenseEntryId && row.projectId) {
+    items.push(
+      <GatedMenuItem
+        key="x"
+        permission="finance.view"
+        subject="Open expense"
+        onAction={go(`${buildRoute(ROUTES.PROJECTS.DETAIL, { id: row.projectId })}?tab=finance`)}
+      >
+        Open expense
+      </GatedMenuItem>,
+    );
   }
   if (row.projectId) {
     items.push(
@@ -161,7 +178,7 @@ export function buildCommissionColumns(
             {r.state === 'payment_in_review' ? r.payoutRequestNo : null}
             {r.state === 'cancelled' ? r.cancelReason : null}
             {r.state === 'recovered' ? r.recoveryNotes : null}
-            {r.state === 'approved' && r.payoutRejectedReason ? `Payment rejected: ${r.payoutRejectedReason}` : null}
+            {r.state === 'approved' && r.payoutRejectedReason ? r.payoutRejectedReason : null}
           </Box>
         </Box>
       ),

@@ -231,10 +231,10 @@ commission. So:
 | Route group | Scoping for a reseller |
 |---|---|
 | `auth/*`, `employees/me` | Himself only. Bank account number and Aadhaar are masked to the last 4 digits. |
-| customers / leads list, detail, create, update | `reseller_id = me` is forced. On create, `reseller_id = me` is set and any sent value is ignored. |
+| customers / leads list, detail, create, update | `reseller_id = me` is forced. On create, `reseller_id = me` is set and any sent value is ignored. On the list, `mine=true` is ignored for a reseller: his caseload is every customer he brought in, and staff usually create those for him. |
 | properties under his customers | Through the customer |
 | follow-ups, site visits, surveys | Scoped to **his customers**. Assigning one to a reseller follows §7.4. |
-| quote calculator, quotes | Only his own customers. **Redacted** (7.3). `POST /quotes` and `PATCH /quotes/:id` are **closed** (they store a client-sent snapshot verbatim); he creates quotes only via `create-from-calculation`, which takes the customer's reseller. Open: list, detail, status, void, delete, share (WhatsApp `to` is ignored: it always goes to the customer), property-lock status, versions. Calculator `config` is open with `profitMarginTiers` stripped. |
+| quote calculator, quotes | Quotes where `quotes.reseller_id = me`. A quote keeps the reseller it was sent under, so after a customer moves to another reseller the old reseller still sees his sent or accepted quote and its project (the deal he earned), but no longer the customer (owner decision, QA 2026-09-28). **Redacted** (7.3). `POST /quotes` and `PATCH /quotes/:id` are **closed** (they store a client-sent snapshot verbatim); he creates quotes only via `create-from-calculation`, which takes the customer's reseller. Open: list, detail, status, void, delete, share (WhatsApp `to` is ignored: it always goes to the customer), property-lock status, versions. Calculator `config` is open with `profitMarginTiers` stripped. |
 | projects list, project detail, project payments (read) | Project's quote has `reseller_id = me`. **GET only.** |
 | service tickets | Scoped to **his customers**. Assigning one to a reseller follows §7.4. |
 | `commissions/me`, `commissions/me/summary` | Himself |
@@ -381,7 +381,9 @@ Shown only when the count is above 0: *"N accepted deals have no commission row.
 
 - Lead form (web onboarding wizard, CRM, and the mobile Add lead flow for staff): the existing
   **Lead source** field drives it. When the source is **Reseller**, a **"Which reseller?"**
-  dropdown appears (active resellers only) and is **required**. Any other source hides it.
+  dropdown appears (active resellers only, each shown with its company code) and is **required**.
+  When editing a customer whose reseller is no longer active, that reseller stays in the list
+  marked "(inactive)". Any other source hides it.
   It sets `customer_profiles.reseller_id`.
 - **Server rule, both ways:** `lead_source = 'reseller'` needs a `reseller_id`, and a
   `reseller_id` needs `lead_source = 'reseller'`. A save that breaks this gets 400 with a clear
@@ -389,7 +391,9 @@ Shown only when the count is above 0: *"N accepted deals have no commission row.
   `leadSource` or `resellerId`**, so automated writebacks (report facts) on a legacy customer
   keep working. Old rows are not rewritten (see Legacy below).
 - The reseller's existence and active checks run only when the reseller **changes**, so
-  deactivating a reseller does not freeze edits to his existing customers.
+  deactivating a reseller does not freeze edits to his existing customers. A reseller is
+  inactive when his profile is inactive **or his user is** (Admin → Users "Deactivate" only
+  changes the user); the picker, this check and `/resellers` all use that rule.
 - The profile-kind lock (§10.5) also counts quotes that name the reseller.
 - A follow-up's customer can never change after it is created.
 - Changing the reseller on an existing customer, or changing its source away from Reseller,
@@ -460,7 +464,7 @@ All numbers are computed live. No stored counters.
 | Quoted | Of those leads: **properties** with at least one non-draft quote with `reseller_id = R`. Counted per property, so re-quotes on the same roof count once. |
 | Won | Of those: properties with an accepted, not-voided quote with `reseller_id = R` |
 | Win rate | Won ÷ Quoted. Show "—" when Quoted = 0, never 0% or NaN. |
-| Revenue | Sum of `base_amount` of commissions not `cancelled`, with the quote's `accepted_at` in the period |
+| Revenue | Sum of `base_amount` of commissions whose quote is still won (accepted, not voided), with the quote's `accepted_at` in the period, **whatever the commission's state**: a 0% partner or a dismissed pre-launch deal still brought the business in. A deal that died drops out, same as Won (owner decision, QA 2026-09-28). |
 | Pending ₹ | Sum of amount, displayed state Pending or Needs amount |
 | Owed ₹ | Sum of amount, displayed state Waiting for project, Approved or Payment in review |
 | Paid lifetime ₹ | Sum of amount where `status = paid` (this includes To recover and Recovered, because that money did leave) |

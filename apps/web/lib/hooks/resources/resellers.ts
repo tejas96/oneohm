@@ -68,6 +68,8 @@ export function useReseller(id: string, period: ResellerPeriod): UseQueryResult<
     queryKey: keys.one(id, period),
     queryFn: async ({ signal }) => (await apiClient.get(`/resellers/${id}`, { params: { period }, signal })).data,
     enabled: Boolean(id),
+    // A wrong id stays wrong: show "not found" at once instead of retrying.
+    retry: (count, error) => error.response?.status !== 404 && count < 1,
     staleTime: 15_000,
   });
 }
@@ -91,7 +93,12 @@ export function useCommissionMutations() {
     refreshMoney();
     showToast.success(msg);
   };
-  const fail = (e: unknown) => showToast.error(getErrorMessage(e));
+  // A refusal usually means the row moved under us (another tab approved it,
+  // a payout went into review): reload so the screen stops showing the old state.
+  const fail = (e: unknown) => {
+    void qc.invalidateQueries({ queryKey: keys.root() });
+    showToast.error(getErrorMessage(e));
+  };
 
   return {
     approve: useMutation({
@@ -101,7 +108,7 @@ export function useCommissionMutations() {
     edit: useMutation({
       mutationFn: async (v: { id: string; baseAmount?: number; ratePercent?: number; reason: string }) =>
         (await apiClient.patch<CommissionRow>(`/commissions/${v.id}`, { baseAmount: v.baseAmount, ratePercent: v.ratePercent, reason: v.reason })).data,
-      onSuccess: done('Saved — it needs approval again'), onError: fail,
+      onSuccess: done('Saved'), onError: fail,
     }),
     cancel: useMutation({
       mutationFn: async (v: { id: string; reason: string }) =>

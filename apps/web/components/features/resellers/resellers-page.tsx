@@ -7,6 +7,7 @@ import { type JSX, useMemo, useState } from 'react';
 import { MissingCommissionsStrip } from './missing-commissions-strip';
 import { buildResellerColumns } from './resellers-columns';
 import { PeriodChips, StatCard } from './stat-card';
+import { useClientPage } from './use-client-page';
 
 import { CrmTable } from '@/components/shared/crm-table';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
@@ -25,6 +26,7 @@ export function ResellersPage(): JSX.Element {
   const q = useResellers(period);
   const rows = q.data?.rows ?? [];
   const t = q.data?.totals;
+  const paged = useClientPage(rows);
 
   const open = (r: ResellerSummary): void => router.push(buildRoute(ROUTES.ORG.RESELLER_DETAIL, { id: r.resellerId }));
   const columns = useMemo(() => buildResellerColumns(open), []);
@@ -71,7 +73,8 @@ export function ResellersPage(): JSX.Element {
 
       <CrmTable<ResellerSummary>
         columns={columns}
-        rows={rows}
+        rows={paged.pageRows}
+        {...paged.tableProps}
         getRowId={(r) => r.resellerId}
         loading={q.isLoading}
         refetching={q.isFetching && !q.isLoading}

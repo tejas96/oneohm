@@ -650,6 +650,25 @@ export function OnboardingWizard({
   };
   const onboard = useGatedAction('customers.create', () => undefined, 'Onboard customer');
 
+  /*
+   * The schema's "which reseller?" rule is a whole-object check, and zod skips
+   * those while any other customer field is still invalid — in a new customer
+   * the billing address is empty at this step, so "Next" slipped past a
+   * missing reseller and the server refused it at the end. Checked here for
+   * any step that shows the field.
+   */
+  const resellerMissing = (fields: readonly string[]): boolean => {
+    if (!fields.includes('customer.resellerId')) return false;
+    const values = form.getValues();
+    if (values.customer?.leadSource !== LeadSource.RESELLER) return false;
+    if (values.customer?.resellerId) return false;
+    form.setError('customer.resellerId' as never, {
+      type: 'custom',
+      message: 'Choose which reseller sent this customer',
+    });
+    return true;
+  };
+
   const handleNext = async (): Promise<void> => {
     // The route already gates this wizard on customers.create, so this is
     // defence in depth for the two entry handlers rather than a gate on each
@@ -666,7 +685,7 @@ export function OnboardingWizard({
 
     const fields = activeConfig.fields;
     const valid = fields.length ? await form.trigger(fields as never) : true;
-    if (!valid) {
+    if (!valid || resellerMissing(fields)) {
       setShowErrors(true);
       return;
     }
@@ -698,7 +717,7 @@ export function OnboardingWizard({
       return;
     }
     const valid = await form.trigger(activeConfig.fields as never);
-    if (!valid) {
+    if (!valid || resellerMissing(activeConfig.fields)) {
       setShowErrors(true);
       return;
     }

@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@mui/material';
+import { PaymentMethod } from '@tejas96/shared/types';
 import { commissionAmount } from '@tejas96/shared/utils';
 import { type JSX, useState } from 'react';
 
@@ -34,6 +35,13 @@ function parseRupeeInputAllowZero(text: string): RupeeInput {
   const cleaned = text.replace(/[,\s₹]/g, '');
   if (cleaned !== '' && Number(cleaned) === 0) return { ok: true, paise: 0 };
   return parseRupeeInput(text);
+}
+
+/** `rupeeInputError` for the fields above, where ₹0 is allowed: a negative
+ *  number must not be told "greater than zero". */
+function rupeeInputErrorAllowZero(result: RupeeInput): string | undefined {
+  if (!result.ok && result.reason === 'not-positive') return 'Enter zero or more.';
+  return rupeeInputError(result);
 }
 
 type RateInput = { ok: true; value: number } | { ok: false; reason: 'empty' | 'invalid' };
@@ -122,11 +130,18 @@ export function EditCommissionDialog({
   const [rateTouched, setRateTouched] = useState(false);
   const [reason, setReason] = useState('');
 
+  // Errors show as soon as the value differs from what was loaded, not only
+  // after the field loses focus — otherwise a bad rate just greys Save with
+  // no word of why.
   const parsedBase = parseRupeeInputAllowZero(base);
-  const baseError = baseTouched ? rupeeInputError(parsedBase) : undefined;
+  const baseError =
+    baseTouched || base !== String(row.basePaise / 100) ? rupeeInputErrorAllowZero(parsedBase) : undefined;
 
   const parsedRate = parseRatePercent(rate);
-  const rateError = rateTouched ? rateInputError(parsedRate) : undefined;
+  const rateError =
+    rateTouched || rate !== String(row.ratePercent) ? rateInputError(parsedRate) : undefined;
+
+  const alreadyPending = row.state === 'pending' || row.state === 'needs_amount';
 
   // Compared in paise / basis points, not floats — and required to actually
   // differ, or the backend's `EditCommissionDto` handler 400s with "Change
@@ -158,7 +173,9 @@ export function EditCommissionDialog({
       <MUIDialogHeader>
         <MUIDialogTitle>Edit {row.quoteNumber}</MUIDialogTitle>
         <MUIDialogDescription>
-          Saving sends it back to Pending. It needs approval again.
+          {alreadyPending
+            ? 'Change the base, the rate, or both, and say why.'
+            : 'Saving sends it back to Pending. It needs approval again.'}
         </MUIDialogDescription>
       </MUIDialogHeader>
       <MUIDialogBody>
@@ -214,13 +231,17 @@ export function EditCommissionDialog({
 export function RecordCommissionPaymentDialog({
   rows,
   onClose,
+  onSent,
 }: {
   rows: CommissionRow[];
   onClose: () => void;
+  /** Called once the payment is sent for approval (not on Back). */
+  onSent?: () => void;
 }): JSX.Element {
   const m = useCommissionMutations();
   const [valueDate, setValueDate] = useState(todayIst());
-  const [method, setMethod] = useState<string>('bank_transfer');
+  // Same default as the vendor payment dialog; every value here is one the server accepts.
+  const [method, setMethod] = useState<string>(PaymentMethod.UPI);
   const [reference, setReference] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const total = rows.reduce((s, r) => s + r.amountPaise, 0);
@@ -280,7 +301,12 @@ export function RecordCommissionPaymentDialog({
                 reference: reference.trim(),
                 invoiceNumber: invoiceNumber.trim() || undefined,
               },
-              { onSuccess: onClose },
+              {
+                onSuccess: () => {
+                  onSent?.();
+                  onClose();
+                },
+              },
             )
           }
         >
@@ -309,8 +335,9 @@ export function CloseRecoveryDialog({
   // the "advance" case pay-vendor-dialog allows, so it blocks Close rather
   // than just warning.
   const overCap = parsedAmount.ok && parsedAmount.paise > row.amountPaise;
-  const amountError = amountTouched
-    ? (rupeeInputError(parsedAmount) ??
+  const amountError =
+    amountTouched || amount !== String(row.amountPaise / 100)
+      ? (rupeeInputErrorAllowZero(parsedAmount) ??
       (overCap ? `Cannot exceed ${formatPaise(row.amountPaise)} — that is all that was paid.` : undefined))
     : undefined;
 
@@ -360,7 +387,7 @@ export function CloseRecoveryDialog({
             )
           }
         >
-          Close
+          Close recovery
         </Button>
       </MUIDialogFooter>
     </MUIDialog>

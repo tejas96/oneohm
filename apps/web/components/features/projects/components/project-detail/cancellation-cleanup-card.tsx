@@ -9,7 +9,7 @@ import { type JSX } from 'react';
 import { DetailCard, RowLink } from './primitives';
 import { useCancellationCleanup } from '../../hooks';
 
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 
 interface CancellationCleanupCardProps {
   projectId: string;
@@ -41,22 +41,32 @@ export function CancellationCleanupCard({
   if (!data) return null;
 
   /*
-   * Reported, never blocking. Nothing in the system can stamp a commission
-   * recovered — `recovered_at` has no writer — so this cannot gate `settled`
-   * without pinning every project that ever paid a commission at
-   * cleanup_pending forever. It is money someone still has to chase by hand,
-   * so it is said out loud on both branches below, in a quieter voice than
-   * the blocking lines.
+   * Reported, never blocking. Recovery is closed on the reseller's page
+   * (Close recovery), often weeks later, so it does not gate `settled`. It is
+   * money someone still has to chase, so it is said on both branches below,
+   * in a quieter voice than the blocking lines, and links to where it closes.
    */
+  const commissionText = `${plural(data.unrecoveredCommissions, 'paid commission')} to recover — close it on the reseller's page. It does not hold this project open.`;
   const commissionNote =
     data.unrecoveredCommissions > 0 ? (
-      <div className="flex items-center gap-2 py-1 text-[13px] text-foreground-tertiary">
-        <InfoOutlinedIcon sx={{ fontSize: 17, color: 'text.disabled', flexShrink: 0 }} />
-        <span className="min-w-0 flex-1">
-          {plural(data.unrecoveredCommissions, 'paid commission')} not recovered — recover it
-          outside the system; it does not hold this project open.
-        </span>
-      </div>
+      data.unrecoveredCommissionResellerId ? (
+        <RowLink
+          href={buildRoute(ROUTES.ORG.RESELLER_DETAIL, {
+            id: data.unrecoveredCommissionResellerId,
+          })}
+        >
+          <InfoOutlinedIcon sx={{ fontSize: 17, color: 'text.disabled', flexShrink: 0 }} />
+          <span className="min-w-0 flex-1 text-[13px] text-foreground-tertiary">
+            {commissionText}
+          </span>
+          <ChevronRightIcon sx={{ fontSize: 16, color: 'text.disabled', flexShrink: 0 }} />
+        </RowLink>
+      ) : (
+        <div className="flex items-center gap-2 py-1 text-[13px] text-foreground-tertiary">
+          <InfoOutlinedIcon sx={{ fontSize: 17, color: 'text.disabled', flexShrink: 0 }} />
+          <span className="min-w-0 flex-1">{commissionText}</span>
+        </div>
+      )
     ) : null;
 
   if (data.state === 'settled') {

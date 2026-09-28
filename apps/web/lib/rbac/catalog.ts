@@ -268,7 +268,7 @@ export const PERMISSIONS = [
     code: 'finance.payments.record',
     module: 'finance',
     name: 'Record Payments',
-    description: 'Record a customer payment',
+    description: 'Record payments, and approve or pay reseller commissions',
   },
   {
     code: 'finance.approvals.view',

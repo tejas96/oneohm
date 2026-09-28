@@ -114,8 +114,12 @@ export class CustomerController {
     }
 
     // Server truth overwrites anything the caller sent for this filter.
+    // A reseller's caseload is every customer he brought in, and staff usually
+    // create those for him — so `mine` (created by or assigned to me) would hide
+    // them. The reseller scope already narrows the list to his own.
     if (resellerId) {
       query.resellerId = resellerId;
+      query.mine = undefined;
     }
 
     // Use unified findAll with query DTO

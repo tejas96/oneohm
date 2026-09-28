@@ -420,7 +420,11 @@ export function ApprovalReviewDrawer({
               </Alert>
             )}
             {data.status === 'cancelled' && (
-              <Alert severity="info">Withdrawn by the person who submitted it.</Alert>
+              <Alert severity="info">
+                {data.rejectionReason
+                  ? `Cancelled: ${data.rejectionReason}.`
+                  : 'Withdrawn by the person who submitted it.'}
+              </Alert>
             )}
           </Stack>
         )}

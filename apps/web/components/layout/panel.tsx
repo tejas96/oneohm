@@ -14,6 +14,7 @@ import { useFilteredNavigation, type GatedNavItem } from '@/lib/hooks/use-filter
 import { useAccessDialog } from '@/lib/rbac';
 import type { NavBadgeVariant, StatusDotColor } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/providers/auth-provider';
 
 interface PanelProps {
   isOpen: boolean;
@@ -62,7 +63,12 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
   const isMyTasksPage = pathname === ROUTES.PROJECTS.MY_TASKS;
   const { data: tasksSummary } = useMyTasksSummary({ enabled: !isMyTasksPage });
   const { data: followupSummary } = useFollowupSummary(true);
-  const { data: approvalSummary } = useApprovalSummary();
+  const { user } = useAuth();
+  // A reseller-only login sees the "use the app" screen and cannot read the
+  // approval queue; asking anyway only fills the console with 403s.
+  const isResellerOnly =
+    Boolean(user?.profiles?.length) && user!.profiles.every((p) => p.type === 'reseller');
+  const { data: approvalSummary } = useApprovalSummary({ enabled: !isResellerOnly });
 
   const dynamicBadges = useMemo<
     Record<string, { value: number | string; variant?: NavBadgeVariant }>

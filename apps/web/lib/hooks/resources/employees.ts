@@ -17,6 +17,8 @@ export type { EmployeeListItem };
 export interface EmployeeFilters extends BaseFilters {
   status?: string;
   department?: string;
+  /** 'staff' leaves resellers out — they can never join a project team. */
+  profileKind?: 'staff' | 'reseller';
 }
 
 // ── Resource Registration ──────────────────────────────────────

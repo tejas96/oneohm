@@ -2,7 +2,7 @@ import {
   BadRequestException, ConflictException, Injectable, NotFoundException,
 } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { commissionAmount } from '@tejas96/shared/utils';
+import { commissionAmount, formatCurrencyDecimal } from '@tejas96/shared/utils';
 import { DataSource, type EntityManager } from 'typeorm';
 
 import type { CurrentUserType } from '../../../auth/types';
@@ -149,7 +149,7 @@ export class CommissionActionsService {
       const writtenOffPaise = row.amountPaise - receivedPaise;
       const note =
         writtenOffPaise > 0
-          ? `${dto.note} (₹${(writtenOffPaise / 100).toFixed(2)} written off)`
+          ? `${dto.note} (${formatCurrencyDecimal(writtenOffPaise / 100)} written off)`
           : dto.note;
 
       const [rows] = await m.query(

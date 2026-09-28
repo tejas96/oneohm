@@ -36,7 +36,9 @@ export function periodStart(period: 'month' | 'fy' | 'all' | undefined, now = ne
  */
 export const RESELLER_SUMMARY_SQL = (commissionRowSql: string): string => `
 WITH r AS (
-  SELECT ep.id, CASE WHEN ep.deleted_at IS NOT NULL THEN 'deleted' ELSE ep.status END AS status,
+  SELECT ep.id, CASE WHEN ep.deleted_at IS NOT NULL THEN 'deleted'
+                     WHEN u.status <> 'active' THEN 'inactive'
+                     ELSE ep.status END AS status,
          ep.company_code AS code, ep.commission_percentage AS rate,
          COALESCE(NULLIF(ep.company_name, ''), TRIM(u.first_name || ' ' || COALESCE(u.last_name, ''))) AS name
     FROM employee_profiles ep JOIN users u ON u.id = ep.user_id
@@ -59,10 +61,17 @@ WITH r AS (
   SELECT l.reseller_id, count(DISTINCT q.property_id) AS n FROM leads l
     JOIN quotes q ON q.customer_id = l.id AND q.reseller_id = l.reseller_id
    WHERE q.status = 'accepted' AND q.voided_at IS NULL AND q.deleted_at IS NULL GROUP BY l.reseller_id
+), revenue AS (
+  -- Every live won deal counts, whatever its commission's state: a 0% partner
+  -- or a dismissed pre-launch deal still brought the business in. A deal that
+  -- died (its quote voided by the project cancel) drops out, same as "won".
+  SELECT c.employee_id AS reseller_id, sum(ROUND(c.base_amount * 100)) AS n
+    FROM employee_commissions c JOIN quotes q ON q.id = c.quote_id
+   WHERE c.deleted_at IS NULL AND q.status = 'accepted' AND q.voided_at IS NULL AND q.deleted_at IS NULL
+     AND ($1::timestamptz IS NULL OR q.accepted_at >= $1)
+   GROUP BY c.employee_id
 ), money AS (
   SELECT x."resellerId" AS reseller_id,
-    sum(x."basePaise") FILTER (WHERE x.status <> 'cancelled'
-        AND ($1::timestamptz IS NULL OR x."acceptedAt" >= $1))                         AS revenue,
     sum(x."amountPaise") FILTER (WHERE x.state IN ('pending','needs_amount'))          AS pending,
     sum(x."amountPaise") FILTER (WHERE x.state IN ('waiting_for_project','approved','payment_in_review')) AS owed,
     sum(x."amountPaise") FILTER (WHERE x.status = 'paid')                              AS paid,
@@ -72,13 +81,14 @@ WITH r AS (
 SELECT r.id AS "resellerId", r.name, r.code, r.status, r.rate::float8 AS "ratePercent",
        (SELECT count(*) FROM leads l WHERE l.reseller_id = r.id)::int AS leads,
        COALESCE(qd.n, 0)::int AS quoted, COALESCE(w.n, 0)::int AS won,
-       COALESCE(mo.revenue, 0)::bigint AS "revenuePaise", COALESCE(mo.pending, 0)::bigint AS "pendingPaise",
+       COALESCE(rv.n, 0)::bigint AS "revenuePaise", COALESCE(mo.pending, 0)::bigint AS "pendingPaise",
        COALESCE(mo.owed, 0)::bigint AS "owedPaise", COALESCE(mo.paid, 0)::bigint AS "paidPaise",
        COALESCE(mo.to_recover, 0)::bigint AS "toRecoverPaise"
   FROM r
   LEFT JOIN quoted qd ON qd.reseller_id = r.id
   LEFT JOIN won w ON w.reseller_id = r.id
   LEFT JOIN money mo ON mo.reseller_id = r.id
+  LEFT JOIN revenue rv ON rv.reseller_id = r.id
  ORDER BY COALESCE(mo.owed, 0) DESC, r.name`;
 
 export const MISSING_COMMISSIONS_SQL = `
