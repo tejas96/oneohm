@@ -6,7 +6,7 @@ import type { CommissionBaseSource, CommissionRateSource, CommissionState } from
  * approval queue. Nothing to keep in step, so nothing can drift.
  *
  * Order of the CASE is the rule table in spec §6.1; do not reorder.
- * Ends with WHERE 1=1 so callers append `AND ...` with their own params.
+ * Ends with `WHERE c.deleted_at IS NULL` so callers append `AND ...` with their own params.
  */
 export const COMMISSION_ROW_SQL = `
 SELECT c.id,
