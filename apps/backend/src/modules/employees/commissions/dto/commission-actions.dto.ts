@@ -1,14 +1,19 @@
 import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 import { PaymentMethod } from '@tejas96/shared/types';
+import { COMMISSION_STATE_LABEL, type CommissionState } from '@tejas96/shared/utils';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsIn, IsNumber, IsOptional,
   IsString, IsUUID, Max, MaxLength, Min, MinLength,
 } from 'class-validator';
 
+/** Every displayed state; the label map is keyed by all of them. */
+const COMMISSION_STATES = Object.keys(COMMISSION_STATE_LABEL) as CommissionState[];
+
 export class CommissionListQueryDto {
   @ApiPropertyOptional() @IsOptional() @IsUUID() resellerId?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() state?: string;
+  @ApiPropertyOptional({ enum: COMMISSION_STATES })
+  @IsOptional() @IsIn(COMMISSION_STATES) state?: CommissionState;
 }
 
 export class EditCommissionDto {
