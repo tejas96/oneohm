@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ResellerModule, ResellerScopeInterceptor } from './common/reseller';
 import { ConfigModule } from './config';
 import { DatabaseModule } from './database/database.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
@@ -47,6 +48,7 @@ import { UsersModule } from './modules/users/users.module';
   imports: [
     ConfigModule,
     DatabaseModule,
+    ResellerModule,
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
     // Global rate limiting - 100 requests per minute per IP
@@ -122,6 +124,8 @@ import { UsersModule } from './modules/users/users.module';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    // The reseller wall. Deny-by-default for reseller users; see common/reseller.
+    { provide: APP_INTERCEPTOR, useClass: ResellerScopeInterceptor },
   ],
 })
 export class AppModule {}

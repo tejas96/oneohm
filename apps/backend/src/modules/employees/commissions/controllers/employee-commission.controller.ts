@@ -1,6 +1,7 @@
 import { Body, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+import { ResellerAllowed, ResellerScope } from '../../../../common/reseller';
 import { CurrentUser } from '../../../auth/decorators';
 import { JwtAuthGuard } from '../../../auth/guards';
 import type { CurrentUserType } from '../../../auth/types';
@@ -25,10 +26,10 @@ export class EmployeeCommissionController {
     private readonly dashboard: ResellerDashboardService,
   ) {}
 
-  /** The reseller's own dashboard. Opened to resellers in Task 9 (`@ResellerAllowed`). */
+  /** The reseller's own dashboard. */
+  @ResellerAllowed()
   @Get('me')
-  async me(@Query() q: ResellerPeriodQueryDto, @CurrentUser() user: CurrentUserType) {
-    const resellerId = await this.dashboard.resellerIdForUser(user.id);
+  me(@Query() q: ResellerPeriodQueryDto, @ResellerScope() resellerId?: string) {
     if (!resellerId) throw new NotFoundException('Only resellers have commissions');
     return this.dashboard.detail(resellerId, q.period);
   }

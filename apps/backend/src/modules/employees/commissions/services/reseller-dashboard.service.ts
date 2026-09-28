@@ -2,12 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
+import { CommissionActionsService } from './commission-actions.service';
 import { COMMISSION_ROW_SQL } from '../sql/commission-read.sql';
 import {
   MISSING_COMMISSIONS_SQL, periodStart, RESELLER_SUMMARY_SQL,
   type MissingRow, type ResellerHeader, type ResellerSummary, type ResellerTotals,
 } from '../sql/reseller-dashboard.sql';
-import { CommissionActionsService } from './commission-actions.service';
 
 type Period = 'month' | 'fy' | 'all' | undefined;
 
@@ -79,14 +79,5 @@ export class ResellerDashboardService {
     const since = rows.filter((r) => !liveFrom || new Date(r.acceptedAt) >= liveFrom);
     const before = rows.filter((r) => liveFrom && new Date(r.acceptedAt) < liveFrom);
     return { sinceLaunch: since, beforeLaunch: before, liveFrom: liveFromRaw };
-  }
-
-  /** employee_profiles.id of a reseller user, or null. */
-  async resellerIdForUser(userId: string): Promise<string | null> {
-    const [r] = await this.dataSource.query(
-      `SELECT id FROM employee_profiles WHERE user_id = $1 AND profile_kind = 'reseller' AND deleted_at IS NULL`,
-      [userId],
-    );
-    return (r?.id as string) ?? null;
   }
 }

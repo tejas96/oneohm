@@ -13,6 +13,7 @@ import { plainToInstance } from 'class-transformer';
 import { Request as ExpressRequest } from 'express';
 
 import { ApiCreate, ApiGet, SecurityRateLimit } from '../../../common/decorators';
+import { ResellerAllowed } from '../../../common/reseller';
 import { IamService } from '../../iam/services/iam.service';
 import { SecurityRateLimitGuard } from '../../security-events/guards';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
@@ -42,6 +43,7 @@ import type { CurrentUserType, LocalAuthRequest, OtpAuthRequest } from '../types
 
 @ApiTags('Authentication')
 @Controller('auth')
+@ResellerAllowed()
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
