@@ -31,6 +31,7 @@ import { systemSizeKwOf } from '../../../common/utils';
 import { LeadClosureService } from '../../customers/services/lead-closure.service';
 import type { DocumentEntity } from '../../documents/entities/document.entity';
 import { DocumentService } from '../../documents/services';
+import { CommissionBirthService } from '../../employees/commissions/services/commission-birth.service';
 import { IntegrationService } from '../../integrations/services';
 import { pgDateToIso, todayIst } from '../../ledger/domain/dates';
 import { paiseToRupees, rupeesToPaise, splitByPercentage } from '../../ledger/domain/paise';
@@ -75,6 +76,7 @@ export class QuoteService {
     private readonly dataSource: DataSource,
     private readonly eventEmitter: EventEmitter2,
     private readonly leadClosureService: LeadClosureService,
+    private readonly commissionBirth: CommissionBirthService,
   ) {}
 
   /**
@@ -705,6 +707,20 @@ export class QuoteService {
       } catch (error) {
         this.logger.error(
           `Quote ${id} accepted but its followups could not be closed: ${String(error)}`,
+        );
+      }
+    }
+
+    // The reseller's commission, born with the deal. Best-effort in the same
+    // shape as the lead closure above: the acceptance has already saved, and a
+    // failure here must not read as "the acceptance did not save". The Fix
+    // strip on /resellers lists any accepted deal left without its row.
+    if (statusDto.status === QuoteStatus.ACCEPTED && quote.resellerId) {
+      try {
+        await this.commissionBirth.createForAcceptedQuote(id, updatedBy);
+      } catch (error) {
+        this.logger.error(
+          `Quote ${id} accepted but its commission could not be created: ${String(error)}`,
         );
       }
     }
