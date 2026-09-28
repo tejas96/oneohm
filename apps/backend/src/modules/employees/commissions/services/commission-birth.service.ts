@@ -71,6 +71,9 @@ export class CommissionBirthService {
     // Spec §5: a 0% reseller earns nothing, and the quote counts as handled.
     const cancelReason = dismissReason ?? (!rateMissing && rate === 0 ? 'Rate is 0%' : null);
 
+    // Unlike UPDATE/DELETE ... RETURNING, an INSERT ... RETURNING on postgres
+    // returns the row array directly (no [rows, rowCount] wrapper) — safe to
+    // index straight into `inserted[0]` below.
     const inserted: Array<{ id: string }> = await m.query(
       `INSERT INTO employee_commissions
          (employee_id, quote_id, base_amount, commission_percentage, commission_amount,

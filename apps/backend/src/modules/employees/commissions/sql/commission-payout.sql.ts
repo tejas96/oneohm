@@ -20,7 +20,10 @@ export async function markCommissionPaid(
     reference: string | null;
   },
 ): Promise<void> {
-  const rows: Array<{ id: string }> = await m.query(
+  // TypeORM returns [rows, rowCount] for an UPDATE ... RETURNING on postgres —
+  // so `result.length` is ALWAYS 2 and says nothing about how many rows
+  // changed. Destructure the row array explicitly.
+  const [rows]: [Array<{ id: string }>, number] = await m.query(
     `UPDATE employee_commissions
         SET status = 'paid', paid_at = $3, paid_by = $4, payment_mode = $5,
             payment_reference = $6, expense_entry_id = $2, payout_rejected_reason = NULL,

@@ -53,7 +53,10 @@ export class CommissionPayoutService {
           user.id,
           m,
         );
-        const done: Array<{ id: string }> = await m.query(
+        // TypeORM returns [rows, rowCount] for an UPDATE ... RETURNING on
+        // postgres — so `result.length` is ALWAYS 2 and says nothing about how
+        // many rows changed. Destructure the row array explicitly.
+        const [rows]: [Array<{ id: string }>, number] = await m.query(
           `UPDATE employee_commissions
               SET payout_request_id = $2, payout_rejected_reason = NULL,
                   invoice_number = COALESCE($3, invoice_number),
@@ -63,7 +66,7 @@ export class CommissionPayoutService {
             RETURNING id`,
           [id, requestId, dto.invoiceNumber ?? null, dto.invoiceDate ?? null, user.id],
         );
-        if (done.length !== 1) throw new ConflictException(CHANGED);
+        if (rows.length !== 1) throw new ConflictException(CHANGED);
         requestIds.push(requestId);
       }
       const rows = await Promise.all(ids.map((id) => this.actions.getOne(id, m)));

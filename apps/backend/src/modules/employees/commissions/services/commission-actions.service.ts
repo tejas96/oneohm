@@ -54,14 +54,17 @@ export class CommissionActionsService {
       if (row.state !== 'pending') throw new ConflictException(`This commission is ${row.state.replace(/_/g, ' ')}.`);
       if (row.amountPaise <= 0) throw new BadRequestException('A ₹0 commission cannot be approved. Edit it or cancel it.');
 
-      const done = await m.query(
+      // TypeORM returns [rows, rowCount] for an UPDATE ... RETURNING on
+      // postgres — so `result.length` is ALWAYS 2 and says nothing about how
+      // many rows changed. Destructure the row array explicitly.
+      const [rows] = await m.query(
         `UPDATE employee_commissions
             SET status = 'approved', approved_at = now(), approved_by = $2, updated_by = $2, updated_at = now()
           WHERE id = $1 AND status = 'pending'
           RETURNING id`,
         [id, user.id],
       );
-      if (done.length !== 1) throw new ConflictException(CHANGED);
+      if (rows.length !== 1) throw new ConflictException(CHANGED);
       return this.getOne(id, m);
     });
   }
@@ -90,7 +93,7 @@ export class CommissionActionsService {
       const amount = commissionAmount(base, rate);
       const stamp = `[${new Date().toISOString().slice(0, 10)}] Edited: ${dto.reason}`;
 
-      const done = await m.query(
+      const [rows] = await m.query(
         `UPDATE employee_commissions
             SET base_amount = $2, commission_percentage = $3, commission_amount = $4,
                 base_source = CASE WHEN $5::boolean THEN 'manual' ELSE base_source END,
@@ -102,7 +105,7 @@ export class CommissionActionsService {
           RETURNING id`,
         [id, base, rate, amount, dto.baseAmount !== undefined, dto.ratePercent !== undefined, stamp, user.id, row.status],
       );
-      if (done.length !== 1) throw new ConflictException(CHANGED);
+      if (rows.length !== 1) throw new ConflictException(CHANGED);
       return this.getOne(id, m);
     });
   }
@@ -111,14 +114,14 @@ export class CommissionActionsService {
     requirePermission(user, 'finance.payments.record');
     return this.dataSource.transaction(async (m) => {
       await this.lock(m, id);
-      const done = await m.query(
+      const [rows] = await m.query(
         `UPDATE employee_commissions
             SET status = 'cancelled', cancel_reason = $2, updated_by = $3, updated_at = now()
           WHERE id = $1 AND status IN ('pending', 'approved') AND payout_request_id IS NULL
           RETURNING id`,
         [id, reason, user.id],
       );
-      if (done.length !== 1) {
+      if (rows.length !== 1) {
         const row = await this.getOne(id, m);
         throw new ConflictException(
           row.payoutRequestId
@@ -149,7 +152,7 @@ export class CommissionActionsService {
           ? `${dto.note} (₹${(writtenOffPaise / 100).toFixed(2)} written off)`
           : dto.note;
 
-      const done = await m.query(
+      const [rows] = await m.query(
         `UPDATE employee_commissions
             SET recovered_at = $2::date, recovered_amount = $3, recovery_notes = $4,
                 updated_by = $5, updated_at = now()
@@ -157,7 +160,7 @@ export class CommissionActionsService {
           RETURNING id`,
         [id, dto.date, receivedPaise / 100, note, user.id],
       );
-      if (done.length !== 1) throw new ConflictException(CHANGED);
+      if (rows.length !== 1) throw new ConflictException(CHANGED);
       return this.getOne(id, m);
     });
   }
