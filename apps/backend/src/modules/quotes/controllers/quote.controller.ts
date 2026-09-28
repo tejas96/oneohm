@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -14,7 +15,12 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { IntegrationProvider, type PaginatedResponse } from '@tejas96/shared/types';
+import {
+  AuditAction,
+  AuditEntityType,
+  IntegrationProvider,
+  type PaginatedResponse,
+} from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -24,7 +30,9 @@ import {
   ApiReadOne,
   ApiUpdate,
 } from '../../../common/decorators';
+import { ResellerAllowed, ResellerOwnershipService, ResellerScope } from '../../../common/reseller';
 import { toPaginatedResponse } from '../../../common/utils';
+import { AuditLogService } from '../../audit/services';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -42,6 +50,9 @@ import {
 import { QuoteService } from '../services/quote.service';
 import type { UploadedPdfFile } from '../types/uploaded-pdf-file.interface';
 
+/** Matches the message `assertDiscountWithinMargin` throws (quote.service.ts). */
+const MARGIN_CAP_MESSAGE = /exceed 50% of the margin/;
+
 /**
  * Quote Controller
  * Handles HTTP requests for quote management
@@ -54,11 +65,14 @@ export class QuoteController {
   constructor(
     private readonly quoteService: QuoteService,
     private readonly integrationService: IntegrationService,
+    private readonly ownership: ResellerOwnershipService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   /**
    * Create a new quote
    */
+  @ResellerAllowed()
   @Post()
   @ApiCreate({
     summary: 'Create a new quote',
@@ -68,18 +82,48 @@ export class QuoteController {
   async create(
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateQuoteDto,
+    @ResellerScope() resellerId?: string,
   ): Promise<QuoteResponseDto> {
-    const quote = await this.quoteService.create(createDto, currentUser.id);
+    if (resellerId) {
+      await this.ownership.assertOwns('customer', createDto.customerId, resellerId);
+      if (createDto.propertyId) {
+        await this.ownership.assertOwns('property', createDto.propertyId, resellerId);
+      }
+    }
 
-    return plainToInstance(QuoteResponseDto, quote, {
-      excludeExtraneousValues: true,
-    });
+    try {
+      const quote = await this.quoteService.create(createDto, currentUser.id);
+
+      return plainToInstance(QuoteResponseDto, quote, {
+        excludeExtraneousValues: true,
+      });
+    } catch (error) {
+      // Edge case 38: the 50%-of-margin cap can be probed to guess the margin
+      // itself (accept/reject is a bit of signal profitabilityAmount would
+      // otherwise never leak). A reseller hitting it is logged before the
+      // error is rethrown unchanged.
+      if (resellerId && error instanceof BadRequestException && MARGIN_CAP_MESSAGE.test(error.message)) {
+        await this.auditLogService.create({
+          entityType: AuditEntityType.QUOTE,
+          entityId: createDto.customerId,
+          action: AuditAction.REJECT,
+          newValues: {
+            reason: 'Reseller discount above the margin cap',
+            discountAmount: createDto.quoteSnapshot?.discountAmount ?? 0,
+            resellerId,
+          },
+          userId: currentUser.id,
+        });
+      }
+      throw error;
+    }
   }
 
   /**
    * Get all quotes with filtering, sorting, and pagination
    * Unified endpoint supporting search, filters, and sorting via query parameters
    */
+  @ResellerAllowed()
   @Get()
   @ApiReadAll({
     summary: 'Get all quotes',
@@ -92,7 +136,9 @@ export class QuoteController {
   async findAll(
     @CurrentUser() currentUser: CurrentUserType,
     @Query() query: QuoteQueryDto,
+    @ResellerScope() resellerId?: string,
   ): Promise<PaginatedResponse<QuoteResponseDto>> {
+    if (resellerId) query.resellerId = resellerId; // server truth, client value ignored
     const result = await this.quoteService.findAll(query);
     return toPaginatedResponse(
       QuoteResponseDto,
@@ -106,6 +152,7 @@ export class QuoteController {
   /**
    * Check if a property is locked (has an accepted quote)
    */
+  @ResellerAllowed()
   @Get('property-lock-status')
   @ApiOperation({
     summary: 'Get property lock status',
@@ -115,13 +162,16 @@ export class QuoteController {
   @ApiResponse({ status: HttpStatus.OK })
   async getPropertyLockStatus(
     @Query('propertyId', ParseUUIDPipe) propertyId: string,
+    @ResellerScope() resellerId?: string,
   ): Promise<{ locked: boolean; acceptedQuoteNumber?: string }> {
+    if (resellerId) await this.ownership.assertOwns('property', propertyId, resellerId);
     return this.quoteService.getPropertyLockStatus(propertyId);
   }
 
   /**
    * Get all quote entries for a property, ordered by creation date (latest first)
    */
+  @ResellerAllowed()
   @Get('property/:propertyId/versions')
   @ApiOperation({
     summary: 'Get property quote versions',
@@ -131,11 +181,14 @@ export class QuoteController {
   @ApiResponse({ status: HttpStatus.OK, type: [QuoteResponseDto] })
   async findByProperty(
     @Param('propertyId', ParseUUIDPipe) propertyId: string,
+    @ResellerScope() resellerId?: string,
   ): Promise<QuoteResponseDto[]> {
+    if (resellerId) await this.ownership.assertOwns('property', propertyId, resellerId);
     const quotes = await this.quoteService.findAllByPropertyId(propertyId);
     return plainToInstance(QuoteResponseDto, quotes, { excludeExtraneousValues: true });
   }
 
+  @ResellerAllowed()
   @Get('whatsapp/health')
   @ApiOperation({
     summary: 'WhatsApp messaging health',
@@ -155,6 +208,7 @@ export class QuoteController {
   /**
    * Get quote by ID
    */
+  @ResellerAllowed()
   @Get(':id')
   @ApiReadOne({
     summary: 'Get quote by ID',
@@ -164,7 +218,9 @@ export class QuoteController {
   async findOne(
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
+    @ResellerScope() resellerId?: string,
   ): Promise<QuoteResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('quote', id, resellerId);
     const quote = await this.quoteService.findById(id);
 
     return plainToInstance(QuoteResponseDto, quote, {
@@ -175,6 +231,7 @@ export class QuoteController {
   /**
    * Update quote (creates new version)
    */
+  @ResellerAllowed()
   @Patch(':id')
   @ApiUpdate({
     summary: 'Update quote',
@@ -186,23 +243,44 @@ export class QuoteController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateQuoteDto,
+    @ResellerScope() resellerId?: string,
   ): Promise<QuoteResponseDto> {
-    const quote = await this.quoteService.update(id, updateDto, currentUser.id);
+    if (resellerId) await this.ownership.assertOwns('quote', id, resellerId);
 
-    return plainToInstance(QuoteResponseDto, quote, {
-      excludeExtraneousValues: true,
-    });
+    try {
+      const quote = await this.quoteService.update(id, updateDto, currentUser.id);
+
+      return plainToInstance(QuoteResponseDto, quote, {
+        excludeExtraneousValues: true,
+      });
+    } catch (error) {
+      if (resellerId && error instanceof BadRequestException && MARGIN_CAP_MESSAGE.test(error.message)) {
+        await this.auditLogService.create({
+          entityType: AuditEntityType.QUOTE,
+          entityId: id,
+          action: AuditAction.REJECT,
+          newValues: {
+            reason: 'Reseller discount above the margin cap',
+            discountAmount: updateDto.quoteSnapshot?.discountAmount ?? 0,
+            resellerId,
+          },
+          userId: currentUser.id,
+        });
+      }
+      throw error;
+    }
   }
 
   /**
    * Update quote status
    */
+  @ResellerAllowed()
   @Patch(':id/status')
   @ApiOperation({
     summary: 'Update quote status',
     description: `
       Change quote status (send, accept, reject, expire)
-      
+
       Status workflow:
       - DRAFT → SENT: Sales person sends quote to customer
       - SENT → VIEWED: Customer opens/views quote
@@ -220,7 +298,9 @@ export class QuoteController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateQuoteStatusDto,
+    @ResellerScope() resellerId?: string,
   ): Promise<QuoteResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('quote', id, resellerId);
     const quote = await this.quoteService.updateStatus(id, statusDto, currentUser.id);
 
     return plainToInstance(QuoteResponseDto, quote, {
@@ -228,6 +308,7 @@ export class QuoteController {
     });
   }
 
+  @ResellerAllowed()
   @Post(':id/share/whatsapp')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -251,13 +332,16 @@ export class QuoteController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ShareQuoteWhatsappDto,
     @UploadedFile() file?: UploadedPdfFile,
+    @ResellerScope() resellerId?: string,
   ): Promise<ShareQuoteWhatsappResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('quote', id, resellerId);
     return this.quoteService.shareOnWhatsapp(id, dto, currentUser.id, file);
   }
 
   /**
    * Void quote
    */
+  @ResellerAllowed()
   @Post(':id/void')
   @ApiOperation({
     summary: 'Void quote',
@@ -284,7 +368,9 @@ export class QuoteController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: VoidQuoteDto,
+    @ResellerScope() resellerId?: string,
   ): Promise<QuoteResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('quote', id, resellerId);
     const quote = await this.quoteService.voidQuote(id, dto.reason, currentUser.id);
 
     return plainToInstance(QuoteResponseDto, quote, {
@@ -295,6 +381,7 @@ export class QuoteController {
   /**
    * Delete quote
    */
+  @ResellerAllowed()
   @ApiDelete({
     summary: 'Delete quote',
     description:
@@ -303,7 +390,9 @@ export class QuoteController {
   async delete(
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
+    @ResellerScope() resellerId?: string,
   ): Promise<void> {
+    if (resellerId) await this.ownership.assertOwns('quote', id, resellerId);
     await this.quoteService.delete(id);
   }
 }

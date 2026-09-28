@@ -38,7 +38,7 @@ export class QuoteEntity extends BaseEntity {
   salesPerson?: UserEntity;
 
   @Column({ type: 'uuid', name: 'reseller_id', nullable: true })
-  resellerId?: string;
+  resellerId?: string | null;
 
   @ManyToOne(() => EmployeeProfileEntity, { nullable: true })
   @JoinColumn({ name: 'reseller_id' })

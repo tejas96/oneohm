@@ -12,6 +12,7 @@ import {
   IsString,
   IsUUID,
   Min,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
@@ -31,12 +32,16 @@ export class UpdateQuoteDto {
   salesPersonId?: string;
 
   @ApiPropertyOptional({
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'Reseller ID',
+    example: null,
+    description:
+      "A quote's reseller comes from its customer and cannot be set here. The only accepted " +
+      'value is `null`, which clears it on a draft quote — everything else is rejected.',
+    nullable: true,
   })
+  @ValidateIf((o: UpdateQuoteDto) => o.resellerId !== null)
   @IsUUID()
   @IsOptional()
-  resellerId?: string;
+  resellerId?: string | null;
 
   @ApiPropertyOptional({
     example: '2025-02-15',

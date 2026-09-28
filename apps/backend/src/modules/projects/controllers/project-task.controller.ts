@@ -37,6 +37,7 @@ import {
   ApiReadOne,
   ApiUpdate,
 } from '../../../common/decorators';
+import { ResellerAllowed, ResellerOwnershipService, ResellerScope } from '../../../common/reseller';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -69,7 +70,10 @@ const TASK_CONSTANTS = {
 @Controller('projects/:projectId/tasks')
 @UseGuards(JwtAuthGuard, ProjectTeamGuard)
 export class ProjectTaskController {
-  constructor(private readonly taskService: ProjectTaskService) {}
+  constructor(
+    private readonly taskService: ProjectTaskService,
+    private readonly ownership: ResellerOwnershipService,
+  ) {}
 
   @Post()
   @ApiCreate({ responseType: ProjectTaskResponseDto, summary: 'Create a new project task' })
@@ -87,6 +91,7 @@ export class ProjectTaskController {
     });
   }
 
+  @ResellerAllowed()
   @Get()
   @ApiReadAll({ responseType: ProjectTaskResponseDto, summary: 'Get all project tasks' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
@@ -110,7 +115,9 @@ export class ProjectTaskController {
     @Query('status') status?: TaskStatus,
     @Query('priority') priority?: string,
     @Query('search') search?: string,
+    @ResellerScope() resellerId?: string,
   ): Promise<PaginatedResponse<ProjectTaskResponseDto>> {
+    if (resellerId) await this.ownership.assertOwns('project', projectId, resellerId);
     const result = await this.taskService.findAll(projectId, page, limit, {
       milestoneName,
       assignedToUserId,

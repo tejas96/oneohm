@@ -12,6 +12,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 
+import { ResellerAllowed, ResellerOwnershipService, ResellerScope } from '../../../common/reseller';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -24,7 +25,10 @@ import { ProjectTeamService } from '../services/project-team.service';
 @Controller('projects/:projectId/team')
 @UseGuards(JwtAuthGuard, ProjectTeamGuard)
 export class ProjectTeamController {
-  constructor(private readonly teamService: ProjectTeamService) {}
+  constructor(
+    private readonly teamService: ProjectTeamService,
+    private readonly ownership: ResellerOwnershipService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Add a team member to a project' })
@@ -45,12 +49,15 @@ export class ProjectTeamController {
     });
   }
 
+  @ResellerAllowed()
   @Get()
   @ApiOperation({ summary: 'Get all team members for a project' })
   async getTeamMembers(
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @CurrentUser() _currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<TeamMemberResponseDto[]> {
+    if (resellerId) await this.ownership.assertOwns('project', projectId, resellerId);
     const members = await this.teamService.getTeamMembers(projectId);
 
     return plainToInstance(TeamMemberResponseDto, members, {

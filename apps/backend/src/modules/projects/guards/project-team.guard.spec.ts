@@ -23,7 +23,19 @@ describe('ProjectTeamGuard', () => {
   const teamRepository = {
     isTeamMember: jest.fn<Promise<boolean>, [string, string]>(),
   };
-  const guard = new ProjectTeamGuard(teamRepository as never);
+  const reflector = {
+    getAllAndOverride: jest.fn(),
+  };
+  const resellerContext = {
+    // None of these existing users is a reseller — this keeps the new
+    // reseller branch a no-op for tests that predate it.
+    resellerIdForUser: jest.fn<Promise<string | null>, [string]>().mockResolvedValue(null),
+  };
+  const guard = new ProjectTeamGuard(
+    teamRepository as never,
+    reflector as never,
+    resellerContext as never,
+  );
 
   it('lets projects.view read a project they are not on', async () => {
     teamRepository.isTeamMember.mockResolvedValue(false);

@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { ResellerAllowed, ResellerOwnershipService, ResellerScope } from '../../../common/reseller';
 import { JwtAuthGuard } from '../../auth/guards';
 import { ProjectSummaryResponseDto } from '../dto/analytics';
 import { MilestoneAggregateDto, RenameMilestoneDto } from '../dto/projects/milestone-aggregate.dto';
@@ -15,6 +16,7 @@ export class ProjectAnalyticsController {
   constructor(
     private readonly analyticsService: ProjectAnalyticsService,
     private readonly taskService: ProjectTaskService,
+    private readonly ownership: ResellerOwnershipService,
   ) {}
 
   @Get(':id/analytics/summary')
@@ -29,13 +31,18 @@ export class ProjectAnalyticsController {
     return this.analyticsService.getProjectSummary(id);
   }
 
+  @ResellerAllowed()
   @Get(':id/milestones')
   @ApiOperation({
     summary: 'Get milestone aggregates for a project',
     description:
       'Returns one row per distinct milestone group, computed live from project_tasks. Cancelled tasks excluded from all counts.',
   })
-  async getMilestones(@Param('id', ParseUUIDPipe) id: string): Promise<MilestoneAggregateDto[]> {
+  async getMilestones(
+    @Param('id', ParseUUIDPipe) id: string,
+    @ResellerScope() resellerId?: string,
+  ): Promise<MilestoneAggregateDto[]> {
+    if (resellerId) await this.ownership.assertOwns('project', id, resellerId);
     return this.analyticsService.getMilestoneAggregates(id);
   }
 
