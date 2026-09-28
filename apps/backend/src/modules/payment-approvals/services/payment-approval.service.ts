@@ -29,7 +29,10 @@ import { allocateWaterfall } from '../../ledger/domain/allocation';
 import { isFutureIst, pgDateToIso, toIsoDate, todayIst } from '../../ledger/domain/dates';
 import { LedgerEntryEntity } from '../../ledger/entities';
 import { LedgerRepository } from '../../ledger/repositories/ledger.repository';
-import { LedgerWriteService } from '../../ledger/services/ledger-write.service';
+import {
+  COMMISSION_REVERSAL_REFUSED,
+  LedgerWriteService,
+} from '../../ledger/services/ledger-write.service';
 import { StorageService } from '../../storage/services/storage.service';
 import { QueryApprovalsDto, SubmitApprovalDto } from '../dto';
 import {
@@ -221,6 +224,9 @@ export class PaymentApprovalService {
           .findOne({ where: { id: dto.reversesEntryId } });
         if (!target) {
           throw new NotFoundException('The entry to reverse was not found');
+        }
+        if (target.category === ExpenseCategory.COMMISSION) {
+          throw new BadRequestException(COMMISSION_REVERSAL_REFUSED);
         }
 
         row = {
