@@ -141,3 +141,51 @@ thead th {
   color: #555;
   margin-top: 3px;
 }
+
+/*
+ * ── Company letterhead ({{> letterhead}}) ──
+ * For letters we send on our own paper. Logo left, name and registration
+ * right, then the office and contacts, closed by a double rule.
+ */
+.rpt-letterhead {
+  padding-bottom: 8px;
+  margin-bottom: 18px;
+  border-bottom: 3px double #1f6f5c;
+}
+.rpt-letterhead .rpt-lh-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.rpt-letterhead .rpt-lh-logo {
+  width: 130px;
+  height: auto;
+  flex: none;
+}
+.rpt-letterhead .rpt-lh-name {
+  font-size: 13pt;
+  font-weight: 700;
+  color: #1f4e79;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+}
+.rpt-letterhead .rpt-lh-tagline {
+  font-size: 8.5pt;
+  font-weight: 600;
+  color: #1f6f5c;
+  margin-top: 2px;
+}
+.rpt-letterhead .rpt-lh-address {
+  font-size: 8.5pt;
+  color: #333;
+  margin-top: 8px;
+}
+.rpt-letterhead .rpt-lh-contacts {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 8.5pt;
+  color: #333;
+  margin-top: 2px;
+}

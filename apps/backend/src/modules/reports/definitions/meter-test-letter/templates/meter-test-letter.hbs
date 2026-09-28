@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meter Test Covering Letter</title>
+    <style>
+      /* fonts via base-report.css; margins via report-print-base.css */
+
+      body {
+        font-size: 10pt;
+        line-height: 1.6;
+      }
+
+      .letter-date {
+        text-align: right;
+        margin-bottom: 18px;
+      }
+
+      .letter-to {
+        margin-bottom: 16px;
+      }
+
+      .letter-subject {
+        font-weight: 700;
+        margin-bottom: 16px;
+      }
+
+      .letter-body p {
+        text-align: justify;
+        margin-bottom: 10px;
+      }
+
+      .details {
+        margin: 6px 0 18px;
+      }
+
+      .details td {
+        border: 1px solid #bbb;
+        padding: 6px 10px;
+      }
+
+      .details td:first-child {
+        width: 42%;
+        font-weight: 600;
+        background: #f5f7f6;
+      }
+
+      .letter-close {
+        margin-top: 8px;
+      }
+
+      /* One signature on the left half, as on a letter, with room for the company stamp. */
+      .rpt-sig-row {
+        margin-top: 0;
+      }
+
+      .rpt-sig .rpt-sig-space {
+        height: 64px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="pdf-wrapper">
+      <div class="pdf-page">
+        {{> letterhead}}
+
+        <div class="letter-date"><strong>Date:</strong> {{generated_on}}</div>
+
+        <div class="letter-to">
+          To,<br />
+          The Executive Engineer,<br />
+          M.S.E.D.C.L.
+        </div>
+
+        <div class="letter-subject">Subject: Testing of generation meter with / without CT</div>
+
+        <div class="letter-body">
+          <p>Respected Sir,</p>
+          <p>
+            We, <strong>{{vendor_name}}</strong>, have installed a solar rooftop system for the
+            consumer named below. The consumer has received sanction for solar rooftop net
+            metering.
+          </p>
+          <p>We request you to test the generation meter, with or without CT. The details are:</p>
+        </div>
+
+        <table class="details">
+          <tbody>
+            <tr><td>Consumer name</td><td>{{consumer_name}}</td></tr>
+            <tr><td>MSEDCL consumer number</td><td>{{consumer_number}}</td></tr>
+            <tr><td>Net metering sanction reference number</td><td>{{sanction_number}}</td></tr>
+            <tr><td>Sanction date</td><td>{{formatDate sanction_date}}</td></tr>
+            <tr><td>Generation meter serial number</td><td>{{meter_serial_number}}</td></tr>
+            <tr><td>Meter make</td><td>{{meter_make}}</td></tr>
+            <tr><td>Meter capacity</td><td>{{meter_capacity}}</td></tr>
+          </tbody>
+        </table>
+
+        <div class="letter-body">
+          <p>Kindly do the needful.</p>
+        </div>
+
+        <div class="letter-close">
+          Yours faithfully,<br />
+          For <strong>{{vendor_name}}</strong>
+        </div>
+
+        <div class="rpt-sig-row">
+          {{> signature name=signatory_name role=signatory_designation}}
+          <div></div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

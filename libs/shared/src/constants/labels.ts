@@ -82,6 +82,7 @@ export const DOCUMENT_TAG_LABELS: Record<DocumentTag, string> = {
   [DocumentTag.NET_METERING_AGREEMENT]: 'Net Metering Connection Agreement',
   [DocumentTag.DCR]: 'DCR Undertaking / Self-Declaration',
   [DocumentTag.MODEL_AGREEMENT]: 'Model Agreement',
+  [DocumentTag.METER_TEST_LETTER]: 'Meter Test Covering Letter',
   [DocumentTag.REPORT]: 'Report',
   [DocumentTag.CONTRACT]: 'Contract',
   [DocumentTag.INVOICE]: 'Invoice',

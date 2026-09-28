@@ -20,8 +20,8 @@ describe('COMPANY', () => {
   });
 
   it('carries the tax identifiers for reference', () => {
-    expect(COMPANY.gstin).toBe('27AABCU9603R1ZM');
-    expect(COMPANY.pan).toBe('AABCU9603R');
+    expect(COMPANY.gstin).toBe('27AAECO5032B1ZW');
+    expect(COMPANY.pan).toBe('AAECO5032B');
   });
 
   it('carries the business defaults that used to live on the organizations row', () => {

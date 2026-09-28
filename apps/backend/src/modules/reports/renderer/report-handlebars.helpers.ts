@@ -1,4 +1,9 @@
+import { readFileSync } from 'fs';
+
+import { COMPANY } from '@tejas96/shared/constants';
 import Handlebars from 'handlebars';
+
+import { resolveReportAsset } from '../utils/report.utils';
 
 function isBlank(value: unknown): boolean {
   if (value === null || value === undefined) return true;
@@ -63,12 +68,48 @@ export function registerReportHandlebarsHelpers(): void {
       ? `${text} ${suffix}`
       : text;
   });
+  /** 215205 → "₹2,15,205/-" (Indian grouping, paise kept when present); blank or not a number → a line. */
+  Handlebars.registerHelper('rupees', (value: unknown) => {
+    const amount = Number(toDisplayString(value));
+    if (isBlank(value) || !Number.isFinite(amount)) {
+      return new Handlebars.SafeString('<span class="blank-line"></span>');
+    }
+    const text = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(amount);
+    return `₹${text}/-`;
+  });
   Handlebars.registerHelper('formatAadhaar', (value: unknown) => {
     const digits = typeof value === 'string' ? value.replace(/\D/g, '') : '';
     return digits.length === 12
       ? `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8)}`
       : '—';
   });
+}
+
+/** The company letterhead: logo, legal name, registration, office and contacts. Built from COMPANY only. */
+function letterheadHtml(): string {
+  const e = Handlebars.escapeExpression;
+  const logo = readFileSync(resolveReportAsset('renderer', 'assets', 'company-logo.png')).toString(
+    'base64',
+  );
+  const { letterhead } = COMPANY;
+  return `<header class="rpt-letterhead">
+  <div class="rpt-lh-top">
+    <img class="rpt-lh-logo" src="data:image/png;base64,${logo}" alt="${e(COMPANY.name)}" />
+    <div class="rpt-lh-id">
+      <div class="rpt-lh-name">${e(COMPANY.legalName)}</div>
+      <div class="rpt-lh-tagline">${e(letterhead.tagline)}</div>
+    </div>
+  </div>
+  <div class="rpt-lh-address">${e(letterhead.address)}</div>
+  <div class="rpt-lh-contacts">
+    <span>Phone: ${e(letterhead.phones.join(' / '))}</span>
+    <span>Email: ${e(letterhead.email)}</span>
+  </div>
+  <div class="rpt-lh-contacts">
+    <span>CIN: ${e(COMPANY.cin)}</span>
+    <span>GSTIN: ${e(COMPANY.gstin)}</span>
+  </div>
+</header>`;
 }
 
 const RESERVED_MUSTACHE = new Set([
@@ -109,7 +150,8 @@ export function autoDashFieldPlaceholders(source: string): string {
 }
 
 /**
- * Shared blocks any report template can use: {{> docTitle …}} and {{> signature …}}.
+ * Shared blocks any report template can use: {{> docTitle …}}, {{> signature …}}
+ * and {{> letterhead}}.
  *
  * Wrapper/element classes are prefixed `rpt-` so the shared CSS in
  * report-print-base.css can target them without colliding with the several
@@ -130,4 +172,5 @@ export function registerReportPartials(): void {
       `<div class="rpt-sig"><div class="rpt-sig-space"></div><div class="rpt-sig-name">{{name}}</div><div class="rpt-sig-rule"></div><div class="rpt-sig-role">{{role}}</div></div>`,
     ),
   );
+  Handlebars.registerPartial('letterhead', letterheadHtml());
 }

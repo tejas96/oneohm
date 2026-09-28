@@ -21,6 +21,8 @@ export interface ReportSource {
   /** Loaded with property, property.customer and the latest quote version. */
   project: ProjectEntity;
   panelSerials: string[];
+  /** Contract value in rupees from the ledger (quote plus change orders); null when the project has none. */
+  contractValue: number | null;
 }
 
 /**
@@ -62,6 +64,7 @@ export function applyOverrides(
 export function resolveSourceFacts({
   project,
   panelSerials,
+  contractValue,
 }: ReportSource): Record<FactKey, string> {
   const facts = {} as Record<FactKey, string>;
   const manual = project.reportFacts ?? {};
@@ -81,6 +84,7 @@ export function resolveSourceFacts({
   const kw = getSystemSizeKw(project);
 
   facts.vendor_name = COMPANY.legalName;
+  facts.vendor_address = COMPANY.letterhead.address;
   facts.signatory_name = COMPANY.reportSignatory.name;
   facts.signatory_designation = COMPANY.reportSignatory.designation;
   facts.signatory_phone = COMPANY.reportSignatory.phone;
@@ -123,6 +127,8 @@ export function resolveSourceFacts({
   facts.site_connection_type = property.connectionType
     ? (CONNECTION_TYPE_LABELS[property.connectionType] ?? '')
     : '';
+
+  facts.system_cost = contractValue != null && contractValue > 0 ? str(contractValue) : '';
 
   facts.installed_capacity_kw = str(kw);
   facts.installed_capacity_wp = kw != null ? str(Math.round(kw * 1000)) : '';

@@ -14,6 +14,7 @@ export enum DocumentTag {
   NET_METERING_AGREEMENT = 'net_metering_agreement',
   DCR = 'dcr',
   MODEL_AGREEMENT = 'model_agreement',
+  METER_TEST_LETTER = 'meter_test_letter',
   SITE_IMAGE = 'site_image',
   FRONT_VIEW = 'front_view',
   ROOF_VIEW = 'roof_view',
