@@ -39,6 +39,8 @@ export interface CustomerResponse {
   pincode?: string;
   leadSource?: string;
   referralCode?: string;
+  /** The reseller (employee_profiles.id) who brought in this customer. */
+  resellerId?: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;

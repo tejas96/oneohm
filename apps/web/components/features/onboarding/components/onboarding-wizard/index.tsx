@@ -7,6 +7,7 @@ import {
   ConnectionType,
   DocumentEntityType,
   FollowupType,
+  LeadSource,
   type LeadTemperature,
   nextFollowupDate,
   atDefaultHour,
@@ -70,6 +71,7 @@ import {
   getConvertedChangeRequests,
   pendingChangeRequestsToFormItems,
 } from '@/components/features/properties/utils/change-request-display';
+import { ReasonDialog } from '@/components/features/resellers/commission-dialogs';
 import { type DraftDocument } from '@/components/shared/document-manager';
 import { showToast } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
@@ -126,6 +128,7 @@ function buildDefaults(
             leadSource: customer.leadSource ?? '',
             leadSourceOther: '',
             referralCode: customer.referralCode ?? '',
+            resellerId: customer.resellerId ?? null,
             status: customer.status,
             groupCode: (customer as { groupCode?: string }).groupCode ?? '',
             groupName: (customer as { groupName?: string }).groupName ?? '',
@@ -223,6 +226,7 @@ export function OnboardingWizard({
   const [isSavingCustomer, setIsSavingCustomer] = React.useState(false);
   const [followupDialogOpen, setFollowupDialogOpen] = React.useState(false);
   const [isConfirmingSaveCustomerOnly, setIsConfirmingSaveCustomerOnly] = React.useState(false);
+  const [resellerChangeDialogOpen, setResellerChangeDialogOpen] = React.useState(false);
   const [blocked, setBlocked] = React.useState<{ title: string; body: string } | null>(null);
   const [showErrors, setShowErrors] = React.useState(false);
 
@@ -361,7 +365,15 @@ export function OnboardingWizard({
     }
   };
 
-  const submitCustomerEdit = async (): Promise<void> => {
+  /**
+   * Editing an existing customer whose reseller changes needs a reason —
+   * `resellerChangeReason` — before the server will accept it (needs
+   * `customers.assign` too; a 403 there surfaces through the usual error
+   * toast, no client-side gate needed). Called once with no reason to check
+   * whether the dialog is needed, and again with the confirmed reason once
+   * the user answers it.
+   */
+  const submitCustomerEdit = async (resellerChangeReason?: string): Promise<void> => {
     const valid = await form.trigger(['customer'] as never);
     if (!valid) {
       setShowErrors(true);
@@ -369,8 +381,28 @@ export function OnboardingWizard({
     }
     const data = form.getValues('customer');
     if (!data || !customerId) return;
+
+    const {
+      status,
+      leadSourceOther,
+      groupCode,
+      groupName,
+      resellerId: formResellerId,
+      ...profile
+    } = data;
+
+    // Moving the lead source off Reseller clears the reseller, same as the
+    // backend rule — never send a stale id alongside a non-reseller source.
+    const resolvedResellerId = data.leadSource === LeadSource.RESELLER ? (formResellerId ?? null) : null;
+    const previousResellerId = initialCustomer?.resellerId ?? null;
+    const resellerChanged = resolvedResellerId !== previousResellerId;
+
+    if (resellerChanged && !resellerChangeReason) {
+      setResellerChangeDialogOpen(true);
+      return;
+    }
+
     try {
-      const { status, leadSourceOther, groupCode, groupName, ...profile } = data;
       const resolvedLeadSource =
         data.leadSource === 'other'
           ? (leadSourceOther ?? undefined)
@@ -386,11 +418,14 @@ export function OnboardingWizard({
           leadSource: resolvedLeadSource,
           groupCode: groupCode || null,
           groupName: groupName || null,
+          resellerId: resolvedResellerId,
+          ...(resellerChanged ? { resellerChangeReason } : {}),
         },
       });
       if (status && status !== initialCustomer?.status) {
         await updateCustomerStatusMutation.mutateAsync({ id: customerId, status });
       }
+      setResellerChangeDialogOpen(false);
       showToast.success('Customer updated successfully');
       router.push(buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: customerId }));
     } catch (error) {
@@ -1001,6 +1036,16 @@ export function OnboardingWizard({
         onBack={() => setFollowupDialogOpen(false)}
         onConfirm={(fields) => void handleConfirmSaveCustomerOnly(fields)}
         isSubmitting={isSaveCustomerOnlySubmitting}
+      />
+
+      <ReasonDialog
+        open={resellerChangeDialogOpen}
+        title="Why is the reseller changing?"
+        description="This changes who gets credit and commission for this customer going forward."
+        confirmLabel="Save"
+        busy={updateCustomerMutation.isPending}
+        onClose={() => setResellerChangeDialogOpen(false)}
+        onConfirm={(reason) => void submitCustomerEdit(reason)}
       />
     </Box>
   );

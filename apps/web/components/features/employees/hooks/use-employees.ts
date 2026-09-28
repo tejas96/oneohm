@@ -26,6 +26,8 @@ export interface Employee {
   department?: string;
   status: UserStatus;
   user?: EmployeeUser;
+  /** Reseller profiles only — `EmployeeResponseDto.companyName`. */
+  companyName?: string;
 }
 
 interface EmployeeListResponse {

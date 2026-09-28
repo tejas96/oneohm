@@ -1,6 +1,6 @@
 'use client';
 
-import { LeadSource } from '@tejas96/shared/types';
+import { EmployeeProfileKind, LeadSource, UserStatus } from '@tejas96/shared/types';
 import * as React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
@@ -11,6 +11,7 @@ import {
   useCustomerGroups,
   type Customer,
 } from '@/components/features/customers';
+import { useEmployees } from '@/components/features/employees';
 import { Alert } from '@/components/shared';
 import { Button, MUIInput, MUISelect, MUITypography } from '@/components/ui';
 
@@ -51,6 +52,19 @@ export function Step1CustomerIdentity({
 
   const availability = useCheckAvailability();
   const { data: groups = [] } = useCustomerGroups();
+  const { data: resellers } = useEmployees({
+    profileKind: EmployeeProfileKind.RESELLER,
+    status: UserStatus.ACTIVE,
+  });
+  const resellerOptions = React.useMemo(
+    () =>
+      (resellers ?? []).map((r) => ({
+        value: r.id,
+        label:
+          r.companyName || `${r.user?.firstName ?? ''} ${r.user?.lastName ?? ''}`.trim() || r.id,
+      })),
+    [resellers],
+  );
 
   const phone = (watch('customer.phone') as string | undefined) ?? '';
   const email = (watch('customer.email') as string | undefined) ?? '';
@@ -215,12 +229,33 @@ export function Step1CustomerIdentity({
                   if (e.target.value !== LeadSource.OTHER) {
                     setValue('customer.leadSourceOther', '');
                   }
+                  if (e.target.value !== LeadSource.RESELLER) {
+                    setValue('customer.resellerId', null, { shouldDirty: true });
+                  }
                 }}
                 error={customerErrors.leadSourceOther?.message}
                 options={LEAD_SOURCE_OPTIONS}
               />
             )}
           />
+          {leadSource === LeadSource.RESELLER && (
+            <Controller
+              name="customer.resellerId"
+              control={control}
+              render={({ field }) => (
+                <MUISelect
+                  fieldLabel="Which reseller?"
+                  required
+                  placeholder="Choose the reseller who sent this customer"
+                  value={field.value ?? ''}
+                  disabled={isLocked}
+                  onChange={(e) => field.onChange(e.target.value || null)}
+                  error={customerErrors.resellerId?.message}
+                  options={resellerOptions}
+                />
+              )}
+            />
+          )}
           {leadSource === LeadSource.OTHER && (
             <MUIInput
               fieldLabel="Specify Source"

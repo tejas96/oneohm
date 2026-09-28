@@ -16,6 +16,7 @@ import { CommandPalette } from '@/components/shared/command-palette';
 import { AuthGuard } from '@/components/shared/guards';
 import { AccessDeniedContent, AccessDialogProvider, useCan } from '@/lib/rbac';
 import { gateForPath } from '@/lib/rbac/route-map';
+import { useAuth } from '@/providers/auth-provider';
 
 interface DashboardLayoutContentProps {
   children: ReactNode;
@@ -69,6 +70,23 @@ function RouteGate({ children }: { children: ReactNode }): React.JSX.Element {
   const pathname = usePathname();
   const { can } = useCan();
   const gate = gateForPath(pathname);
+  const { user } = useAuth();
+  const isResellerOnly =
+    Boolean(user?.profiles?.length) && user!.profiles.every((p) => p.type === 'reseller');
+
+  if (isResellerOnly) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <div className="mx-auto max-w-md text-center">
+          <h2 className="mb-1 text-xl font-semibold text-foreground">Use the OneOhm EPC app</h2>
+          <p className="text-sm text-foreground-secondary">
+            Your leads, quotes and earnings are in the mobile app. The web portal is for the office
+            team.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!can(gate)) {
     return (

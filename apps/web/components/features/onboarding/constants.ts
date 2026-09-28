@@ -72,6 +72,7 @@ const ONBOARDING_STEPS: OnboardingStepConfig[] = [
       'customer.email',
       'customer.leadSource',
       'customer.leadSourceOther',
+      'customer.resellerId',
     ],
   },
   {
