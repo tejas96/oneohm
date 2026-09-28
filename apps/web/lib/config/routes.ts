@@ -182,6 +182,7 @@ export const ROUTES = {
     EMPLOYEES: '/employees',
     EMPLOYEE_DETAIL: '/employees/[id]',
     RESELLERS: '/resellers',
+    RESELLER_DETAIL: '/resellers/[id]',
     DOCUMENTS: '/documents',
   },
 
@@ -378,6 +379,7 @@ const ROUTE_TO_PANEL_MAP: Record<string, string> = {
   [ROUTES.FINANCE.RECEIVABLES]: 'finance',
   [ROUTES.FINANCE.PAYABLES]: 'finance',
   [ROUTES.FINANCE.APPROVALS]: 'finance',
+  [ROUTES.ORG.RESELLERS]: 'finance',
 
   // Service routes
   [ROUTES.SERVICE.HOME]: 'service',

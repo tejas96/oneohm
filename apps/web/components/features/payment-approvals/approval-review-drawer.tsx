@@ -40,6 +40,7 @@ const KIND_LABEL = {
   expense: 'Money spent',
   reversal: 'Reversal',
   vendor_payment: 'Vendor payment',
+  commission: 'Commission',
 } as const;
 
 /**
@@ -51,6 +52,7 @@ const DUPLICATE_NOUN = {
   expense: 'expense',
   reversal: 'reversal',
   vendor_payment: 'vendor payment',
+  commission: 'commission',
 } as const;
 
 /** "a bill on credit from Sharma Traders", "a payment to Sharma Traders", "an expense". */

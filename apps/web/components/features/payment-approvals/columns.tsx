@@ -25,6 +25,7 @@ const KIND_TONE: Record<PaymentApproval['kind'], CrmTone> = {
   expense: 'info',
   reversal: 'warning',
   vendor_payment: 'info',
+  commission: 'info',
 };
 
 const KIND_LABEL: Record<PaymentApproval['kind'], string> = {
@@ -32,6 +33,7 @@ const KIND_LABEL: Record<PaymentApproval['kind'], string> = {
   expense: 'Expense',
   reversal: 'Reversal',
   vendor_payment: 'Vendor payment',
+  commission: 'Commission',
 };
 
 /**
