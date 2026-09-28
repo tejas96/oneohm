@@ -9,11 +9,22 @@ export type FactSource =
   | 'customer'
   | 'property'
   | 'project'
+  /** The project's Money tab (ledger): the contract value. */
+  | 'finance'
   | 'bom'
   | 'manual'
   | 'fixed';
 
-export type FactType = 'text' | 'textarea' | 'number' | 'date' | 'email' | 'phone' | 'year';
+/** `money` is rupees: typed as a number, printed as "₹2,15,205/-". */
+export type FactType =
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'money'
+  | 'date'
+  | 'email'
+  | 'phone'
+  | 'year';
 
 export type FactGroup =
   | 'vendor'
@@ -22,6 +33,7 @@ export type FactGroup =
   | 'system'
   | 'installation'
   | 'agreement'
+  | 'meter'
   | 'signatory';
 
 /** The record a source fact is saved on when it is edited on the Reports tab. */
@@ -105,6 +117,7 @@ export const FACT_GROUPS: ReadonlyArray<{ id: FactGroup; title: string }> = [
   { id: 'system', title: 'System' },
   { id: 'installation', title: 'Installation and service' },
   { id: 'agreement', title: 'Net metering agreement' },
+  { id: 'meter', title: 'Generation meter' },
   { id: 'signatory', title: 'Vendor signatory' },
 ];
 
@@ -116,6 +129,14 @@ export const REPORT_FACTS = [
     group: 'vendor',
     source: 'company',
     help: 'Our registered company name, the same on every report. It is fixed and cannot be changed here.',
+  },
+  {
+    key: 'vendor_address',
+    label: 'Vendor address',
+    type: 'textarea',
+    group: 'vendor',
+    source: 'company',
+    help: 'Our registered office, as on the company letterhead. It is fixed and cannot be changed here.',
   },
 
   {
@@ -448,6 +469,16 @@ export const REPORT_FACTS = [
     help: FROM_QUOTE,
   },
   {
+    key: 'module_efficiency',
+    label: 'Module efficiency (%)',
+    type: 'number',
+    group: 'system',
+    source: 'fixed',
+    fixedValue: '20.8',
+    hidden: true,
+    help: 'Always printed as 20.8% on the model agreement. Not shown on the form.',
+  },
+  {
     key: 'module_serial_numbers',
     label: 'Module serial numbers',
     type: 'textarea',
@@ -484,6 +515,16 @@ export const REPORT_FACTS = [
     source: 'project',
     overridable: true,
     help: `${FROM_QUOTE} Worked out as capacity × quantity of each inverter.`,
+  },
+  {
+    key: 'system_cost',
+    label: 'Cost of the system',
+    type: 'money',
+    group: 'system',
+    source: 'finance',
+    overridable: true,
+    placeholder: 'e.g. 215205',
+    help: `The contract price, as on the Money tab: the approved quote plus agreed change orders. Subsidy is not taken off. A change here prints on the reports only: the Money tab stays the same. Reset brings back the Money tab value. ${OUT_OF_DATE}`,
   },
   {
     key: 'inverter_hpd',
@@ -590,12 +631,40 @@ export const REPORT_FACTS = [
   },
 
   {
+    key: 'meter_serial_number',
+    label: 'Meter serial number',
+    type: 'text',
+    group: 'meter',
+    source: 'manual',
+    placeholder: 'e.g. 54665147',
+    help: 'Serial number of the new generation (solar) meter, from its nameplate. Not the old meter on the electricity bill.',
+  },
+  {
+    key: 'meter_make',
+    label: 'Meter make',
+    type: 'text',
+    group: 'meter',
+    source: 'manual',
+    placeholder: 'e.g. HPL',
+    help: 'Maker of the generation meter, from its nameplate.',
+  },
+  {
+    key: 'meter_capacity',
+    label: 'Meter capacity',
+    type: 'text',
+    group: 'meter',
+    source: 'manual',
+    placeholder: 'e.g. 5-30 A',
+    help: 'Current rating of the generation meter, from its nameplate.',
+  },
+
+  {
     key: 'signatory_name',
     label: 'Signatory name',
     type: 'text',
     group: 'signatory',
     source: 'company',
-    help: "The company's signatory, the same on every DCR. Set in company details; it cannot be changed here.",
+    help: "The company's signatory, the same on every report that prints it. Set in company details; it cannot be changed here.",
   },
   {
     key: 'signatory_designation',
@@ -603,7 +672,7 @@ export const REPORT_FACTS = [
     type: 'text',
     group: 'signatory',
     source: 'company',
-    help: "The company's signatory, the same on every DCR. Set in company details; it cannot be changed here.",
+    help: "The company's signatory, the same on every report that prints it. Set in company details; it cannot be changed here.",
   },
   {
     key: 'signatory_phone',
@@ -611,7 +680,7 @@ export const REPORT_FACTS = [
     type: 'phone',
     group: 'signatory',
     source: 'company',
-    help: "The company's signatory, the same on every DCR. Set in company details; it cannot be changed here.",
+    help: "The company's signatory, the same on every report that prints it. Set in company details; it cannot be changed here.",
   },
   {
     key: 'signatory_email',
@@ -619,7 +688,7 @@ export const REPORT_FACTS = [
     type: 'email',
     group: 'signatory',
     source: 'company',
-    help: "The company's signatory, the same on every DCR. Set in company details; it cannot be changed here.",
+    help: "The company's signatory, the same on every report that prints it. Set in company details; it cannot be changed here.",
   },
 ] as const satisfies readonly ReportFact[];
 

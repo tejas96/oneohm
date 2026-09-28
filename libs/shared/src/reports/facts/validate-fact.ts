@@ -1,3 +1,4 @@
+import { normalizeMoney } from './format-fact';
 import { getFact, type ReportFact } from './report-facts';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -8,6 +9,7 @@ const MAX_LENGTH: Record<ReportFact['type'], number> = {
   text: 200,
   textarea: 1000,
   number: 20,
+  money: 20,
   date: 10,
   email: 200,
   phone: 20,
@@ -26,7 +28,8 @@ export function validateFactValue(
   if (value.length > max) return `${fact.label} is too long (max ${max} characters)`;
 
   switch (fact.type) {
-    case 'number': {
+    case 'number':
+    case 'money': {
       const n = Number(value);
       return Number.isFinite(n) && n >= 0 ? null : `${fact.label} must be a number`;
     }
@@ -87,12 +90,13 @@ export function applyFactPatch(
       errors.set(fact.key, `${fact.label} must be text`);
       continue;
     }
-    const message = validateFactValue(fact, value);
+    const typed = fact.type === 'money' ? normalizeMoney(value) : value.trim();
+    const message = validateFactValue(fact, typed);
     if (message) {
       errors.set(fact.key, message);
       continue;
     }
-    next.set(fact.key, value.trim());
+    next.set(fact.key, typed);
   }
 
   return { next: Object.fromEntries(next), errors: Object.fromEntries(errors) };

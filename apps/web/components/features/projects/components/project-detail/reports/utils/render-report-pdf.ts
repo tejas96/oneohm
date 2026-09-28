@@ -11,6 +11,8 @@ const PAGE_BREAK_AVOID_SELECTORS = [
   '.sig-box',
   // The shared signature block (name, line, role): never split across a page.
   '.rpt-sig-row',
+  // The model agreement's last clause kept with its signatures.
+  '.sign-off',
   '.guarantee-heading',
   '.guarantee-text',
   '.identity-block',

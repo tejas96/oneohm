@@ -143,12 +143,61 @@ export const ANNEXURE_PROFORMA_A_REPORT: ReportDefinition = {
   ],
 };
 
+export const MODEL_AGREEMENT_REPORT: ReportDefinition = {
+  id: 'model-agreement',
+  name: 'Model Agreement',
+  shortName: 'Model agreement',
+  description:
+    'MNRE model agreement between the applicant and the vendor (Rooftop Solar Programme Ph-II).',
+  documentTag: DocumentTag.MODEL_AGREEMENT,
+  templateVersion: 1,
+  facts: [
+    req('consumer_name'),
+    req('consumer_number'),
+    req('site_address'),
+    req('vendor_name'),
+    req('vendor_address'),
+    req('module_total_kw'),
+    req('module_make'),
+    opt('module_model_number'),
+    req('module_wattage'),
+    opt('module_efficiency'),
+    req('inverter_make_model'),
+    req('inverter_total_kw'),
+    req('system_cost'),
+    req('signatory_name'),
+  ],
+};
+
+export const METER_TEST_LETTER_REPORT: ReportDefinition = {
+  id: 'meter-test-letter',
+  name: 'Meter Test Covering Letter',
+  shortName: 'Meter test letter',
+  description: 'Letter asking MSEDCL to test the generation meter, with or without CT.',
+  documentTag: DocumentTag.METER_TEST_LETTER,
+  templateVersion: 1,
+  facts: [
+    req('vendor_name'),
+    req('consumer_name'),
+    req('consumer_number'),
+    req('sanction_number'),
+    opt('sanction_date'),
+    req('meter_serial_number'),
+    req('meter_make'),
+    req('meter_capacity'),
+    req('signatory_name'),
+    opt('signatory_designation'),
+  ],
+};
+
 /** Order here is the order on screen. A new report is added here and nowhere else in code. */
 export const REPORT_DEFINITIONS: readonly ReportDefinition[] = [
   WCR_REPORT,
   ANNEXURE_PROFORMA_A_REPORT,
   NET_METERING_AGREEMENT_REPORT,
   DCR_REPORT,
+  MODEL_AGREEMENT_REPORT,
+  METER_TEST_LETTER_REPORT,
 ];
 
 export function getReportDefinition(id: string): ReportDefinition | undefined {

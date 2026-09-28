@@ -42,6 +42,7 @@ import {
   resolveFallbackKeys,
   resolveSourceFacts,
 } from '../facts/resolve-facts';
+import { formatGeneratedOn, GENERATED_ON } from '../renderer/render-values';
 import { TemplateRendererService } from '../renderer/template-renderer.service';
 import { templateFileFor } from '../utils/report.utils';
 
@@ -228,7 +229,10 @@ export class ReportWorkspaceService {
     const definition = this.definition(reportId);
     const { facts } = await this.load(projectId);
     return {
-      html: this.templateRenderer.render(templateFileFor(definition), facts),
+      html: this.templateRenderer.render(templateFileFor(definition), {
+        ...facts,
+        [GENERATED_ON]: formatGeneratedOn(new Date()),
+      }),
       pages: definition.pages,
       factsHash: hashReportFacts(definition, facts),
     };
@@ -288,9 +292,10 @@ export class ReportWorkspaceService {
   async pendingCounts(projectIds: string[]): Promise<Record<string, number>> {
     if (projectIds.length === 0) return {};
 
-    const [projects, serials, docs] = await Promise.all([
+    const [projects, serials, payments, docs] = await Promise.all([
       this.projectRepository.findByIdsForReports(projectIds),
       this.bomReadService.getPanelSerialsByProjects(projectIds),
+      this.projectRepository.getPaymentSummaries(projectIds),
       this.documentService.findByEntitiesWithTags(DocumentEntityType.PROJECT, projectIds, {
         category: DocumentCategory.REPORT,
         tags: [...REPORT_TAGS],
@@ -308,7 +313,11 @@ export class ReportWorkspaceService {
         counts[project.id] = 0;
         continue;
       }
-      const facts = resolveFacts({ project, panelSerials: serials.get(project.id) ?? [] });
+      const facts = resolveFacts({
+        project,
+        panelSerials: serials.get(project.id) ?? [],
+        contractValue: payments.get(project.id)?.contractValue ?? null,
+      });
       const filedByTag = latestFiledByTag(docsByProject.get(project.id) ?? []);
       counts[project.id] = REPORT_DEFINITIONS.filter((definition) =>
         isPendingStatus(statusOf(definition, facts, filedByTag.get(definition.documentTag)).status),
@@ -330,12 +339,16 @@ export class ReportWorkspaceService {
     sourceFacts: Record<FactKey, string>;
   }> {
     const project = await this.projectService.findById(projectId);
-    const panelSerials = await this.bomReadService.getPanelSerials(projectId);
-    return {
+    const [panelSerials, payments] = await Promise.all([
+      this.bomReadService.getPanelSerials(projectId),
+      this.projectRepository.getPaymentSummaries([projectId]),
+    ]);
+    const source = {
       project,
-      facts: resolveFacts({ project, panelSerials }),
-      sourceFacts: resolveSourceFacts({ project, panelSerials }),
+      panelSerials,
+      contractValue: payments.get(projectId)?.contractValue ?? null,
     };
+    return { project, facts: resolveFacts(source), sourceFacts: resolveSourceFacts(source) };
   }
 
   private async validateUploadedFile(

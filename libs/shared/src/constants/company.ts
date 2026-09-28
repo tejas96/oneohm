@@ -37,11 +37,25 @@ export const COMPANY = {
   },
 
   /**
-   * Held for reference only. NOT printed on receipts: a receipt is a payment
+   * The company's own letterhead, printed at the top of letters we send to the
+   * DISCOM (the meter test covering letter). Receipts keep the contact above.
+   */
+  letterhead: {
+    tagline: 'MNRE Registered Vendor and Consultant',
+    address:
+      'Plot No. 93, Vasantdada Industrial Estate, Near Old RTO Office, Sangli, Tal. Miraj, Dist. Sangli, Maharashtra 416416',
+    phones: ['8788275659', '8380037272', '9797979598'],
+    email: 'oneohmpvtltd@gmail.com',
+  },
+
+  cin: 'U35109PN2024PTC234457',
+
+  /**
+   * Printed on the letterhead. NOT printed on receipts: a receipt is a payment
    * acknowledgement and says so explicitly, not a tax invoice.
    */
-  gstin: '27AABCU9603R1ZM',
-  pan: 'AABCU9603R',
+  gstin: '27AAECO5032B1ZW',
+  pan: 'AAECO5032B',
 
   timezone: 'Asia/Kolkata',
   currency: 'INR',

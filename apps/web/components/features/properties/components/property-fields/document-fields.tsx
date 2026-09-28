@@ -54,6 +54,8 @@ export function DocumentFields({
         DocumentTag.NET_METERING_AGREEMENT,
         DocumentTag.WCR,
         DocumentTag.DCR,
+        DocumentTag.MODEL_AGREEMENT,
+        DocumentTag.METER_TEST_LETTER,
         DocumentTag.OTHER,
       ]}
       readOnly={isSubmitting}

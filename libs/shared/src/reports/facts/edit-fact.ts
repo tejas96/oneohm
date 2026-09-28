@@ -1,3 +1,4 @@
+import { normalizeMoney } from './format-fact';
 import type { ReportFact } from './report-facts';
 import { validateFactValue } from './validate-fact';
 import { EMAIL_REGEX } from '../../utils/validation';
@@ -22,6 +23,7 @@ export function normalizeIndianMobile(raw: string): string {
  */
 export function normalizeFactInput(fact: Pick<ReportFact, 'type' | 'edit'>, raw: string): string {
   const value = raw.trim();
+  if (fact.type === 'money') return normalizeMoney(value);
   if (!value || !fact.edit) return value;
   if (fact.type === 'phone') return normalizeIndianMobile(value);
   if (fact.edit.input === 'digits') return value.replace(/[\s-]/g, '');

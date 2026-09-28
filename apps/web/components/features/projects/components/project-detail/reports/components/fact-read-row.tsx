@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Tooltip, Typography } from '@mui/material';
-import type { WorkspaceFact } from '@tejas96/shared/reports';
+import { formatRupees, type WorkspaceFact } from '@tejas96/shared/reports';
 import { Lock } from 'lucide-react';
 
 import { isChangedFromSource, isLockedFact, shownValue, sourceWord } from './fact-field';
@@ -15,8 +15,9 @@ function lockedSource(fact: WorkspaceFact): string {
   return 'Fixed';
 }
 
-/** ISO dates read DD-MM-YYYY, as the reports print them; anything else as stored. */
-function asPrintedDate(fact: WorkspaceFact, value: string): string {
+/** Dates and rupees read as the reports print them; anything else as stored. */
+function asPrinted(fact: WorkspaceFact, value: string): string {
+  if (fact.type === 'money') return formatRupees(value);
   if (fact.type !== 'date') return value;
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
   return m ? `${m[3]}-${m[2]}-${m[1]}` : value;
@@ -24,7 +25,7 @@ function asPrintedDate(fact: WorkspaceFact, value: string): string {
 
 /** What the row shows: the unsaved draft when there is one, else what reports print. */
 function readValue(fact: WorkspaceFact, draft: string | undefined): string {
-  return asPrintedDate(fact, rawReadValue(fact, draft));
+  return asPrinted(fact, rawReadValue(fact, draft));
 }
 
 function rawReadValue(fact: WorkspaceFact, draft: string | undefined): string {

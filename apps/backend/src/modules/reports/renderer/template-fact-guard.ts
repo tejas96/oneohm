@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { REPORT_DEFINITIONS } from '@tejas96/shared/reports';
 import Handlebars from 'handlebars';
 
+import { RENDER_VALUES } from './render-values';
 import { resolveReportAsset, templateFileFor } from '../utils/report.utils';
 
 /** Printed as blank lines until these facts exist. */
@@ -54,7 +55,7 @@ export function findUndeclaredTemplateFacts(): string[] {
     const declared = new Set<string>(definition.facts.map(({ key }) => key));
     const source = readFileSync(resolveReportAsset(templateFileFor(definition)), 'utf8');
     for (const name of templateVariables(source)) {
-      if (!declared.has(name) && !KNOWN_UNDECLARED.has(name)) {
+      if (!declared.has(name) && !KNOWN_UNDECLARED.has(name) && !RENDER_VALUES.has(name)) {
         problems.push(
           `${templateFileFor(definition)} prints "${name}", which ${definition.id} does not declare`,
         );

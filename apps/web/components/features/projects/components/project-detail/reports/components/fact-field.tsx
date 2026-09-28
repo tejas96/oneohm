@@ -57,9 +57,11 @@ export function isChangedFromSource(fact: WorkspaceFact): boolean {
   return !!fact.overridden && !!fact.quoteValue;
 }
 
-/** Where a changeable value came from: the quote, or the BOM (panel serial numbers). */
+/** Where a changeable value came from: the quote, the BOM (panel serial numbers) or the Money tab (system cost). */
 export function sourceWord(fact: WorkspaceFact): string {
-  return fact.source === 'bom' ? 'BOM' : 'quote';
+  if (fact.source === 'bom') return 'BOM';
+  if (fact.source === 'finance') return 'Money tab';
+  return 'quote';
 }
 
 /** Multi-line facts keep their line breaks: a single-line input would join them on any edit. Read-only ones grow to fit. */
@@ -67,7 +69,7 @@ const MULTILINE_ROWS = { minRows: 1, maxRows: 4 } as const;
 
 function inputMode(fact: WorkspaceFact): React.HTMLAttributes<HTMLInputElement>['inputMode'] {
   if (fact.edit?.input === 'digits') return 'numeric';
-  if (fact.type === 'number' || fact.type === 'year') return 'decimal';
+  if (fact.type === 'number' || fact.type === 'money' || fact.type === 'year') return 'decimal';
   if (fact.type === 'phone') return 'tel';
   if (fact.type === 'email') return 'email';
   return undefined;
