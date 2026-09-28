@@ -6,7 +6,7 @@ import { commissionAmount } from '@tejas96/shared/utils';
 import { DataSource, type EntityManager } from 'typeorm';
 
 import type { CurrentUserType } from '../../../auth/types';
-import type { EditCommissionDto } from '../dto';
+import type { CloseRecoveryDto, EditCommissionDto } from '../dto';
 import { COMMISSION_ROW_SQL, toCommissionRow, type CommissionRow } from '../sql/commission-read.sql';
 import { requirePermission } from '../utils/require-permission';
 
@@ -126,6 +126,38 @@ export class CommissionActionsService {
             : `A ${row.state.replace(/_/g, ' ')} commission cannot be cancelled.`,
         );
       }
+      return this.getOne(id, m);
+    });
+  }
+
+  /** Spec §9: full, partial (rest written off) or ₹0 (all written off). Flag-and-chase, no ledger entry (X4). */
+  async closeRecovery(id: string, dto: CloseRecoveryDto, user: CurrentUserType): Promise<CommissionRow> {
+    requirePermission(user, 'finance.payments.record');
+    return this.dataSource.transaction(async (m) => {
+      await this.lock(m, id);
+      const row = await this.getOne(id, m);
+      if (row.state !== 'to_recover') {
+        throw new ConflictException('Only a paid commission on a cancelled deal can be closed out.');
+      }
+      const receivedPaise = Math.round(dto.amountReceived * 100);
+      if (receivedPaise > row.amountPaise) {
+        throw new BadRequestException('That is more than was paid.');
+      }
+      const writtenOffPaise = row.amountPaise - receivedPaise;
+      const note =
+        writtenOffPaise > 0
+          ? `${dto.note} (₹${(writtenOffPaise / 100).toFixed(2)} written off)`
+          : dto.note;
+
+      const done = await m.query(
+        `UPDATE employee_commissions
+            SET recovered_at = $2::date, recovered_amount = $3, recovery_notes = $4,
+                updated_by = $5, updated_at = now()
+          WHERE id = $1 AND status = 'paid' AND recovered_at IS NULL
+          RETURNING id`,
+        [id, dto.date, receivedPaise / 100, note, user.id],
+      );
+      if (done.length !== 1) throw new ConflictException(CHANGED);
       return this.getOne(id, m);
     });
   }

@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../../auth/decorators';
 import { JwtAuthGuard } from '../../../auth/guards';
 import type { CurrentUserType } from '../../../auth/types';
-import { CommissionListQueryDto, EditCommissionDto, ReasonDto } from '../dto';
+import { CloseRecoveryDto, CommissionListQueryDto, EditCommissionDto, ReasonDto } from '../dto';
 import { CommissionActionsService } from '../services/commission-actions.service';
 import type { CommissionRow } from '../sql/commission-read.sql';
 import { requirePermission } from '../utils/require-permission';
@@ -54,5 +54,14 @@ export class EmployeeCommissionController {
     @CurrentUser() user: CurrentUserType,
   ): Promise<CommissionRow> {
     return this.actions.cancel(id, dto.reason, user);
+  }
+
+  @Post(':id/close-recovery')
+  closeRecovery(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CloseRecoveryDto,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<CommissionRow> {
+    return this.actions.closeRecovery(id, dto, user);
   }
 }

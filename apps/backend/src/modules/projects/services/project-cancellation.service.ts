@@ -88,12 +88,25 @@ export class ProjectCancellationService {
         [projectId],
       );
 
-      // 2. Commissions nobody has been paid yet.
+      // 2. Commissions nobody has been paid yet — and any payout still waiting
+      //    in the approval queue, so a finance head cannot pay a dead deal.
+      //    Paid ones stay paid and show "To recover" (derived; spec §9).
       await manager.query(
-        `UPDATE employee_commissions c SET status = 'cancelled', updated_at = now()
-          FROM projects p
-         WHERE p.id = $1 AND p.quote_id = c.quote_id AND c.status IN ('pending', 'approved')`,
+        `UPDATE pending_ledger_entries SET status = 'cancelled', updated_at = now()
+          WHERE status = 'pending' AND kind = 'commission'
+            AND id IN (SELECT c.payout_request_id FROM employee_commissions c
+                         JOIN projects p ON p.quote_id = c.quote_id
+                        WHERE p.id = $1 AND c.status = 'approved'
+                          AND c.payout_request_id IS NOT NULL)`,
         [projectId],
+      );
+      await manager.query(
+        `UPDATE employee_commissions c
+            SET status = 'cancelled', payout_request_id = NULL, cancel_reason = $2,
+                updated_by = $3, updated_at = now()
+           FROM projects p
+          WHERE p.id = $1 AND p.quote_id = c.quote_id AND c.status IN ('pending', 'approved')`,
+        [projectId, `Project ${project.projectNumber} cancelled`, userId],
       );
 
       // 3. The accepted quote stops locking the roof. `propertyId` is NOT NULL
