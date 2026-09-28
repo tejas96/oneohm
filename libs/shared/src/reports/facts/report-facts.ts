@@ -13,7 +13,16 @@ export type FactSource =
   | 'manual'
   | 'fixed';
 
-export type FactType = 'text' | 'textarea' | 'number' | 'date' | 'email' | 'phone' | 'year';
+/** `money` is rupees: typed as a number, printed as "₹2,15,205/-". */
+export type FactType =
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'money'
+  | 'date'
+  | 'email'
+  | 'phone'
+  | 'year';
 
 export type FactGroup =
   | 'vendor'
@@ -507,8 +516,8 @@ export const REPORT_FACTS = [
   },
   {
     key: 'system_cost',
-    label: 'Cost of the system (₹)',
-    type: 'number',
+    label: 'Cost of the system',
+    type: 'money',
     group: 'system',
     source: 'project',
     overridable: true,

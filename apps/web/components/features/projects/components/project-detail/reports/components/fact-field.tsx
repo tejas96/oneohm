@@ -67,7 +67,7 @@ const MULTILINE_ROWS = { minRows: 1, maxRows: 4 } as const;
 
 function inputMode(fact: WorkspaceFact): React.HTMLAttributes<HTMLInputElement>['inputMode'] {
   if (fact.edit?.input === 'digits') return 'numeric';
-  if (fact.type === 'number' || fact.type === 'year') return 'decimal';
+  if (fact.type === 'number' || fact.type === 'money' || fact.type === 'year') return 'decimal';
   if (fact.type === 'phone') return 'tel';
   if (fact.type === 'email') return 'email';
   return undefined;

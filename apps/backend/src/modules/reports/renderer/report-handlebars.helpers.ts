@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 
 import { COMPANY } from '@tejas96/shared/constants';
+import { formatRupees } from '@tejas96/shared/reports';
 import Handlebars from 'handlebars';
 
 import { resolveReportAsset } from '../utils/report.utils';
@@ -68,15 +69,12 @@ export function registerReportHandlebarsHelpers(): void {
       ? `${text} ${suffix}`
       : text;
   });
-  /** 215205 → "₹2,15,205/-" (Indian grouping, paise kept when present); blank or not a number → a line. */
-  Handlebars.registerHelper('rupees', (value: unknown) => {
-    const amount = Number(toDisplayString(value));
-    if (isBlank(value) || !Number.isFinite(amount)) {
-      return new Handlebars.SafeString('<span class="blank-line"></span>');
-    }
-    const text = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(amount);
-    return `₹${text}/-`;
-  });
+  /** 944817.93 → "₹9,44,818/-" (see formatRupees); blank → a line. */
+  Handlebars.registerHelper('rupees', (value: unknown) =>
+    isBlank(value)
+      ? new Handlebars.SafeString('<span class="blank-line"></span>')
+      : formatRupees(toDisplayString(value)),
+  );
   Handlebars.registerHelper('formatAadhaar', (value: unknown) => {
     const digits = typeof value === 'string' ? value.replace(/\D/g, '') : '';
     return digits.length === 12

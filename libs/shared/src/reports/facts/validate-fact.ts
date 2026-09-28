@@ -8,6 +8,7 @@ const MAX_LENGTH: Record<ReportFact['type'], number> = {
   text: 200,
   textarea: 1000,
   number: 20,
+  money: 20,
   date: 10,
   email: 200,
   phone: 20,
@@ -26,7 +27,8 @@ export function validateFactValue(
   if (value.length > max) return `${fact.label} is too long (max ${max} characters)`;
 
   switch (fact.type) {
-    case 'number': {
+    case 'number':
+    case 'money': {
       const n = Number(value);
       return Number.isFinite(n) && n >= 0 ? null : `${fact.label} must be a number`;
     }

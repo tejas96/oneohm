@@ -37,6 +37,17 @@ export function earthingCountMismatch(raw: string): { declared: number; given: n
   return { declared: parsed.declared, given: parsed.values.length };
 }
 
+/**
+ * Rupees in whole rupees with Indian grouping: 944817.93 prints "₹9,44,818/-"
+ * ("/-" means no paise). Anything that is not a number prints as typed.
+ */
+export function formatRupees(raw: string): string {
+  const value = raw.trim();
+  const amount = Number(value);
+  if (!value || !Number.isFinite(amount)) return value;
+  return `₹${Math.round(amount).toLocaleString('en-IN')}/-`;
+}
+
 /** Serial numbers typed one per line, or with commas or spaces. */
 export function splitSerials(raw: string): string[] {
   return raw.split(/[\s,;]+/).filter(Boolean);
