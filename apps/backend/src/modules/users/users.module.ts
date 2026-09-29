@@ -11,6 +11,7 @@ import {
   UserDeviceTokenRepository,
 } from './repositories';
 import { UserService, ProfileService, InvitationService, DeviceTokenService } from './services';
+import { AccountStatusService } from '../auth/services/account-status.service';
 import { CustomersModule } from '../customers/customers.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { IamModule } from '../iam/iam.module';
@@ -38,6 +39,9 @@ import { IamModule } from '../iam/iam.module';
   ],
   controllers: [UserController, InvitationController],
   providers: [
+    // Owned here (not AuthModule) so UserService can clear its cache without a module import cycle;
+    // AuthModule reaches it through its UsersModule import.
+    AccountStatusService,
     UserRepository,
     UserRoleRepository,
     InvitationRepository,
@@ -48,6 +52,7 @@ import { IamModule } from '../iam/iam.module';
     DeviceTokenService,
   ],
   exports: [
+    AccountStatusService,
     UserService,
     ProfileService,
     InvitationService,

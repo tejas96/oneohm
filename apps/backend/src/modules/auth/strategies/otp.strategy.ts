@@ -1,12 +1,13 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { UserProfileType } from '@tejas96/shared/types';
+import { UserProfileType, UserStatus } from '@tejas96/shared/types';
 import { Request } from 'express';
 import { Strategy } from 'passport-custom';
 
 import { UserEntity } from '../../users/entities/user.entity';
 import { ProfileService } from '../../users/services/profile.service';
 import { UserService } from '../../users/services/user.service';
+import { accountStatusMessage } from '../services/account-status.service';
 import { OtpService } from '../services/otp.service';
 
 /**
@@ -80,6 +81,11 @@ export class OtpStrategy extends PassportStrategy(Strategy, 'otp') {
       user = await this.userService.findByPhone(phone);
     } catch {
       throw new UnauthorizedException('User not found');
+    }
+
+    // Same account-status gate as password login and refresh
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException(accountStatusMessage(user.status));
     }
 
     // Verify that the user has the requested profile type (Customer or Employee)

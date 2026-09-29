@@ -262,6 +262,8 @@ export function AdminUsersListPage(): JSX.Element {
     user: AdminUser;
     newStatus: string;
   } | null>(null);
+  // Open state is separate so the dialog keeps its name and verb while it animates closed.
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [restoreTarget, setRestoreTarget] = useState<AdminUser | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
 
@@ -283,7 +285,7 @@ export function AdminUsersListPage(): JSX.Element {
         id: statusChangeTarget.user.id,
         status: statusChangeTarget.newStatus,
       });
-      setStatusChangeTarget(null);
+      setStatusDialogOpen(false);
     } catch {
       // error toast handled by FDAL mutation config
     }
@@ -450,7 +452,10 @@ export function AdminUsersListPage(): JSX.Element {
             user={row as unknown as AdminUser}
             isSelf={currentUser?.id === row.id}
             onEdit={(id) => setEditUserId(id)}
-            onStatusChange={(u, status) => setStatusChangeTarget({ user: u, newStatus: status })}
+            onStatusChange={(u, status) => {
+              setStatusChangeTarget({ user: u, newStatus: status });
+              setStatusDialogOpen(true);
+            }}
             onDelete={(u) => requestDelete(u)}
             onRestore={(u) => setRestoreTarget(u)}
           />
@@ -578,7 +583,8 @@ export function AdminUsersListPage(): JSX.Element {
               <span className="font-medium">
                 {deleteConfirmation.target?.firstName} {deleteConfirmation.target?.lastName}
               </span>
-              ? This action cannot be undone.
+              ? They will be removed and can no longer sign in. Their history (customers, quotes,
+              commissions) is kept. An admin can restore them: filter Users by Archived status.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -608,12 +614,7 @@ export function AdminUsersListPage(): JSX.Element {
       </Dialog>
 
       {/* Status change confirmation */}
-      <Dialog
-        open={!!statusChangeTarget}
-        onOpenChange={(open) => {
-          if (!open) setStatusChangeTarget(null);
-        }}
-      >
+      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle>
@@ -644,7 +645,7 @@ export function AdminUsersListPage(): JSX.Element {
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setStatusChangeTarget(null)}
+              onClick={() => setStatusDialogOpen(false)}
               disabled={mutations.statusChange.isPending}
             >
               Cancel

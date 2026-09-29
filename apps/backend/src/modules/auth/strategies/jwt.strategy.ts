@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
 import { ConfigService } from '../../../config/config.service';
+import { AccountStatusService } from '../services/account-status.service';
 import type { CurrentUser, JwtPayload } from '../types';
 
 /**
@@ -11,7 +12,10 @@ import type { CurrentUser, JwtPayload } from '../types';
  */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(@Inject(ConfigService) configService: ConfigService) {
+  constructor(
+    @Inject(ConfigService) configService: ConfigService,
+    @Inject(AccountStatusService) private readonly accountStatus: AccountStatusService,
+  ) {
     const secret = configService.jwt.secret;
     if (!secret) {
       throw new UnauthorizedException('JWT_SECRET is not configured');
@@ -35,8 +39,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Invalid token payload');
     }
 
+    // A deactivated or deleted user's token stops working (cached 60s), with the login message.
+    const refusal = await this.accountStatus.refusalFor(payload.sub);
+    if (refusal) {
+      throw new UnauthorizedException(refusal);
+    }
+
     // Return simplified payload to be attached to request.user
-    // AuthService validates user existence on login
     // NEW IAM: Extract permissions from JWT
     // organizationId is optional - users can belong to multiple orgs
     return {

@@ -50,7 +50,7 @@ that we have not first checked on the web.
 | X2 | If a returning customer gets a second roof, the reseller tag carries over. Staff can remove the reseller on the **draft** quote. |
 | X3 | The first reseller to add a customer owns that customer. Only staff can change the owner, on the web, and must give a reason. |
 | X4 | Money that a reseller pays back is recorded on the commission row only. No ledger entry in v1 (see §9). |
-| X5 | Deals accepted before launch get no automatic commission. They appear under "Before launch" in the Fix strip. Admin creates or dismisses each one. |
+| X5 | Commissions start when the code is live; there is no launch-date setting (owner decision, 2026-09-29: no reseller had been onboarded, so there is no earlier activity). Any accepted reseller deal without a commission row appears in the Fix strip, where admin creates or dismisses it. |
 | X6 | No push notifications in v1. The reseller sees changes when he opens the app. |
 | X7 | TDS is not handled. The amount is the gross commission. |
 | X8 | The reseller cannot see project documents in v1 (they hold customer KYC and bills). |
@@ -372,8 +372,7 @@ books, that is a follow-up.
 Shown only when the count is above 0: *"N accepted deals have no commission row. [Review]"*.
 
 - "Missing" = quote `accepted`, not voided, `reseller_id` set, no commission row.
-- Two groups: **Since launch** (accepted on or after env `COMMISSIONS_LIVE_FROM`, an IST date) and
-  **Before launch** (X5).
+- One list, newest first (X5). No launch-date split.
 - Each row: **Create** (runs the §6.3 creator) or **Dismiss** (creates the row as `cancelled`,
   cancel_reason "Dismissed: {note}", so the unique index still holds).
 
@@ -481,8 +480,8 @@ before building. (Table names: "customers" in this section means `customer_profi
 **Birth**
 1. The quote has no reseller → no commission.
 2. The same quote is accepted twice (double tap or retry) → the unique `quote_id` makes the second a no-op.
-3. The acceptance hook fails → the Fix strip "Since launch" shows it (§10.3).
-4. The quote is from before launch → only via the Fix strip "Before launch" (X5).
+3. The acceptance hook fails → the Fix strip shows it (§10.3).
+4. A reseller deal accepted before this feature existed → shows in the Fix strip (X5). None expected: no reseller had been onboarded.
 5. Snapshot or base is missing → `base_source = missing`, ₹0, Approve blocked until Edit (§5).
 6. The reseller's rate is NULL → `rate_source = missing`, same as 5.
 7. The rate is 0% → born `cancelled` "Rate is 0%" (§5).
@@ -614,8 +613,7 @@ and SMS reach real phones (use the approved test customer, and "Mark as sent" fo
 1. Before deploy, run a **read-only** SELECT on production for: `employee_commissions` rows whose
    project has no quote, duplicate quotes (two rows for one quote), and `paid` rows with no
    expense. Any hit aborts the migration or fails a later VALIDATE; fix the data first.
-2. Set `COMMISSIONS_LIVE_FROM` (an IST date, `YYYY-MM-DD`) on Fly **before** the deploy goes live.
-   An impossible date is logged and treated as unset.
+2. (Removed 2026-09-29: there is no `COMMISSIONS_LIVE_FROM` setting; commissions start on deploy, X5.)
 3. Deploy the backend + web PR, then run the cross-foot (§15).
 4. With the owner's OK, run the 8 `ALTER TABLE employee_commissions VALIDATE CONSTRAINT …`
    statements (`chk_ec_status`, `chk_ec_rate`, `chk_ec_base`, `chk_ec_amount`,
