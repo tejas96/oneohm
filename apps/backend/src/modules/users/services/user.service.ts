@@ -11,6 +11,7 @@ import { UserStatus } from '@tejas96/shared/types';
 import * as bcrypt from 'bcrypt';
 
 import { ProfileService } from './profile.service';
+import { AccountStatusService } from '../../auth/services/account-status.service';
 import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
@@ -33,6 +34,7 @@ export class UserService {
     @Inject(forwardRef(() => ProfileService))
     private readonly profileService: ProfileService,
     private readonly employeeProfileRepository: EmployeeProfileRepository,
+    private readonly accountStatus: AccountStatusService,
   ) {}
 
   /**
@@ -383,6 +385,7 @@ export class UserService {
         .execute();
     });
 
+    this.accountStatus.forget(id);
     this.logger.log(`User deleted: ${user.phone}`);
   }
 
@@ -409,6 +412,7 @@ export class UserService {
         .execute();
     });
 
+    this.accountStatus.forget(id);
     this.logger.log(`User restored: ${id}`);
     return this.findById(id);
   }
@@ -455,6 +459,7 @@ export class UserService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
+    this.accountStatus.forget(id);
     this.logger.log(`User status updated: ${updatedUser.phone} -> ${newStatus}`);
 
     return this.findById(id);

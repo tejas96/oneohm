@@ -5,7 +5,7 @@ import type ms from 'ms';
 
 import { AuthController } from './controllers';
 import { JwtAuthGuard } from './guards';
-import { AccountStatusService, AuthService, OtpService, PlatformSmsService } from './services';
+import { AuthService, OtpService, PlatformSmsService } from './services';
 import { JwtStrategy, LocalStrategy, OtpStrategy } from './strategies';
 import { ConfigService } from '../../config/config.service';
 import { CustomersModule } from '../customers/customers.module';
@@ -56,7 +56,6 @@ import { UsersModule } from '../users/users.module';
   controllers: [AuthController],
   providers: [
     // Services
-    AccountStatusService,
     AuthService,
     OtpService,
     PlatformSmsService,

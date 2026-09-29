@@ -51,4 +51,8 @@ export class AccountStatusService {
     this.cache.set(userId, { refusal, at: Date.now() });
     return refusal;
   }
+  /** Drop the cached answer so an admin's status change, restore or delete applies at once. */
+  forget(userId: string): void {
+    this.cache.delete(userId);
+  }
 }
