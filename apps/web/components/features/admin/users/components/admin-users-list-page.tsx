@@ -583,7 +583,8 @@ export function AdminUsersListPage(): JSX.Element {
               <span className="font-medium">
                 {deleteConfirmation.target?.firstName} {deleteConfirmation.target?.lastName}
               </span>
-              ? This action cannot be undone.
+              ? They will be removed and can no longer sign in. Their history (customers, quotes,
+              commissions) is kept. An admin can restore them from the Archived tab.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
