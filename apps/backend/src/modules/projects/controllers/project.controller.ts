@@ -24,6 +24,7 @@ import {
   ApiUpdate,
   isUserRefOrMe,
 } from '../../../common/decorators';
+import { ResellerAllowed, ResellerOwnershipService, ResellerScope } from '../../../common/reseller';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -59,11 +60,13 @@ export class ProjectController {
     private readonly teamService: ProjectTeamService,
     private readonly projectRepository: ProjectRepository,
     private readonly cancellationService: ProjectCancellationService,
+    private readonly ownership: ResellerOwnershipService,
   ) {}
 
   /**
    * Get all projects with filters
    */
+  @ResellerAllowed()
   @Get()
   @ApiReadAll({
     summary: 'Get all projects',
@@ -218,6 +221,13 @@ export class ProjectController {
     enum: ['ASC', 'DESC'],
     description: 'Sort order',
   })
+  @ApiQuery({
+    name: 'resellerId',
+    required: false,
+    type: String,
+    description:
+      'Filter by reseller (employee_profiles.id). Ignored and overwritten for a reseller caller.',
+  })
   async findAll(
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page?: string,
@@ -244,6 +254,8 @@ export class ProjectController {
     @Query('systemSizeMax', new ParseFloatPipe({ optional: true })) systemSizeMax?: number,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+    @Query('resellerId', new ParseUUIDPipe({ optional: true })) resellerIdQuery?: string,
+    @ResellerScope() resellerId?: string,
   ): Promise<PaginatedResponse<ProjectListItemDto>> {
     const pageNum = Math.max(1, page ? parseInt(page, 10) || 1 : 1);
     const limitNum = Math.min(100, Math.max(1, limit ? parseInt(limit, 10) || 20 : 20));
@@ -287,12 +299,25 @@ export class ProjectController {
     //     (list page, command palette). Admins still pass an optional memberId.
     // A bare customerId is not an authorization token — without one of those
     // grants the list stays team-scoped even if the query names a customer.
-    const effectiveMemberId = resolveProjectListMemberId(
-      currentUser.roles || [],
-      currentUser.permissions || [],
-      currentUser.id,
-      { customerId, memberId },
-    );
+    //
+    // A reseller is a third case, scoped to his own customers: he is on no project's
+    // crew by definition, so pinning him to "my team" would always return
+    // nothing. `resellerId` (server truth, below) is what scopes his list
+    // instead, so the member pin is skipped entirely rather than resolved.
+    const effectiveMemberId = resellerId
+      ? undefined
+      : resolveProjectListMemberId(
+          currentUser.roles || [],
+          currentUser.permissions || [],
+          currentUser.id,
+          {
+            customerId,
+            memberId,
+          },
+        );
+
+    // Server truth overwrites anything the caller sent for this filter.
+    const effectiveResellerId = resellerId ?? resellerIdQuery;
 
     const result = await this.projectService.findAll(pageNum, limitNum, {
       status,
@@ -309,6 +334,7 @@ export class ProjectController {
       address,
       memberId: effectiveMemberId,
       currentUserId: currentUser.id,
+      resellerId: effectiveResellerId,
       pendingWorkflowStepId,
       healthStatus,
       createdBy: effectiveCreatedBy,
@@ -402,6 +428,7 @@ export class ProjectController {
   /**
    * Get project by ID
    */
+  @ResellerAllowed()
   @Get(':id')
   @ApiReadOne({
     summary: 'Get project by ID',
@@ -411,7 +438,12 @@ export class ProjectController {
   async findOne(
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
+    @ResellerScope() resellerId?: string,
   ): Promise<ProjectResponseDto> {
+    // Unlike the team/task controllers, `ProjectService.findById` carries no
+    // membership gate of its own to bypass — every authenticated user could
+    // already read any project by id. Ownership is the only check to add.
+    if (resellerId) await this.ownership.assertOwns('project', id, resellerId);
     const project = await this.projectService.findById(id);
 
     return plainToInstance(ProjectResponseDto, project, {

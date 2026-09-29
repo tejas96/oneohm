@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ResellerModule, ResellerScopeInterceptor } from './common/reseller';
 import { ConfigModule } from './config';
 import { DatabaseModule } from './database/database.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
@@ -22,6 +23,7 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DiscomsModule } from './modules/discoms/discoms.module';
 import { DocumentsModule } from './modules/documents/documents.module';
+import { CommissionPayoutModule } from './modules/employees/commissions/commission-payout.module';
 import { EmployeesModule } from './modules/employees/employees.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { FinanceCommonModule } from './modules/finance-common/finance-common.module';
@@ -46,6 +48,7 @@ import { UsersModule } from './modules/users/users.module';
   imports: [
     ConfigModule,
     DatabaseModule,
+    ResellerModule,
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
     // Global rate limiting - 100 requests per minute per IP
@@ -92,6 +95,8 @@ import { UsersModule } from './modules/users/users.module';
     // scripts/ledger-dry-run.ts reads them by design and goes with them.
     LedgerModule,
     PaymentApprovalModule,
+    // Imported here to avoid an import cycle; see commission-payout.module.ts.
+    CommissionPayoutModule,
     FinanceModule,
     CommentsModule,
     DocumentsModule,
@@ -115,6 +120,8 @@ import { UsersModule } from './modules/users/users.module';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    // The reseller wall. Deny-by-default for reseller users; see common/reseller.
+    { provide: APP_INTERCEPTOR, useClass: ResellerScopeInterceptor },
   ],
 })
 export class AppModule {}

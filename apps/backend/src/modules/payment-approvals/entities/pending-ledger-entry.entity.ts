@@ -9,7 +9,7 @@ import {
 
 import { paiseTransformer } from '../../ledger/domain/paise';
 
-export type PendingKind = 'receipt' | 'expense' | 'reversal' | 'vendor_payment';
+export type PendingKind = 'receipt' | 'expense' | 'reversal' | 'vendor_payment' | 'commission';
 export type PendingStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
 
 /**

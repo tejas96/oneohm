@@ -15,6 +15,7 @@ import { CustomerService } from './services/customer.service';
 import { FollowupService } from './services/followup.service';
 import { LeadClosureService } from './services/lead-closure.service';
 import { SiteWorkService } from './services/site-work.service';
+import { AuditModule } from '../audit/audit.module';
 import { DiscomsModule } from '../discoms/discoms.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { IamModule } from '../iam/iam.module';
@@ -38,6 +39,7 @@ import { UsersModule } from '../users/users.module';
     StorageModule,
     IamModule,
     DiscomsModule,
+    AuditModule,
   ],
   controllers: [CustomerController, CustomerPropertyController, FollowupController],
   providers: [

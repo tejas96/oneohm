@@ -184,6 +184,8 @@ export class ProjectRepository {
       systemSizeMax?: number;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
+      /** employee_profiles.id, server-set for a reseller caller; scopes to his customers. */
+      resellerId?: string;
     },
   ): Promise<{ projects: ProjectEntity[]; total: number }> {
     const query = this.repository
@@ -323,6 +325,13 @@ export class ProjectRepository {
                 - SUM(ROUND(COALESCE(bi.quoted_quantity, 0) * bi.unit_price_paise))
                 > COALESCE(bal.change_order_paise, 0)
          )`,
+      );
+    }
+
+    if (filters?.resellerId) {
+      query.andWhere(
+        'project.quoteId IN (SELECT q.id FROM quotes q WHERE q.reseller_id = :resellerId)',
+        { resellerId: filters.resellerId },
       );
     }
 

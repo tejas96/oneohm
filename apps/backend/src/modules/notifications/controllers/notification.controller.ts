@@ -11,6 +11,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 
+import { ResellerAllowed } from '../../../common/reseller';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -27,6 +28,7 @@ export class NotificationController {
   /**
    * Get unread count — MUST be before :id
    */
+  @ResellerAllowed()
   @Get('unread-count')
   @ApiOperation({ summary: 'Get unread notification count for current user' })
   async getUnreadCount(@CurrentUser() currentUser: CurrentUserType): Promise<{ count: number }> {
@@ -37,6 +39,7 @@ export class NotificationController {
   /**
    * Mark all notifications as read
    */
+  @ResellerAllowed()
   @Post('mark-all-read')
   @ApiOperation({ summary: 'Mark all notifications as read for current user' })
   async markAllRead(@CurrentUser() currentUser: CurrentUserType): Promise<{ message: string }> {
@@ -47,6 +50,7 @@ export class NotificationController {
   /**
    * Get all notifications for current user
    */
+  @ResellerAllowed()
   @Get()
   @ApiOperation({ summary: 'Get notifications for current user' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -81,6 +85,7 @@ export class NotificationController {
   /**
    * Mark notification as read
    */
+  @ResellerAllowed()
   @Patch(':id/read')
   @ApiOperation({ summary: 'Mark a notification as read' })
   async markRead(

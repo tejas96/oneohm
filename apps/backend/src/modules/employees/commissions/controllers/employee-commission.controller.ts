@@ -2,206 +2,123 @@ import {
   Body,
   Controller,
   Get,
-  HttpStatus,
+  NotFoundException,
   Param,
   ParseUUIDPipe,
+  Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CommissionStatus } from '@tejas96/shared/types';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import {
-  ApiAction,
-  ApiCreate,
-  ApiDelete,
-  ApiReadAll,
-  ApiReadOne,
-  ApiUpdate,
-} from '../../../../common/decorators';
+import { ResellerAllowed, ResellerScope } from '../../../../common/reseller';
 import { CurrentUser } from '../../../auth/decorators';
 import { JwtAuthGuard } from '../../../auth/guards';
 import type { CurrentUserType } from '../../../auth/types';
 import {
-  CommissionResponseDto,
-  CreateCommissionDto,
-  UpdateCommissionDto,
-  UpdateCommissionStatusDto,
+  CloseRecoveryDto,
+  CommissionListQueryDto,
+  EditCommissionDto,
+  ReasonDto,
+  ResellerPeriodQueryDto,
 } from '../dto';
-import { EmployeeCommissionService } from '../services/employee-commission.service';
+import { CommissionActionsService } from '../services/commission-actions.service';
+import { ResellerDashboardService } from '../services/reseller-dashboard.service';
+import type { CommissionRow } from '../sql/commission-read.sql';
+import { requirePermission } from '../utils/require-permission';
 
 /**
- * Employee Commission Controller
- * Handles HTTP requests for commission management.
- * Renamed from ResellerCommissionController; route prefix stays `/commissions`
- * (still a reasonable generic name), but the reseller sub-route now uses
- * `employee` for consistency with the merge into the employees module.
+ * A commission row as its reseller sees it: office-only text (notes, the
+ * rejection and recovery notes, a Fix-strip dismissal) never reaches him.
  */
-@ApiTags('Employee Commissions')
+function forReseller(
+  row: CommissionRow,
+): Omit<CommissionRow, 'notes' | 'payoutRejectedReason' | 'recoveryNotes'> {
+  const { notes, payoutRejectedReason, recoveryNotes, ...rest } = row;
+  void notes;
+  void payoutRejectedReason;
+  void recoveryNotes;
+  return {
+    ...rest,
+    cancelReason: rest.cancelReason?.startsWith('Dismissed:') ? null : rest.cancelReason,
+  };
+}
+
+/**
+ * Commissions, office side. There is no create, no delete and no "set status":
+ * a commission is born from an accepted quote, dies by cancel, and reaches
+ * `paid` only through the approval queue (spec §6.2, §7.5).
+ */
+@ApiTags('Commissions')
 @ApiBearerAuth()
 @Controller('commissions')
 @UseGuards(JwtAuthGuard)
 export class EmployeeCommissionController {
-  constructor(private readonly commissionService: EmployeeCommissionService) {}
+  constructor(
+    private readonly actions: CommissionActionsService,
+    private readonly dashboard: ResellerDashboardService,
+  ) {}
 
-  /**
-   * Create a new commission record
-   */
-  @ApiCreate({
-    summary: 'Create a new commission',
-    description: 'Creates a new commission record for an employee (reseller-kind profile).',
-    responseType: CommissionResponseDto,
-    additionalErrors: [
-      {
-        status: 400,
-        description: 'Commission calculation mismatch',
-      },
-    ],
-  })
-  async create(
-    @Body() createDto: CreateCommissionDto,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<CommissionResponseDto> {
-    const commission = await this.commissionService.create(createDto, currentUser.id);
-    return commission as CommissionResponseDto;
+  /** The reseller's own dashboard. */
+  @ResellerAllowed()
+  @Get('me')
+  async me(@Query() q: ResellerPeriodQueryDto, @ResellerScope() resellerId?: string) {
+    if (!resellerId) throw new NotFoundException('Only resellers have commissions');
+    const detail = await this.dashboard.detail(resellerId, q.period);
+    return { ...detail, commissions: detail.commissions.map(forReseller) };
   }
 
-  /**
-   * Get all commissions
-   */
-  @ApiReadAll({
-    summary: 'Get all commissions',
-    description: 'Retrieve all commission records.',
-    responseType: CommissionResponseDto,
-    additionalQueries: [
-      {
-        name: 'status',
-        required: false,
-        enum: CommissionStatus,
-        description: 'Filter by commission status',
-      },
-      {
-        name: 'employeeId',
-        required: false,
-        type: String,
-        description: 'Filter by employee (reseller-kind profile) ID',
-      },
-    ],
-  })
-  async findAll(
-    @CurrentUser() currentUser: CurrentUserType,
-    @Query('status') status?: CommissionStatus,
-    @Query('employeeId') employeeId?: string,
-  ): Promise<CommissionResponseDto[]> {
-    if (status) {
-      const commissions = await this.commissionService.findByStatus(status);
-      return commissions as CommissionResponseDto[];
-    }
-
-    if (employeeId) {
-      const commissions = await this.commissionService.findByEmployeeId(employeeId);
-      return commissions as CommissionResponseDto[];
-    }
-
-    const commissions = await this.commissionService.findAll();
-    return commissions as CommissionResponseDto[];
+  @Get()
+  list(
+    @Query() query: CommissionListQueryDto,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<CommissionRow[]> {
+    requirePermission(user, 'finance.view');
+    return this.actions.list(query);
   }
 
-  /**
-   * Get commission by ID
-   */
-  @ApiReadOne({
-    summary: 'Get commission by ID',
-    description: 'Retrieve a specific commission record by its ID.',
-    responseType: CommissionResponseDto,
-  })
-  async findOne(
+  @Get(':id')
+  getOne(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<CommissionResponseDto> {
-    const commission = await this.commissionService.findById(id);
-    return commission as CommissionResponseDto;
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<CommissionRow> {
+    requirePermission(user, 'finance.view');
+    return this.actions.getOne(id);
   }
 
-  /**
-   * Update commission
-   */
-  @ApiUpdate({
-    summary: 'Update commission',
-    description: 'Update commission record details.',
-    responseType: CommissionResponseDto,
-    additionalErrors: [
-      {
-        status: 400,
-        description: 'Cannot update paid or cancelled commissions',
-      },
-    ],
-  })
-  async update(
+  @Post(':id/approve')
+  approve(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateDto: UpdateCommissionDto,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<CommissionResponseDto> {
-    const commission = await this.commissionService.update(id, updateDto, currentUser.id);
-    return commission as CommissionResponseDto;
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<CommissionRow> {
+    return this.actions.approve(id, user);
   }
 
-  /**
-   * Update commission status (generic)
-   */
-  @ApiAction({
-    path: 'status',
-    summary: 'Update commission status',
-    description: `Update commission status (${Object.values(CommissionStatus).join(', ')}). Handles approval and payment workflows.`,
-    responseType: CommissionResponseDto,
-  })
-  async updateStatus(
+  @Patch(':id')
+  edit(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() statusDto: UpdateCommissionStatusDto,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<CommissionResponseDto> {
-    const commission = await this.commissionService.updateStatus(
-      id,
-      statusDto.status,
-      currentUser.id,
-    );
-    return commission as CommissionResponseDto;
+    @Body() dto: EditCommissionDto,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<CommissionRow> {
+    return this.actions.edit(id, dto, user);
   }
 
-  /**
-   * Delete commission
-   */
-  @ApiDelete({
-    summary: 'Delete commission',
-    description: 'Soft delete a commission record. Cannot delete paid commissions.',
-    additionalErrors: [
-      {
-        status: 400,
-        description: 'Cannot delete paid commissions',
-      },
-    ],
-  })
-  async delete(
+  @Post(':id/cancel')
+  cancel(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<void> {
-    await this.commissionService.delete(id);
+    @Body() dto: ReasonDto,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<CommissionRow> {
+    return this.actions.cancel(id, dto.reason, user);
   }
 
-  /**
-   * Get total commission earned by an employee (reseller-kind profile)
-   */
-  @Get('employee/:employeeId/total')
-  @ApiOperation({ summary: 'Get total commission earned' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Total commission retrieved' })
-  async getTotalCommissionEarned(
-    @Param('employeeId', ParseUUIDPipe) employeeId: string,
-    @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<{ employeeId: string; totalCommissionEarned: number }> {
-    const total = await this.commissionService.getTotalCommissionEarned(employeeId);
-    return {
-      employeeId,
-      totalCommissionEarned: total,
-    };
+  @Post(':id/close-recovery')
+  closeRecovery(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CloseRecoveryDto,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<CommissionRow> {
+    return this.actions.closeRecovery(id, dto, user);
   }
 }

@@ -19,6 +19,7 @@ import {
 import { parsePaginationParams } from '@tejas96/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
+import { ResellerAllowed } from '../../../common/reseller';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -46,6 +47,7 @@ type GroupByMode = 'dueDate' | 'priority' | 'project' | 'status';
 export class TasksController {
   constructor(private readonly taskService: ProjectTaskService) {}
 
+  @ResellerAllowed()
   @Get('my')
   @ApiOperation({ summary: 'Get tasks assigned to the current user, optionally grouped' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
@@ -139,6 +141,7 @@ export class TasksController {
     };
   }
 
+  @ResellerAllowed()
   @Get('my/summary')
   @ApiOperation({
     summary: 'Get lightweight summary counts for current user tasks (for navigation badges)',

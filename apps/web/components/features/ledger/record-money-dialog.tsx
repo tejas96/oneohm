@@ -2,7 +2,7 @@
 
 import { Alert, Box, Button, CircularProgress } from '@mui/material';
 import { EXPENSE_CATEGORY_LABELS } from '@tejas96/shared';
-import { ExpenseCategory, PaymentMethod } from '@tejas96/shared/types';
+import { ExpenseCategory, MANUAL_EXPENSE_CATEGORIES, PaymentMethod } from '@tejas96/shared/types';
 import { type JSX, useEffect, useMemo, useRef, useState } from 'react';
 
 import { VendorPickerControlled } from '@/components/features/inventory/components/shared/vendor-picker';
@@ -47,7 +47,7 @@ interface RecordMoneyDialogProps {
 }
 
 /**
- * The seven categories, and nothing else.
+ * Every category except Commission.
  *
  * There used to be an eighth option, "Other", with a free-text box beside it
  * whose contents were sent as the category verbatim. It is gone: it defeated
@@ -60,7 +60,7 @@ interface RecordMoneyDialogProps {
  * ("Insurance", "Training") belongs in the Notes field below, which is free
  * text by design and is not summed by anything.
  */
-const EXPENSE_CATEGORY_OPTIONS = Object.values(ExpenseCategory).map((c) => ({
+const EXPENSE_CATEGORY_OPTIONS = MANUAL_EXPENSE_CATEGORIES.map((c) => ({
   value: c,
   label: EXPENSE_CATEGORY_LABELS[c],
 }));

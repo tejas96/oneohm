@@ -8,6 +8,7 @@ import {
   FileBarChart,
   FileText,
   Folder,
+  Handshake,
   HelpCircle,
   Home,
   Key,
@@ -438,6 +439,19 @@ export const navigationConfig: NavigationConfig = {
               icon: CheckCircle,
               label: 'Payment Approvals',
               href: ROUTES.FINANCE.APPROVALS,
+            },
+          ],
+        },
+        {
+          title: 'RESELLERS',
+          permission: ALWAYS_OPEN,
+          items: [
+            {
+              id: 'finance-resellers',
+              permission: 'finance.view',
+              icon: Handshake,
+              label: 'Resellers',
+              href: ROUTES.ORG.RESELLERS,
             },
           ],
         },

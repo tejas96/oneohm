@@ -98,6 +98,7 @@ function makeService(opts: {
     dataSource as never,
     { emit } as never,
     {} as never,
+    { createForAcceptedQuote: jest.fn() } as never,
   );
 
   return { service, quoteRepository, sendTemplateMessage, update, emit, dataSource };

@@ -32,6 +32,8 @@ export function Step3TeamSelection({ form }: Step3TeamSelectionProps): React.JSX
     isError,
   } = useEmployees({
     status: 'active',
+    // The server refuses a reseller on a project team, so never offer one.
+    profileKind: 'staff',
   });
   const { data: workloadData } = useTeamWorkload();
 

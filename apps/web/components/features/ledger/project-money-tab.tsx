@@ -2,6 +2,7 @@
 
 import { Tooltip } from '@mui/material';
 import { bankLabel } from '@tejas96/shared/constants';
+import { ExpenseCategory } from '@tejas96/shared/types';
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -640,7 +641,11 @@ function pendingKindLabel(p: Pick<PaymentApproval, 'kind' | 'isCredit'>): string
   if (p.kind === 'expense') return p.isCredit ? 'Credit bill' : 'Expense';
   if (p.kind === 'vendor_payment') return 'Vendor payment';
   if (p.kind === 'reversal') return 'Reversal';
-  return 'Receipt';
+  if (p.kind === 'commission') return 'Commission';
+  if (p.kind === 'receipt') return 'Receipt';
+  // Exhaustive: a new ApprovalKind must be added above, not fall through silently.
+  const unreachable: never = p.kind;
+  return String(unreachable);
 }
 
 /** Every ledger entry on the project, newest first. */
@@ -829,13 +834,17 @@ function ProjectEntries({
                           </span>
                         </Tooltip>
                       ) : null}
-                      <button
-                        type="button"
-                        onClick={() => onReverse(e)}
-                        className="inline-flex h-7 items-center rounded-pill px-2.5 text-[11.5px] font-medium text-foreground-secondary transition-colors duration-fast hover:bg-surface hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                      >
-                        Reverse
-                      </button>
+                      {/* A commission payout is undone by Close recovery on the
+                          reseller's page; the backend refuses a plain reversal. */}
+                      {e.category === ExpenseCategory.COMMISSION ? null : (
+                        <button
+                          type="button"
+                          onClick={() => onReverse(e)}
+                          className="inline-flex h-7 items-center rounded-pill px-2.5 text-[11.5px] font-medium text-foreground-secondary transition-colors duration-fast hover:bg-surface hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        >
+                          Reverse
+                        </button>
+                      )}
                     </>
                   )}
                 </div>

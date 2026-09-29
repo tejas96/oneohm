@@ -88,11 +88,27 @@ export class ProjectCancellationService {
         [projectId],
       );
 
-      // 2. Commissions nobody has been paid yet.
+      // 2. Commissions nobody has been paid yet — and any payout still waiting
+      //    in the approval queue, so a finance head cannot pay a dead deal.
+      //    Paid ones stay paid and show "To recover" (derived; spec §9).
       await manager.query(
-        `UPDATE employee_commissions SET status = 'cancelled', updated_at = now()
-          WHERE project_id = $1 AND status IN ('pending', 'approved')`,
-        [projectId],
+        // The reason goes on the request so the queue says why it closed,
+        // instead of reading like the recorder withdrew it.
+        `UPDATE pending_ledger_entries SET status = 'cancelled', rejection_reason = $2, updated_at = now()
+          WHERE status = 'pending' AND kind = 'commission'
+            AND id IN (SELECT c.payout_request_id FROM employee_commissions c
+                         JOIN projects p ON p.quote_id = c.quote_id
+                        WHERE p.id = $1 AND c.status = 'approved'
+                          AND c.payout_request_id IS NOT NULL)`,
+        [projectId, `Project ${project.projectNumber} cancelled`],
+      );
+      await manager.query(
+        `UPDATE employee_commissions c
+            SET status = 'cancelled', payout_request_id = NULL, cancel_reason = $2,
+                updated_by = $3, updated_at = now()
+           FROM projects p
+          WHERE p.id = $1 AND p.quote_id = c.quote_id AND c.status IN ('pending', 'approved')`,
+        [projectId, `Project ${project.projectNumber} cancelled`, userId],
       );
 
       // 3. The accepted quote stops locking the roof. `propertyId` is NOT NULL
@@ -200,9 +216,12 @@ export class ProjectCancellationService {
              AND po.deleted_at IS NULL
              AND po.status NOT IN ('received', 'cancelled'))::int         AS open_purchase_orders,
          (SELECT COUNT(*) FROM employee_commissions c
-           WHERE c.project_id = $1
-             AND c.status = 'paid'
-             AND c.recovered_at IS NULL)::int                             AS unrecovered_commissions,
+            JOIN projects p ON p.quote_id = c.quote_id
+           WHERE p.id = $1 AND c.status = 'paid' AND c.recovered_at IS NULL)::int AS unrecovered_commissions,
+         (SELECT c.employee_id FROM employee_commissions c
+            JOIN projects p ON p.quote_id = c.quote_id
+           WHERE p.id = $1 AND c.status = 'paid' AND c.recovered_at IS NULL
+           LIMIT 1)                                                        AS unrecovered_commission_reseller_id,
          (SELECT settled_at IS NOT NULL FROM projects WHERE id = $1)      AS settled`,
       [projectId],
     );
@@ -224,14 +243,11 @@ export class ProjectCancellationService {
       they were cancelled, though their allocated/dispatched figures remain.
 
       `unrecovered_commissions` is ADVISORY and deliberately NOT in this sum.
-      Nothing in this codebase ever writes `employee_commissions.recovered_at`
-      — the column exists in a migration and in the entity, and this SELECT is
-      its only reader. Folding it in makes a gate nobody can clear: any
-      cancelled project that ever paid a commission would report
-      `cleanup_pending` forever, which teaches everyone to ignore the state
-      entirely. It is reported so the money is visible, and it stays out of the
-      arithmetic. Do NOT fold it back in until something can actually stamp
-      recovery — a gate with no way to clear it is worse than no gate.
+      Recovery is chased with the reseller, not with this project: Close
+      recovery on the reseller's page stamps `recovered_at`, and that can take
+      weeks. Holding the project at `cleanup_pending` until then would mix a
+      money chase into the stock cleanup. It is reported, with the reseller to
+      go to, and stays out of the arithmetic.
     */
     const open = Number(row.units_at_site) + Number(row.units_reserved) + row.open_purchase_orders;
 
@@ -241,6 +257,7 @@ export class ProjectCancellationService {
       pendingReturns: row.pending_returns,
       openPurchaseOrders: row.open_purchase_orders,
       unrecoveredCommissions: row.unrecovered_commissions,
+      unrecoveredCommissionResellerId: row.unrecovered_commission_reseller_id ?? null,
       settled: row.settled,
       state: open === 0 && row.settled ? 'settled' : 'cleanup_pending',
     };

@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { MANUAL_EXPENSE_CATEGORIES } from '@tejas96/shared/types';
 import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -85,10 +86,11 @@ export class SubmitApprovalDto {
   @IsOptional()
   vendorId?: string;
 
-  @ApiPropertyOptional({ description: 'Required for expense.' })
+  @ApiPropertyOptional({ enum: MANUAL_EXPENSE_CATEGORIES, description: 'Required for expense.' })
   @ValidateIf((o: SubmitApprovalDto) => o.kind === 'expense')
-  @IsString()
-  @MaxLength(30)
+  @IsIn(MANUAL_EXPENSE_CATEGORIES, {
+    message: `category must be one of: ${MANUAL_EXPENSE_CATEGORIES.join(', ')}`,
+  })
   category?: string;
 
   @ApiPropertyOptional()

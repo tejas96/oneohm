@@ -231,6 +231,7 @@ export function PaymentApprovalsPage(): JSX.Element {
               { label: 'Expense', value: 'expense' },
               { label: 'Vendor payment', value: 'vendor_payment' },
               { label: 'Reversal', value: 'reversal' },
+              { label: 'Commission', value: 'commission' },
             ],
           },
           { field: 'valueDate', headerName: 'Date', filterable: true, filterType: 'date' },
@@ -314,7 +315,8 @@ function toKind(value: string | undefined): ApprovalKind | undefined {
   return value === 'receipt' ||
     value === 'expense' ||
     value === 'reversal' ||
-    value === 'vendor_payment'
+    value === 'vendor_payment' ||
+    value === 'commission'
     ? value
     : undefined;
 }

@@ -24,11 +24,16 @@ export class CancellationCleanupDto {
   @ApiProperty({
     example: 0,
     description:
-      'Advisory only, and NOT part of `state`. Nothing writes ' +
-      '`employee_commissions.recovered_at` yet, so gating on it would pin every ' +
-      'project that ever paid a commission at cleanup_pending forever.',
+      'Advisory only, and NOT part of `state`. Recovery is closed on the ' +
+      "reseller's page, often weeks later, so it does not hold the stock cleanup open.",
   })
   unrecoveredCommissions!: number;
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'The reseller to chase, so the card can link to his page. Null when none.',
+  })
+  unrecoveredCommissionResellerId!: string | null;
   @ApiProperty({ example: true }) settled!: boolean;
   @ApiProperty({ example: 'cleanup_pending', enum: ['cleanup_pending', 'settled'] })
   state!: 'cleanup_pending' | 'settled';

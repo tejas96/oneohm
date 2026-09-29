@@ -182,6 +182,7 @@ export const ROUTES = {
     EMPLOYEES: '/employees',
     EMPLOYEE_DETAIL: '/employees/[id]',
     RESELLERS: '/resellers',
+    RESELLER_DETAIL: '/resellers/[id]',
     DOCUMENTS: '/documents',
   },
 
@@ -233,6 +234,7 @@ interface RouteParamTypes {
   '/admin/users/[id]': { id: string };
   '/admin/roles/[id]': { id: string };
   '/employees/[id]': { id: string };
+  '/resellers/[id]': { id: string };
 
   // Routes with query filters
   '/quotes': { status?: 'draft' | 'sent' | 'viewed' | 'accepted' | 'rejected' | 'expired' };
@@ -378,6 +380,7 @@ const ROUTE_TO_PANEL_MAP: Record<string, string> = {
   [ROUTES.FINANCE.RECEIVABLES]: 'finance',
   [ROUTES.FINANCE.PAYABLES]: 'finance',
   [ROUTES.FINANCE.APPROVALS]: 'finance',
+  [ROUTES.ORG.RESELLERS]: 'finance',
 
   // Service routes
   [ROUTES.SERVICE.HOME]: 'service',

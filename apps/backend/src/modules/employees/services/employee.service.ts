@@ -7,9 +7,11 @@ import {
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
 import { EmployeeProfileKind, UserProfileType, UserStatus } from '@tejas96/shared/types';
 import { AADHAAR_ALREADY_REGISTERED_MESSAGE } from '@tejas96/shared/utils';
 import { plainToInstance } from 'class-transformer';
+import { DataSource } from 'typeorm';
 
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { UserRepository } from '../../users/repositories/user.repository';
@@ -38,6 +40,7 @@ export class EmployeeService {
     private readonly userRoleRepository: UserRoleRepository,
     @Inject(forwardRef(() => ProfileService))
     private readonly profileService: ProfileService,
+    @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -285,6 +288,20 @@ export class EmployeeService {
       assertNoResellerFieldsOnStaffProfile(dto as Record<string, unknown>);
     }
 
+    if (dto.profileKind && dto.profileKind !== existing.profileKind) {
+      const [used] = await this.dataSource.query(
+        `SELECT (EXISTS (SELECT 1 FROM customer_profiles WHERE reseller_id = $1)
+              OR EXISTS (SELECT 1 FROM employee_commissions WHERE employee_id = $1)
+              OR EXISTS (SELECT 1 FROM quotes WHERE reseller_id = $1)) AS used`,
+        [existing.id],
+      );
+      if (used?.used) {
+        throw new BadRequestException(
+          'This reseller has customers, quotes or commissions, so the profile type cannot change.',
+        );
+      }
+    }
+
     if (existing.profileKind === EmployeeProfileKind.RESELLER) {
       // Check for email conflicts (if email is being updated)
       if (dto.email) {
@@ -381,43 +398,6 @@ export class EmployeeService {
    */
   async getEntity(userId: string): Promise<EmployeeProfileEntity | null> {
     return this.employeeRepository.findByUserAndOrganization(userId);
-  }
-
-  /**
-   * Find employee by ID, verifying it belongs to the given organization.
-   * Used by the commissions submodule (ported from ResellerService.findById).
-   */
-  async findByIdInOrganization(id: string): Promise<EmployeeProfileEntity> {
-    const employee = await this.employeeRepository.findById(id);
-    if (!employee) {
-      throw new NotFoundException('Employee not found');
-    }
-
-    return employee;
-  }
-
-  /**
-   * Update reseller performance metrics.
-   * Called by the commission service when commissions are paid.
-   * Ported from ResellerService.updatePerformanceMetrics.
-   */
-  async updatePerformanceMetrics(
-    id: string,
-    metrics: {
-      totalLeadsGenerated?: number;
-      totalProjectsConverted?: number;
-      totalRevenueGenerated?: number;
-      totalCommissionEarned?: number;
-    },
-  ): Promise<void> {
-    this.logger.log(`Updating performance metrics for employee: ${id}`);
-
-    // Verify employee exists and belongs to organization
-    await this.findByIdInOrganization(id);
-
-    await this.employeeRepository.updatePerformanceMetrics(id, metrics);
-
-    this.logger.log(`Performance metrics updated for employee: ${id}`);
   }
 
   /**

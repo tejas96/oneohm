@@ -15,7 +15,7 @@ import { getErrorMessage } from '@/lib/utils/error';
 // only learns about it when an approver says yes.
 // ============================================================================
 
-export type ApprovalKind = 'receipt' | 'expense' | 'reversal' | 'vendor_payment';
+export type ApprovalKind = 'receipt' | 'expense' | 'reversal' | 'vendor_payment' | 'commission';
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
 
 export interface PaymentApproval {
@@ -216,8 +216,11 @@ export function useApprovalImpact(id: string | null): UseQueryResult<ApprovalImp
   });
 }
 
-export function useApprovalSummary(): UseQueryResult<ApprovalSummary, AxiosError> {
+export function useApprovalSummary(
+  options: { enabled?: boolean } = {},
+): UseQueryResult<ApprovalSummary, AxiosError> {
   return useQuery({
+    enabled: options.enabled ?? true,
     queryKey: approvalKeys.summary(),
     queryFn: async ({ signal }): Promise<ApprovalSummary> => {
       const { data } = await apiClient.get<ApprovalSummary>('/payment-approvals/summary', {

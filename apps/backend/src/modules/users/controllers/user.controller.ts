@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  NotFoundException,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
@@ -20,6 +21,7 @@ import {
   ApiReadOne,
   ApiUpdate,
 } from '../../../common/decorators';
+import { ResellerAllowed, ResellerScope } from '../../../common/reseller';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -72,6 +74,7 @@ export class UserController {
     });
   }
 
+  @ResellerAllowed()
   @ApiReadAll({
     path: 'check-availability',
     summary: 'Check if email or phone is already registered',
@@ -203,6 +206,7 @@ export class UserController {
     return response;
   }
 
+  @ResellerAllowed()
   @Post('device-token')
   async registerDeviceToken(
     @CurrentUser() currentUser: CurrentUserType,
@@ -223,6 +227,7 @@ export class UserController {
     });
   }
 
+  @ResellerAllowed()
   @ApiUpdate({
     path: ':id',
     summary: 'Update user',
@@ -234,7 +239,24 @@ export class UserController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateUserDto,
+    @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<UserResponseDto> {
+    // A reseller may only touch his own users.id row — anyone else's is a 404,
+    // not a 403, so guessing an id does not confirm it exists.
+    if (resellerId && id !== currentUser.id) {
+      throw new NotFoundException('User not found');
+    }
+    if (resellerId) {
+      // `roles` (UserService.update calls userRoleRepository.updateUserRoles)
+      // and `status` are privileged — left in, a reseller could patch himself
+      // to super_admin or reactivate a suspended account. profileType/profileData
+      // are for onboarding, not a self-edit. Only the plain contact fields stay.
+      delete updateDto.roles;
+      delete updateDto.status;
+      delete updateDto.profileType;
+      delete updateDto.profileData;
+    }
     const user = await this.userService.update(id, updateDto);
     return plainToInstance(UserResponseDto, user, {
       excludeExtraneousValues: true,

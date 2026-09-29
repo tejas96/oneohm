@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
@@ -23,12 +24,15 @@ import {
   ApiUpdate,
   ApiAction,
 } from '../../../common/decorators';
+import { ResellerAllowed, ResellerScope } from '../../../common/reseller';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
 import {
   CreateEmployeeDto,
   EmployeeResponseDto,
+  type EmployeeSlimResponseDto,
+  toEmployeeSlim,
   UpdateEmployeeDto,
   UpdateEmployeeStatusDto,
 } from '../dto';
@@ -87,18 +91,33 @@ export class EmployeeController {
     example: EmployeeProfileKind.RESELLER,
     description: 'Filter by profile kind (staff or reseller)',
   })
+  @ResellerAllowed()
   async findAll(
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
     @Query('status') status?: UserStatus,
     @Query('department') department?: string,
     @Query('profileKind') profileKind?: EmployeeProfileKind,
+    @ResellerScope() resellerId?: string,
   ): Promise<{
-    items: EmployeeResponseDto[];
+    items: EmployeeResponseDto[] | EmployeeSlimResponseDto[];
     total: number;
     page: number;
     limit: number;
   }> {
+    // A reseller sees active staff only, never other resellers' profiles, and
+    // only the slim row his pickers need (no phones, emails, bank or KYC).
+    // Server truth overwrites anything he sent for these filters.
+    if (resellerId) {
+      const staff = await this.employeeService.findByOrganization(
+        page,
+        limit,
+        UserStatus.ACTIVE,
+        EmployeeProfileKind.STAFF,
+      );
+      return { ...staff, items: staff.items.map(toEmployeeSlim) };
+    }
+
     if (department) {
       const employees = await this.employeeService.findByDepartment(department);
       const paged = employees.slice((page - 1) * limit, page * limit);
@@ -113,6 +132,7 @@ export class EmployeeController {
     return this.employeeService.findByOrganization(page, limit, status, profileKind);
   }
 
+  @ResellerAllowed()
   @Get('me')
   @ApiReadOne({
     summary: 'Get current user employee profile',
@@ -156,6 +176,7 @@ export class EmployeeController {
     return this.employeeService.update(id, updateDto, currentUser?.id);
   }
 
+  @ResellerAllowed()
   @Patch(':id')
   @ApiUpdate({
     summary: 'Update employee profile (partial update)',
@@ -165,7 +186,32 @@ export class EmployeeController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateEmployeeDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<EmployeeResponseDto> {
+    if (resellerId) {
+      // His own profile id only — anyone else's is a 404.
+      if (id !== resellerId) {
+        throw new NotFoundException('Employee not found');
+      }
+      // profileKind is locked by EmployeeService.update; commission and bank fields
+      // are staff/finance-controlled, never self-editable. status, employeeId,
+      // department, designation and the KYC fields (aadhaarNumber/pan/gstin)
+      // are likewise admin-managed facts — left in, a reseller could
+      // self-reactivate (status) or rewrite his own HR/compliance record.
+      delete updateDto.profileKind;
+      delete updateDto.commissionPercentage;
+      delete updateDto.bankName;
+      delete updateDto.accountNumber;
+      delete updateDto.ifscCode;
+      delete updateDto.accountHolderName;
+      delete updateDto.status;
+      delete updateDto.employeeId;
+      delete updateDto.department;
+      delete updateDto.designation;
+      delete updateDto.aadhaarNumber;
+      delete updateDto.pan;
+      delete updateDto.gstin;
+    }
     return this.employeeService.update(id, updateDto, currentUser?.id);
   }
 

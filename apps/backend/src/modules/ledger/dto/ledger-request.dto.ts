@@ -1,10 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ExpenseCategory } from '@tejas96/shared/types';
+import { ExpenseCategory, MANUAL_EXPENSE_CATEGORIES } from '@tejas96/shared/types';
 import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
-  IsEnum,
   IsIn,
   IsInt,
   IsOptional,
@@ -150,7 +149,7 @@ export class RecordExpenseDto {
   valueDate?: string;
 
   /**
-   * One of the seven `ExpenseCategory` values — free text is refused.
+   * One of the manual `ExpenseCategory` values (every category except Commission) — free text is refused.
    *
    * This used to be any non-empty string up to 30 characters, blocked only
    * from the literal lowercase 'other'. The web form has always offered the
@@ -163,10 +162,10 @@ export class RecordExpenseDto {
    * Any total grouped by category is wrong while that is possible, so the
    * constraint belongs here rather than in the form: the form is one caller.
    */
-  @ApiProperty({ enum: ExpenseCategory, example: ExpenseCategory.MATERIALS })
+  @ApiProperty({ enum: MANUAL_EXPENSE_CATEGORIES, example: ExpenseCategory.MATERIALS })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
-  @IsEnum(ExpenseCategory, {
-    message: `category must be one of: ${Object.values(ExpenseCategory).join(', ')}`,
+  @IsIn(MANUAL_EXPENSE_CATEGORIES, {
+    message: `category must be one of: ${MANUAL_EXPENSE_CATEGORIES.join(', ')}`,
   })
   category!: ExpenseCategory;
 

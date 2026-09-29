@@ -412,6 +412,20 @@ const root = {
     'col-pay-past-terms': '108px',
     'col-pay-bills': '76px',
     'col-pay-actions': '44px',
+    // Resellers list grid — five lifetime money columns (Revenue, Pending,
+    // Owed, Paid, To recover). Narrower than `col-pay-payable`: sized for a
+    // plain `formatPaise` value with no "Advance " prefix (up to
+    // "₹1,23,45,678.00", 16 chars). Sharing one token across all five keeps
+    // them visually even and gives one place to widen if amounts grow.
+    'col-reseller-money': '124px',
+    // Reseller commission grid (`/resellers/[id]`) — "Base × rate = amount"
+    // plus an occasional "edited"/"missing" pill: two money figures and an
+    // operator, wider than any other flexible column track in the app.
+    'col-reseller-maths': 'minmax(260px,1.4fr)',
+    // Same grid's State column: a status pill plus a second line (paid date,
+    // payout number, cancel/recovery note). Wider than the generic
+    // `col-status` (106px) because that second line needs room to breathe.
+    'col-reseller-state': '140px',
     // Cash ledger grid (design min-width 960px)
     'col-cash-date': '104px',
     'col-cash-entry': '150px',

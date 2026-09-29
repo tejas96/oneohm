@@ -57,6 +57,7 @@ const ROUTE_GATES: ReadonlyArray<{ pattern: RegExp; gate: Gate }> = [
   { pattern: /^\/vendors(\/|$)/, gate: 'inventory.view' },
 
   // Finance
+  { pattern: /^\/resellers(\/|$)/, gate: 'finance.view' },
   { pattern: /^\/finance\/receivables(\/|$)/, gate: 'finance.receivables.view' },
   { pattern: /^\/finance\/approvals(\/|$)/, gate: 'finance.approvals.view' },
   { pattern: /^\/finance(\/|$)/, gate: 'finance.view' },

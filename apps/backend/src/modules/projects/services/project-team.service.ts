@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { TaskStatus } from '@tejas96/shared/types';
 
+import { ResellerContextService } from '../../../common/reseller';
 import { hasAdminBypassRole } from '../../iam/constants';
 import { type AddTeamMemberDto, type UpdateTeamMemberDto } from '../dto/project-team';
 import { type ProjectTeamMemberEntity } from '../entities';
@@ -28,6 +29,7 @@ export class ProjectTeamService {
   constructor(
     private readonly teamRepository: ProjectTeamRepository,
     private readonly projectRepository: ProjectRepository,
+    private readonly resellerContext: ResellerContextService,
   ) {}
 
   /**
@@ -37,6 +39,13 @@ export class ProjectTeamService {
     const existing = await this.teamRepository.findByUserAndProject(dto.userId, dto.projectId);
     if (existing) {
       throw new BadRequestException('User is already a team member of this project');
+    }
+
+    const memberResellerId = await this.resellerContext.resellerIdForUser(dto.userId);
+    if (memberResellerId) {
+      throw new BadRequestException(
+        'Resellers cannot be added to a project team; they see their projects read-only.',
+      );
     }
 
     if (dto.isProjectManager) {

@@ -131,6 +131,8 @@ export interface Customer {
   pincode?: string;
   leadSource?: string;
   referralCode?: string;
+  /** The reseller (employee_profiles.id) who brought in this customer. */
+  resellerId?: string | null;
   groupCode?: string;
   groupName?: string;
   status: CustomerStatus;
@@ -201,6 +203,10 @@ export interface UpdateCustomerData {
   pincode?: string;
   leadSource?: string;
   referralCode?: string;
+  /** Send `null` to clear, never `undefined` — PATCH cannot clear with undefined. */
+  resellerId?: string | null;
+  /** Required by the server when `resellerId` changes on an existing customer (needs `customers.assign`). */
+  resellerChangeReason?: string;
   groupCode?: string | null;
   groupName?: string | null;
   status?: CustomerStatus;

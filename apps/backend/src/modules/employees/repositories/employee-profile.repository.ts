@@ -51,6 +51,13 @@ export class EmployeeProfileRepository {
       whereCondition.profileKind = profileKind;
     }
 
+    // Admin → Users "Deactivate" only changes the user row, so an active
+    // reseller profile can belong to a user who can no longer sign in. The
+    // reseller picker must not offer him.
+    if (profileKind === EmployeeProfileKind.RESELLER && status === UserStatus.ACTIVE) {
+      whereCondition.user = { status: UserStatus.ACTIVE };
+    }
+
     const [items, total] = await this.repository.findAndCount({
       where: whereCondition,
       relations: ['user'],
@@ -143,21 +150,5 @@ export class EmployeeProfileRepository {
     return this.repository.findOne({
       where: { phone, profileKind, deletedAt: IsNull() },
     });
-  }
-
-  /**
-   * Update reseller performance metrics
-   * Ported from ResellerProfileRepository.updatePerformanceMetrics
-   */
-  async updatePerformanceMetrics(
-    id: string,
-    metrics: {
-      totalLeadsGenerated?: number;
-      totalProjectsConverted?: number;
-      totalRevenueGenerated?: number;
-      totalCommissionEarned?: number;
-    },
-  ): Promise<void> {
-    await this.repository.update({ id }, metrics);
   }
 }

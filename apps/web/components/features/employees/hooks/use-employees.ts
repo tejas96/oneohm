@@ -26,6 +26,10 @@ export interface Employee {
   department?: string;
   status: UserStatus;
   user?: EmployeeUser;
+  /** Reseller profiles only — `EmployeeResponseDto.companyName`. */
+  companyName?: string;
+  /** Reseller profiles only — tells two resellers with the same name apart. */
+  companyCode?: string;
 }
 
 interface EmployeeListResponse {

@@ -1,6 +1,7 @@
 'use client';
 
-import { LeadSource } from '@tejas96/shared/types';
+import { useQuery } from '@tanstack/react-query';
+import { EmployeeProfileKind, LeadSource, UserStatus } from '@tejas96/shared/types';
 import * as React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
@@ -11,8 +12,10 @@ import {
   useCustomerGroups,
   type Customer,
 } from '@/components/features/customers';
+import { useEmployees, type Employee } from '@/components/features/employees';
 import { Alert } from '@/components/shared';
 import { Button, MUIInput, MUISelect, MUITypography } from '@/components/ui';
+import { apiClient } from '@/lib/api/client';
 
 const LEAD_SOURCE_OPTIONS = [
   { value: LeadSource.REFERRAL, label: 'Referral' },
@@ -51,6 +54,41 @@ export function Step1CustomerIdentity({
 
   const availability = useCheckAvailability();
   const { data: groups = [] } = useCustomerGroups();
+  const { data: resellers } = useEmployees({
+    profileKind: EmployeeProfileKind.RESELLER,
+    status: UserStatus.ACTIVE,
+  });
+  // The customer's current reseller may no longer be active, so he is not in
+  // the list above; without this the picker showed his raw id.
+  const currentResellerId = watch('customer.resellerId') as string | null | undefined;
+  const currentMissing = Boolean(
+    currentResellerId && resellers && !resellers.some((r) => r.id === currentResellerId),
+  );
+  const { data: currentReseller } = useQuery({
+    queryKey: ['employees', 'one', currentResellerId],
+    queryFn: async (): Promise<Employee> =>
+      (await apiClient.get<Employee>(`/employees/${currentResellerId}`)).data,
+    enabled: currentMissing,
+    staleTime: 5 * 60 * 1000,
+  });
+  const resellerOptions = React.useMemo(() => {
+    const label = (r: Employee): string => {
+      const name =
+        r.companyName || `${r.user?.firstName ?? ''} ${r.user?.lastName ?? ''}`.trim() || r.id;
+      // Two resellers can share a company name; the code tells them apart.
+      return r.companyCode ? `${name} · ${r.companyCode}` : name;
+    };
+    const options = (resellers ?? []).map((r) => ({ value: r.id, label: label(r) }));
+    if (currentMissing && currentResellerId) {
+      options.unshift({
+        value: currentResellerId,
+        label: currentReseller
+          ? `${label(currentReseller)} (inactive)`
+          : 'Current reseller (inactive)',
+      });
+    }
+    return options;
+  }, [resellers, currentMissing, currentResellerId, currentReseller]);
 
   const phone = (watch('customer.phone') as string | undefined) ?? '';
   const email = (watch('customer.email') as string | undefined) ?? '';
@@ -215,12 +253,33 @@ export function Step1CustomerIdentity({
                   if (e.target.value !== LeadSource.OTHER) {
                     setValue('customer.leadSourceOther', '');
                   }
+                  if (e.target.value !== LeadSource.RESELLER) {
+                    setValue('customer.resellerId', null, { shouldDirty: true });
+                  }
                 }}
                 error={customerErrors.leadSourceOther?.message}
                 options={LEAD_SOURCE_OPTIONS}
               />
             )}
           />
+          {leadSource === LeadSource.RESELLER && (
+            <Controller
+              name="customer.resellerId"
+              control={control}
+              render={({ field }) => (
+                <MUISelect
+                  fieldLabel="Which reseller?"
+                  required
+                  placeholder="Choose the reseller who sent this customer"
+                  value={field.value ?? ''}
+                  disabled={isLocked}
+                  onChange={(e) => field.onChange(e.target.value || null)}
+                  error={customerErrors.resellerId?.message}
+                  options={resellerOptions}
+                />
+              )}
+            />
+          )}
           {leadSource === LeadSource.OTHER && (
             <MUIInput
               fieldLabel="Specify Source"

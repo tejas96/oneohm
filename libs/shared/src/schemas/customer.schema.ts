@@ -40,6 +40,13 @@ export const createCustomerProfileSchema = z
     groupCode: z.string().max(20).optional().or(z.literal('')),
     /** Group assignment: name for new group (when no groupCode) or label of existing group */
     groupName: z.string().max(100).optional().or(z.literal('')),
+    /** The reseller (employee_profiles.id) who brought in this customer. */
+    resellerId: z.string().uuid().nullable().optional(),
+    /**
+     * Required only when changing an existing customer's reseller — captured
+     * via a confirm dialog at submit time, not a form field.
+     */
+    resellerChangeReason: z.string().max(500).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.leadSource === LeadSource.OTHER && !data.leadSourceOther?.trim()) {
@@ -47,6 +54,13 @@ export const createCustomerProfileSchema = z
         code: z.ZodIssueCode.custom,
         message: 'Please specify the source',
         path: ['leadSourceOther'],
+      });
+    }
+    if (data.leadSource === LeadSource.RESELLER && !data.resellerId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Choose which reseller sent this customer',
+        path: ['resellerId'],
       });
     }
   });

@@ -20,6 +20,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
+import { ResellerAllowed, ResellerOwnershipService, ResellerScope } from '../../../common/reseller';
 import { toDto, toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -83,6 +84,7 @@ export class LedgerController {
     private readonly receiptDocumentService: ReceiptDocumentService,
     private readonly milestoneService: MilestoneService,
     private readonly ledgerRepository: LedgerRepository,
+    private readonly ownership: ResellerOwnershipService,
   ) {}
 
   // ============================================
@@ -155,12 +157,15 @@ export class LedgerController {
    * different concept from payment milestones. Registering the same path here
    * would have been silently shadowed, since ProjectsModule loads first.
    */
+  @ResellerAllowed()
   @Get('projects/:projectId/ledger/milestones')
   @ApiOperation({ summary: 'Payment milestone plan with derived balances' })
   @ApiParam({ name: 'projectId', type: String })
   async listMilestones(
     @Param('projectId', ParseUUIDPipe) projectId: string,
+    @ResellerScope() resellerId?: string,
   ): Promise<MilestoneBalanceResponseDto[]> {
+    if (resellerId) await this.ownership.assertOwns('project', projectId, resellerId);
     const rows = await this.ledgerRepository.getMilestoneBalancesWithAllocations(projectId);
     return toDtoArray(MilestoneBalanceResponseDto, rows);
   }

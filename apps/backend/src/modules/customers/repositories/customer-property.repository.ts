@@ -563,6 +563,13 @@ export class CustomerPropertyRepository {
       });
     }
 
+    if (query.resellerId) {
+      qb.andWhere(
+        `property.customerId IN (SELECT cp.id FROM customer_profiles cp WHERE cp.reseller_id = :resellerId)`,
+        { resellerId: query.resellerId },
+      );
+    }
+
     // ===== Sorting (using safe field mapping) =====
     const sortColumn = SORT_FIELD_MAP[query.sortBy] ?? SORT_FIELD_MAP[PropertySortField.CREATED_AT];
     const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';

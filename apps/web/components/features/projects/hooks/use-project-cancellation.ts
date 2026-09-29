@@ -30,11 +30,12 @@ export interface CancellationCleanup {
   pendingReturns: number;
   openPurchaseOrders: number;
   /**
-   * Advisory only — deliberately NOT part of `state`. Nothing writes
-   * `recovered_at` yet, so gating on it would pin every project that ever
-   * paid a commission at cleanup_pending forever.
+   * Advisory only — deliberately NOT part of `state`. Recovery is closed on
+   * the reseller's page, often weeks later.
    */
   unrecoveredCommissions: number;
+  /** The reseller to chase; null when nothing is unrecovered. */
+  unrecoveredCommissionResellerId: string | null;
   settled: boolean;
   state: 'cleanup_pending' | 'settled';
 }

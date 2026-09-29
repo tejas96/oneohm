@@ -299,6 +299,13 @@ export class CustomerQueryDto {
   @IsOptionalBoolean()
   needsFollowup?: boolean;
 
+  @ApiPropertyOptional({
+    description: 'Only customers brought in by this reseller (employee_profiles.id)',
+  })
+  @IsOptional()
+  @IsUUID()
+  resellerId?: string;
+
   // ==================== Sorting ====================
 
   @ApiPropertyOptional({

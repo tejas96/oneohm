@@ -195,6 +195,13 @@ export class CustomerResponseDto {
   @Expose()
   referralCode?: string;
 
+  @ApiPropertyOptional({
+    description: 'The reseller (employee_profiles.id) who brought in this customer',
+    nullable: true,
+  })
+  @Expose()
+  resellerId?: string | null;
+
   // ==================== Customer Group ====================
   @ApiPropertyOptional()
   @Expose()

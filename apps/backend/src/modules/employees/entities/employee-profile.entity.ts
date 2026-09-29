@@ -147,31 +147,6 @@ export class EmployeeProfileEntity extends BaseEntity {
   @Column({ name: 'account_holder_name', type: 'varchar', length: 255, nullable: true })
   accountHolderName?: string;
 
-  // ==================== Reseller: Performance Tracking ====================
-  @Column({ name: 'total_leads_generated', type: 'integer', nullable: true })
-  totalLeadsGenerated?: number;
-
-  @Column({ name: 'total_projects_converted', type: 'integer', nullable: true })
-  totalProjectsConverted?: number;
-
-  @Column({
-    name: 'total_revenue_generated',
-    type: 'decimal',
-    precision: 15,
-    scale: 2,
-    nullable: true,
-  })
-  totalRevenueGenerated?: number;
-
-  @Column({
-    name: 'total_commission_earned',
-    type: 'decimal',
-    precision: 15,
-    scale: 2,
-    nullable: true,
-  })
-  totalCommissionEarned?: number;
-
   // ==================== Status ====================
   @Column({
     type: 'varchar',

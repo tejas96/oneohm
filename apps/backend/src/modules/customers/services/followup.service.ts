@@ -8,6 +8,7 @@ import {
 } from '@tejas96/shared/types';
 
 import { LeadClosureService } from './lead-closure.service';
+import { ResellerContextService } from '../../../common/reseller';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { CompleteFollowupDto } from '../dto/complete-followup.dto';
 import { CreateFollowupDto } from '../dto/create-followup.dto';
@@ -31,6 +32,7 @@ export class FollowupService {
     private readonly propertyRepository: CustomerPropertyRepository,
     private readonly userRoleRepository: UserRoleRepository,
     private readonly leadClosureService: LeadClosureService,
+    private readonly resellerContext: ResellerContextService,
   ) {}
 
   /**
@@ -65,6 +67,11 @@ export class FollowupService {
       throw new BadRequestException('Assigned user not found');
     }
 
+    await this.resellerContext.assertAssignableUser(
+      createDto.assignedToUserId,
+      createDto.customerId,
+    );
+
     const followup = await this.followupRepository.create({
       ...createDto,
       scheduledAt: new Date(createDto.scheduledAt),
@@ -95,6 +102,7 @@ export class FollowupService {
       priority?: string;
       from?: string;
       to?: string;
+      resellerId?: string;
     },
     page = 1,
     limit = 20,
@@ -117,12 +125,14 @@ export class FollowupService {
     status?: FollowupStatus,
     page = 1,
     limit = 20,
+    resellerId?: string,
   ): Promise<{ data: FollowupEntity[]; total: number }> {
     const [data, total] = await this.followupRepository.findByAssignedUser(
       userId,
       status,
       page,
       limit,
+      resellerId,
     );
     return { data, total };
   }
@@ -134,8 +144,14 @@ export class FollowupService {
     userId?: string,
     page = 1,
     limit = 20,
+    resellerId?: string,
   ): Promise<{ data: FollowupEntity[]; total: number }> {
-    const [data, total] = await this.followupRepository.findTodayFollowups(userId, page, limit);
+    const [data, total] = await this.followupRepository.findTodayFollowups(
+      userId,
+      page,
+      limit,
+      resellerId,
+    );
     return { data, total };
   }
 
@@ -146,8 +162,14 @@ export class FollowupService {
     userId?: string,
     page = 1,
     limit = 20,
+    resellerId?: string,
   ): Promise<{ data: FollowupEntity[]; total: number }> {
-    const [data, total] = await this.followupRepository.findOverdueFollowups(userId, page, limit);
+    const [data, total] = await this.followupRepository.findOverdueFollowups(
+      userId,
+      page,
+      limit,
+      resellerId,
+    );
     return { data, total };
   }
 
@@ -175,6 +197,16 @@ export class FollowupService {
     // Verify followup exists and belongs to org
     const existingFollowup = await this.findById(id);
 
+    // A followup's customer is fixed at creation and never moves. No client
+    // (web or mobile) ever sends a changed customerId on this route — this
+    // DTO only inherited the field via `PartialType(CreateFollowupDto)`. Left
+    // open, it would let anyone re-parent a followup onto another customer
+    // and, worse for a reseller, read that other customer's name/phone off
+    // the response (found in the reseller-commissions security review).
+    if (updateDto.customerId && updateDto.customerId !== existingFollowup.customerId) {
+      throw new BadRequestException('A follow-up cannot move to another customer.');
+    }
+
     // If propertyId is being updated, validate it
     if (updateDto.propertyId && updateDto.propertyId !== existingFollowup.propertyId) {
       const property = await this.propertyRepository.findById(updateDto.propertyId);
@@ -187,8 +219,18 @@ export class FollowupService {
       }
     }
 
-    // Separate scheduledAt from other fields to handle string -> Date conversion
-    const { scheduledAt, ...restDto } = updateDto;
+    if (updateDto.assignedToUserId !== undefined) {
+      await this.resellerContext.assertAssignableUser(
+        updateDto.assignedToUserId,
+        existingFollowup.customerId,
+      );
+    }
+
+    // Separate scheduledAt from other fields to handle string -> Date
+    // conversion. customerId is dropped unconditionally (immutable on this
+    // route, and already rejected above when it would actually change).
+    const { scheduledAt, customerId: customerIdIgnored, ...restDto } = updateDto;
+    void customerIdIgnored;
     const updates: Partial<FollowupEntity> = {
       ...restDto,
       updatedBy,
@@ -333,8 +375,9 @@ export class FollowupService {
    * Deliberately unrestricted: no RBAC in this feature.
    */
   async reassign(id: string, assignedToUserId: string, userId: string): Promise<FollowupEntity> {
-    await this.findById(id);
+    const followup = await this.findById(id);
     await this.assertUserExists(assignedToUserId);
+    await this.resellerContext.assertAssignableUser(assignedToUserId, followup.customerId);
 
     const updated = await this.followupRepository.update(id, {
       assignedToUserId,
@@ -353,6 +396,15 @@ export class FollowupService {
     userId: string,
   ): Promise<{ updated: number }> {
     await this.assertUserExists(assignedToUserId);
+
+    // Validate every affected follow-up before writing any of them — fail the
+    // whole batch on the first violation rather than leaving it half-applied.
+    for (const id of ids) {
+      const followup = await this.followupRepository.findById(id);
+      if (followup) {
+        await this.resellerContext.assertAssignableUser(assignedToUserId, followup.customerId);
+      }
+    }
 
     let updated = 0;
     for (const id of ids) {
@@ -391,20 +443,23 @@ export class FollowupService {
   }
 
   /** Open lead units with nobody owing them an action. */
-  async gaps(): Promise<FollowupGapRow[]> {
-    return this.followupRepository.findGaps();
+  async gaps(resellerId?: string): Promise<FollowupGapRow[]> {
+    return this.followupRepository.findGaps(resellerId);
   }
 
   /** Badge counts. Pass null for everyone's followups. */
-  async summary(userId: string | null): Promise<{
+  async summary(
+    userId: string | null,
+    resellerId?: string,
+  ): Promise<{
     overdue: number;
     today: number;
     upcoming: number;
     gaps: number;
   }> {
     const [counts, gapRows] = await Promise.all([
-      this.followupRepository.summaryCounts(userId),
-      this.followupRepository.findGaps(),
+      this.followupRepository.summaryCounts(userId, resellerId),
+      this.followupRepository.findGaps(resellerId),
     ]);
 
     // Gaps must respect the same scope as the date buckets. Counting all of

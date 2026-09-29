@@ -14,6 +14,7 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { ApiCreate, ApiReadAll, ApiReadOne, ApiUpdate } from '../../../common/decorators';
+import { ResellerAllowed } from '../../../common/reseller';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
@@ -40,6 +41,7 @@ export class ProductTypeController {
     return this.productTypeService.create(body, currentUser.id);
   }
 
+  @ResellerAllowed()
   @Get()
   @ApiReadAll({
     summary: 'Get all product types',

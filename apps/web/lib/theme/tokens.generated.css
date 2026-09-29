@@ -205,6 +205,9 @@
   --crm-col-pay-past-terms: 108px;
   --crm-col-pay-bills: 76px;
   --crm-col-pay-actions: 44px;
+  --crm-col-reseller-money: 124px;
+  --crm-col-reseller-maths: minmax(260px,1.4fr);
+  --crm-col-reseller-state: 140px;
   --crm-col-cash-date: 104px;
   --crm-col-cash-entry: 150px;
   --crm-col-cash-customer: minmax(150px,1.3fr);

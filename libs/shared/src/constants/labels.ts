@@ -181,6 +181,7 @@ export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   [ExpenseCategory.SUBCONTRACTOR]: 'Subcontractor',
   [ExpenseCategory.PERMITS]: 'Permits',
   [ExpenseCategory.MISC]: 'Miscellaneous',
+  [ExpenseCategory.COMMISSION]: 'Commission',
 };
 
 export const EXPENSE_PAID_BY_LABELS: Record<ExpensePaidByType, string> = {

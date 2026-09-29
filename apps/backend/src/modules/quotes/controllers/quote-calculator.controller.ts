@@ -11,6 +11,8 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
+  AuditAction,
+  AuditEntityType,
   type CalculatorInputs,
   DcrPreference,
   type PricingBreakdown,
@@ -23,6 +25,8 @@ import {
 import { applyPreGstDiscount, GstSplitPercentagesInvalidError } from '@tejas96/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
+import { ResellerAllowed, ResellerOwnershipService, ResellerScope } from '../../../common/reseller';
+import { AuditLogService } from '../../audit/services';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -73,19 +77,22 @@ export class QuoteCalculatorController {
     private readonly subsidyConfigRepo: SubsidyConfigurationRepository,
     private readonly installationPricingRepo: InstallationPricingRepository,
     private readonly quoteConfigRepo: QuoteConfigurationRepository,
+    private readonly ownership: ResellerOwnershipService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   /**
    * Calculate quote preview
    * Returns calculated quote without saving
    */
+  @ResellerAllowed()
   @Post('calculate')
   @ApiOperation({
     summary: 'Calculate quote preview',
     description: `
       Calculates a complete quote based on input parameters.
       Does NOT save the quote - use create-from-calculation for that.
-      
+
       Features:
       - Auto DCR/Non-DCR split based on subsidy eligibility
       - Panel quantity calculation
@@ -113,6 +120,7 @@ export class QuoteCalculatorController {
    * Create a quote from calculated result.
    * Property-level versioning is modeled as separate quote records.
    */
+  @ResellerAllowed()
   @Post('create-from-calculation')
   @ApiOperation({
     summary: 'Create quote from calculation',
@@ -133,6 +141,7 @@ export class QuoteCalculatorController {
   async createFromCalculation(
     @CurrentUser() currentUser: CurrentUserType,
     @Body() input: CreateQuoteFromCalculationDto,
+    @ResellerScope() resellerId?: string,
   ): Promise<{
     quoteId: string;
     quoteNumber: string;
@@ -142,6 +151,17 @@ export class QuoteCalculatorController {
     subsidyAmount: number;
     calculation: CalculateQuoteResponseDto;
   }> {
+    // Own both parent records before any calculation runs, mirroring `create`
+    // on the quote itself. Deliberately before the DTO-shape checks below: a
+    // reseller's ownership must fail closed on an id he does not hold,
+    // whatever else is wrong with the rest of the body.
+    if (resellerId) {
+      if (input.customerId)
+        await this.ownership.assertOwns('customer', input.customerId, resellerId);
+      if (input.propertyId)
+        await this.ownership.assertOwns('property', input.propertyId, resellerId);
+    }
+
     const calculation = await this.calculatorService.calculateQuote(input);
 
     const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault();
@@ -167,6 +187,18 @@ export class QuoteCalculatorController {
     const discountAmount = input.discountAmount || 0;
     const maxAllowedDiscount = Math.max(0, calculation.profitabilityAmount * 0.5);
     if (discountAmount > maxAllowedDiscount) {
+      // Edge case 40: this is the one route left where a reseller can still
+      // probe the margin cap — POST /quotes and PATCH /quotes/:id are closed
+      // to him entirely, so the audit hook lives only here. Logs
+      // the exact `discountAmount` the check above just used.
+      if (resellerId) {
+        await this.auditRejectedDiscount(
+          resellerId,
+          input.customerId,
+          discountAmount,
+          currentUser.id,
+        );
+      }
       throw new BadRequestException('Discount cannot exceed 50% of the margin');
     }
 
@@ -255,7 +287,8 @@ export class QuoteCalculatorController {
       customerId: input.customerId,
       propertyId: input.propertyId,
       salesPersonId: input.salesPersonId,
-      resellerId: input.resellerId,
+      // A quote's reseller comes from its customer (Spec §10.4, amended) —
+      // `create` derives and ignores whatever is set here.
       systemType,
       totalWattageWp: calculation.actualTotalWattage,
       projectType: input.projectType,
@@ -286,6 +319,7 @@ export class QuoteCalculatorController {
   /**
    * Get organization's quote configuration
    */
+  @ResellerAllowed()
   @Get('config')
   @ApiOperation({
     summary: 'Get quote configuration',
@@ -334,6 +368,7 @@ export class QuoteCalculatorController {
   /**
    * Get subsidy rules for a project type
    */
+  @ResellerAllowed()
   @Get('subsidy-rules')
   @ApiOperation({
     summary: 'Get subsidy rules',
@@ -369,6 +404,7 @@ export class QuoteCalculatorController {
   /**
    * Get all subsidy configurations
    */
+  @ResellerAllowed()
   @Get('subsidy-rules/all')
   @ApiOperation({
     summary: 'Get all subsidy rules',
@@ -388,6 +424,7 @@ export class QuoteCalculatorController {
   /**
    * Get installation pricing for a system size
    */
+  @ResellerAllowed()
   @Get('installation-pricing')
   @ApiOperation({
     summary: 'Get installation pricing',
@@ -429,5 +466,41 @@ export class QuoteCalculatorController {
     return plainToInstance(InstallationPricingResponseDto, result.data, {
       excludeExtraneousValues: true,
     });
+  }
+
+  /**
+   * Edge case 40: a reseller hit the margin cap on the one route he can still
+   * reach it from. Logged, not thrown — an audit-write failure (DB hiccup,
+   * whatever) must never turn the caller's correct 400 into a 500. `entityId`
+   * falls back through "the quote id if there is one" (there never is one
+   * here — the cap always rejects before `quoteService.create` runs), "the
+   * customer id from the body", to the reseller id itself, so the row is
+   * always a valid, traceable record.
+   */
+  private async auditRejectedDiscount(
+    resellerId: string,
+    customerId: string | undefined,
+    discountAmount: number,
+    userId: string,
+  ): Promise<void> {
+    try {
+      await this.auditLogService.create({
+        entityType: AuditEntityType.QUOTE,
+        entityId: customerId ?? resellerId,
+        action: AuditAction.REJECT,
+        newValues: {
+          reason: 'Reseller discount above the margin cap',
+          discountAmount,
+          resellerId,
+        },
+        userId,
+      });
+    } catch (auditError) {
+      this.logger.error(
+        `Failed to audit-log a reseller margin-cap rejection (resellerId=${resellerId}): ${
+          auditError instanceof Error ? auditError.message : String(auditError)
+        }`,
+      );
+    }
   }
 }

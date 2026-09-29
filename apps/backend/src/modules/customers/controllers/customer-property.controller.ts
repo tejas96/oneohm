@@ -24,6 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { LeadTemperature, type PaginatedResponse } from '@tejas96/shared/types';
 
+import { ResellerAllowed, ResellerOwnershipService, ResellerScope } from '../../../common/reseller';
 import { toDto, toDtoArray, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -48,11 +49,15 @@ import { CustomerPropertyService } from '../services/customer-property.service';
 @Controller('customer-properties')
 @UseGuards(JwtAuthGuard)
 export class CustomerPropertyController {
-  constructor(private readonly propertyService: CustomerPropertyService) {}
+  constructor(
+    private readonly propertyService: CustomerPropertyService,
+    private readonly ownership: ResellerOwnershipService,
+  ) {}
 
   /**
    * Create a new customer property
    */
+  @ResellerAllowed()
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
@@ -71,7 +76,9 @@ export class CustomerPropertyController {
   async create(
     @Body() createDto: CreateCustomerPropertyDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerPropertyResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('customer', createDto.customerId, resellerId);
     const property = await this.propertyService.create(createDto, currentUser.id);
     return toDto(CustomerPropertyResponseDto, property);
   }
@@ -81,6 +88,7 @@ export class CustomerPropertyController {
    * @deprecated Standalone property list UI removed; prefer GET /customers with property filters
    * or GET /customer-properties/customer/:customerId for nested views.
    */
+  @ResellerAllowed()
   @Get()
   @ApiOperation({
     summary: 'Get all properties (deprecated)',
@@ -97,6 +105,7 @@ export class CustomerPropertyController {
   async findAll(
     @CurrentUser() currentUser: CurrentUserType,
     @Query() query: PropertyQueryDto,
+    @ResellerScope() resellerId?: string,
   ): Promise<PaginatedResponse<CustomerPropertyResponseDto>> {
     // Substitute 'me' with actual user ID for createdBy filter
     if (query.createdBy === 'me') {
@@ -113,6 +122,11 @@ export class CustomerPropertyController {
       query.siteSurveyAssignee = currentUser.id;
     }
 
+    // Server truth overwrites anything the caller sent for this filter.
+    if (resellerId) {
+      query.resellerId = resellerId;
+    }
+
     const result = await this.propertyService.findAll(query);
     return toPaginatedResponse(
       CustomerPropertyResponseDto,
@@ -126,6 +140,7 @@ export class CustomerPropertyController {
   /**
    * Get properties for the logged-in customer user
    */
+  @ResellerAllowed()
   @Get('my-properties')
   @ApiOperation({
     summary: 'Get properties for the logged-in customer',
@@ -140,6 +155,9 @@ export class CustomerPropertyController {
   async findMyProperties(
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto[]> {
+    // Already self-scoped: it resolves the caller's OWN customer profile from
+    // their userId, so a reseller (who has no customer profile of his own)
+    // gets an empty list, never another customer's properties.
     const properties = await this.propertyService.findMyProperties(currentUser.id);
     return toDtoArray(CustomerPropertyResponseDto, properties);
   }
@@ -147,6 +165,7 @@ export class CustomerPropertyController {
   /**
    * Get properties by customer
    */
+  @ResellerAllowed()
   @Get('customer/:customerId')
   @ApiOperation({
     summary: 'Get properties by customer',
@@ -161,7 +180,9 @@ export class CustomerPropertyController {
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Customer not found' })
   async findByCustomer(
     @Param('customerId', ParseUUIDPipe) customerId: string,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerPropertyResponseDto[]> {
+    if (resellerId) await this.ownership.assertOwns('customer', customerId, resellerId);
     const properties = await this.propertyService.findByCustomer(customerId);
     return toDtoArray(CustomerPropertyResponseDto, properties);
   }
@@ -236,6 +257,7 @@ export class CustomerPropertyController {
   /**
    * Get property by ID
    */
+  @ResellerAllowed()
   @Get(':id')
   @ApiOperation({
     summary: 'Get property by ID',
@@ -248,7 +270,11 @@ export class CustomerPropertyController {
     type: CustomerPropertyResponseDto,
   })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Property not found' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<CustomerPropertyResponseDto> {
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @ResellerScope() resellerId?: string,
+  ): Promise<CustomerPropertyResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('property', id, resellerId);
     const property = await this.propertyService.findById(id);
     return toDto(CustomerPropertyResponseDto, property);
   }
@@ -256,6 +282,7 @@ export class CustomerPropertyController {
   /**
    * Update property
    */
+  @ResellerAllowed()
   @Patch(':id')
   @ApiOperation({
     summary: 'Update property',
@@ -273,7 +300,9 @@ export class CustomerPropertyController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateCustomerPropertyDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerPropertyResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('property', id, resellerId);
     const property = await this.propertyService.update(id, updateDto, currentUser.id);
     return toDto(CustomerPropertyResponseDto, property);
   }
@@ -281,6 +310,7 @@ export class CustomerPropertyController {
   /**
    * Update property temperature
    */
+  @ResellerAllowed()
   @Patch(':id/temperature')
   @ApiOperation({
     summary: 'Update property lead temperature',
@@ -311,7 +341,9 @@ export class CustomerPropertyController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body('temperature') temperature: LeadTemperature,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerPropertyResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('property', id, resellerId);
     const property = await this.propertyService.updateTemperature(id, temperature, currentUser.id);
     return toDto(CustomerPropertyResponseDto, property);
   }
@@ -319,6 +351,7 @@ export class CustomerPropertyController {
   /**
    * Set property as primary
    */
+  @ResellerAllowed()
   @Patch(':id/set-primary')
   @ApiOperation({
     summary: 'Set property as primary',
@@ -336,7 +369,9 @@ export class CustomerPropertyController {
   async setPrimary(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerPropertyResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('property', id, resellerId);
     const property = await this.propertyService.setPrimary(id, currentUser.id);
     return toDto(CustomerPropertyResponseDto, property);
   }
@@ -369,6 +404,7 @@ export class CustomerPropertyController {
   /**
    * Add document to property
    */
+  @ResellerAllowed()
   @Post(':id/documents')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
@@ -386,7 +422,9 @@ export class CustomerPropertyController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() document: PropertyDocumentDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerPropertyResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('property', id, resellerId);
     const property = await this.propertyService.addDocument(id, document, currentUser.id);
     return toDto(CustomerPropertyResponseDto, property);
   }
@@ -394,6 +432,7 @@ export class CustomerPropertyController {
   /**
    * Remove document from property
    */
+  @ResellerAllowed()
   @Delete(':id/documents/:encodedUrl')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -418,7 +457,9 @@ export class CustomerPropertyController {
     @Param('id', ParseUUIDPipe) id: string,
     @Param('encodedUrl') encodedUrl: string,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerPropertyResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('property', id, resellerId);
     const url = Buffer.from(encodedUrl, 'base64').toString('utf-8');
     const property = await this.propertyService.removeDocument(id, url, currentUser.id);
     return toDto(CustomerPropertyResponseDto, property);
@@ -426,6 +467,7 @@ export class CustomerPropertyController {
 
   // ==================== SITE VISIT / SURVEY ENDPOINTS ====================
 
+  @ResellerAllowed()
   @Post(':id/complete-visit')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Complete site visit for property' })
@@ -434,11 +476,14 @@ export class CustomerPropertyController {
   async completeVisit(
     @Param('id', ParseUUIDPipe) propertyId: string,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerPropertyResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('property', propertyId, resellerId);
     const updated = await this.propertyService.completeVisit(propertyId, currentUser.id);
     return toDto(CustomerPropertyResponseDto, updated);
   }
 
+  @ResellerAllowed()
   @Post(':id/complete-survey')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Complete site survey for property' })
@@ -447,11 +492,14 @@ export class CustomerPropertyController {
   async completeSurvey(
     @Param('id', ParseUUIDPipe) propertyId: string,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerPropertyResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('property', propertyId, resellerId);
     const updated = await this.propertyService.completeSurvey(propertyId, currentUser.id);
     return toDto(CustomerPropertyResponseDto, updated);
   }
 
+  @ResellerAllowed()
   @Post(':id/cancel-site-activity')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cancel site activity for property' })
@@ -460,7 +508,9 @@ export class CustomerPropertyController {
   async cancelSiteActivity(
     @Param('id', ParseUUIDPipe) propertyId: string,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerPropertyResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('property', propertyId, resellerId);
     const updated = await this.propertyService.cancelSiteActivity(propertyId, currentUser.id);
     return toDto(CustomerPropertyResponseDto, updated);
   }
@@ -471,6 +521,7 @@ export class CustomerPropertyController {
    * Per-property by design: one customer can have three sites, and losing one
    * must not remove the other two from the pipeline.
    */
+  @ResellerAllowed()
   @Post(':id/lost')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Mark a property as lost' })
@@ -480,7 +531,9 @@ export class CustomerPropertyController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: MarkLostDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerPropertyResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('property', id, resellerId);
     const property = await this.propertyService.markLost(
       id,
       dto.reason,
@@ -496,6 +549,7 @@ export class CustomerPropertyController {
    * Per-property by design, same as `markLost`: the survey, roof data, DISCOM
    * and photos all stay; only the deal's dead state is undone.
    */
+  @ResellerAllowed()
   @Post(':id/reopen')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reopen a lost property so it can be quoted again' })
@@ -504,7 +558,9 @@ export class CustomerPropertyController {
   async reopen(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerPropertyResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('property', id, resellerId);
     const property = await this.propertyService.reopen(id, currentUser.id);
     return toDto(CustomerPropertyResponseDto, property);
   }

@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   MaxLength,
   ValidateIf,
@@ -153,4 +154,22 @@ export class CreateCustomerDto {
   @IsEnum(CustomerStatus)
   @IsOptional()
   status?: CustomerStatus;
+
+  // ==================== Reseller Attribution ====================
+  @ApiPropertyOptional({
+    description: 'The reseller (employee_profiles.id) who brought in this customer',
+    nullable: true,
+  })
+  @IsOptional()
+  @ValidateIf((o: CreateCustomerDto) => o.resellerId !== null)
+  @IsUUID()
+  resellerId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Reason for changing the reseller attributed to this customer',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  resellerChangeReason?: string;
 }

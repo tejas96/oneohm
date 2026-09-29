@@ -24,6 +24,7 @@ import {
   ApiReadOne,
   ApiUpdate,
 } from '../../../common/decorators';
+import { ResellerAllowed, ResellerOwnershipService, ResellerScope } from '../../../common/reseller';
 import { toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -54,10 +55,18 @@ export class QuoteController {
   constructor(
     private readonly quoteService: QuoteService,
     private readonly integrationService: IntegrationService,
+    private readonly ownership: ResellerOwnershipService,
   ) {}
 
   /**
    * Create a new quote
+   *
+   * Closed to resellers. POST /quotes stores whatever quoteSnapshot/
+   * finalPrice/effectivePrice the client sends verbatim — a reseller hitting
+   * this route directly could author his own commission base and self-attest
+   * a profitability figure that clears the margin cap. A reseller creates
+   * quotes only via POST /quote-calculator/create-from-calculation, where
+   * those fields are always server-computed.
    */
   @Post()
   @ApiCreate({
@@ -80,6 +89,7 @@ export class QuoteController {
    * Get all quotes with filtering, sorting, and pagination
    * Unified endpoint supporting search, filters, and sorting via query parameters
    */
+  @ResellerAllowed()
   @Get()
   @ApiReadAll({
     summary: 'Get all quotes',
@@ -92,7 +102,9 @@ export class QuoteController {
   async findAll(
     @CurrentUser() currentUser: CurrentUserType,
     @Query() query: QuoteQueryDto,
+    @ResellerScope() resellerId?: string,
   ): Promise<PaginatedResponse<QuoteResponseDto>> {
+    if (resellerId) query.resellerId = resellerId; // server truth, client value ignored
     const result = await this.quoteService.findAll(query);
     return toPaginatedResponse(
       QuoteResponseDto,
@@ -106,6 +118,7 @@ export class QuoteController {
   /**
    * Check if a property is locked (has an accepted quote)
    */
+  @ResellerAllowed()
   @Get('property-lock-status')
   @ApiOperation({
     summary: 'Get property lock status',
@@ -115,13 +128,16 @@ export class QuoteController {
   @ApiResponse({ status: HttpStatus.OK })
   async getPropertyLockStatus(
     @Query('propertyId', ParseUUIDPipe) propertyId: string,
+    @ResellerScope() resellerId?: string,
   ): Promise<{ locked: boolean; acceptedQuoteNumber?: string }> {
+    if (resellerId) await this.ownership.assertOwns('property', propertyId, resellerId);
     return this.quoteService.getPropertyLockStatus(propertyId);
   }
 
   /**
    * Get all quote entries for a property, ordered by creation date (latest first)
    */
+  @ResellerAllowed()
   @Get('property/:propertyId/versions')
   @ApiOperation({
     summary: 'Get property quote versions',
@@ -131,11 +147,14 @@ export class QuoteController {
   @ApiResponse({ status: HttpStatus.OK, type: [QuoteResponseDto] })
   async findByProperty(
     @Param('propertyId', ParseUUIDPipe) propertyId: string,
+    @ResellerScope() resellerId?: string,
   ): Promise<QuoteResponseDto[]> {
+    if (resellerId) await this.ownership.assertOwns('property', propertyId, resellerId);
     const quotes = await this.quoteService.findAllByPropertyId(propertyId);
     return plainToInstance(QuoteResponseDto, quotes, { excludeExtraneousValues: true });
   }
 
+  @ResellerAllowed()
   @Get('whatsapp/health')
   @ApiOperation({
     summary: 'WhatsApp messaging health',
@@ -155,6 +174,7 @@ export class QuoteController {
   /**
    * Get quote by ID
    */
+  @ResellerAllowed()
   @Get(':id')
   @ApiReadOne({
     summary: 'Get quote by ID',
@@ -164,7 +184,9 @@ export class QuoteController {
   async findOne(
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
+    @ResellerScope() resellerId?: string,
   ): Promise<QuoteResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('quote', id, resellerId);
     const quote = await this.quoteService.findById(id);
 
     return plainToInstance(QuoteResponseDto, quote, {
@@ -174,6 +196,10 @@ export class QuoteController {
 
   /**
    * Update quote (creates new version)
+   *
+   * Closed to resellers, same reasoning as `create` above — the
+   * client-supplied quoteSnapshot/finalPrice/effectivePrice are stored
+   * verbatim here.
    */
   @Patch(':id')
   @ApiUpdate({
@@ -197,12 +223,13 @@ export class QuoteController {
   /**
    * Update quote status
    */
+  @ResellerAllowed()
   @Patch(':id/status')
   @ApiOperation({
     summary: 'Update quote status',
     description: `
       Change quote status (send, accept, reject, expire)
-      
+
       Status workflow:
       - DRAFT → SENT: Sales person sends quote to customer
       - SENT → VIEWED: Customer opens/views quote
@@ -220,7 +247,9 @@ export class QuoteController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateQuoteStatusDto,
+    @ResellerScope() resellerId?: string,
   ): Promise<QuoteResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('quote', id, resellerId);
     const quote = await this.quoteService.updateStatus(id, statusDto, currentUser.id);
 
     return plainToInstance(QuoteResponseDto, quote, {
@@ -228,6 +257,7 @@ export class QuoteController {
     });
   }
 
+  @ResellerAllowed()
   @Post(':id/share/whatsapp')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -251,13 +281,21 @@ export class QuoteController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ShareQuoteWhatsappDto,
     @UploadedFile() file?: UploadedPdfFile,
+    @ResellerScope() resellerId?: string,
   ): Promise<ShareQuoteWhatsappResponseDto> {
+    if (resellerId) {
+      await this.ownership.assertOwns('quote', id, resellerId);
+      // A reseller's share always goes to the quote's customer: our WhatsApp
+      // number must not carry a quote to any phone he types.
+      dto.to = undefined;
+    }
     return this.quoteService.shareOnWhatsapp(id, dto, currentUser.id, file);
   }
 
   /**
    * Void quote
    */
+  @ResellerAllowed()
   @Post(':id/void')
   @ApiOperation({
     summary: 'Void quote',
@@ -284,7 +322,9 @@ export class QuoteController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: VoidQuoteDto,
+    @ResellerScope() resellerId?: string,
   ): Promise<QuoteResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('quote', id, resellerId);
     const quote = await this.quoteService.voidQuote(id, dto.reason, currentUser.id);
 
     return plainToInstance(QuoteResponseDto, quote, {
@@ -295,6 +335,7 @@ export class QuoteController {
   /**
    * Delete quote
    */
+  @ResellerAllowed()
   @ApiDelete({
     summary: 'Delete quote',
     description:
@@ -303,7 +344,9 @@ export class QuoteController {
   async delete(
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
+    @ResellerScope() resellerId?: string,
   ): Promise<void> {
+    if (resellerId) await this.ownership.assertOwns('quote', id, resellerId);
     await this.quoteService.delete(id);
   }
 }

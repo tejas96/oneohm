@@ -380,9 +380,14 @@ export class CreateQuoteFromCalculationDto extends CalculateQuoteDto {
   @IsOptional()
   salesPersonId?: string;
 
+  /**
+   * IGNORED. A quote's reseller is always its customer's. Kept only because
+   * older clients still send it and `forbidNonWhitelisted` would 400 them.
+   */
   @ApiPropertyOptional({
-    description: 'Reseller ID if quote is through reseller',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    description:
+      "Ignored. The quote takes its customer's reseller. Accepted only so older clients do not get a 400.",
+    deprecated: true,
   })
   @IsUUID()
   @IsOptional()

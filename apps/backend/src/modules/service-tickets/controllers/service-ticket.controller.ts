@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+import { ResellerAllowed, ResellerOwnershipService, ResellerScope } from '../../../common/reseller';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import {
@@ -33,7 +34,10 @@ import { ServiceTicketService } from '../services';
 @Controller('service-tickets')
 @UseGuards(JwtAuthGuard)
 export class ServiceTicketController {
-  constructor(private readonly ticketService: ServiceTicketService) {}
+  constructor(
+    private readonly ticketService: ServiceTicketService,
+    private readonly ownership: ResellerOwnershipService,
+  ) {}
 
   // ============================================
   // CREATE
@@ -58,10 +62,15 @@ export class ServiceTicketController {
   // READ
   // ============================================
 
+  @ResellerAllowed()
   @Get()
   @ApiOperation({ summary: 'List service tickets' })
   @ApiResponse({ status: HttpStatus.OK, type: ServiceTicketListResponseDto })
-  async findAll(@Query() query: ServiceTicketQueryDto): Promise<ServiceTicketListResponseDto> {
+  async findAll(
+    @Query() query: ServiceTicketQueryDto,
+    @ResellerScope() resellerId?: string,
+  ): Promise<ServiceTicketListResponseDto> {
+    if (resellerId) query.resellerId = resellerId;
     const { items, total } = await this.ticketService.findAll(query);
     return {
       items: items.map((ticket) => this.ticketService.toListItemDto(ticket)),
@@ -85,11 +94,16 @@ export class ServiceTicketController {
     return this.ticketService.getStats(query.kind);
   }
 
+  @ResellerAllowed()
   @Get(':id')
   @ApiOperation({ summary: 'Get a service ticket with its status history' })
   @ApiResponse({ status: HttpStatus.OK, type: ServiceTicketResponseDto })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Ticket not found' })
-  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<ServiceTicketResponseDto> {
+  async findById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @ResellerScope() resellerId?: string,
+  ): Promise<ServiceTicketResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('ticket', id, resellerId);
     return this.ticketService.toResponseDto(await this.ticketService.findById(id));
   }
 
@@ -97,6 +111,7 @@ export class ServiceTicketController {
   // UPDATE
   // ============================================
 
+  @ResellerAllowed()
   @Patch(':id')
   @ApiOperation({ summary: 'Update a service ticket' })
   @ApiResponse({ status: HttpStatus.OK, type: ServiceTicketResponseDto })
@@ -105,10 +120,13 @@ export class ServiceTicketController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateServiceTicketDto,
     @CurrentUser() user: { id: string },
+    @ResellerScope() resellerId?: string,
   ): Promise<ServiceTicketResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('ticket', id, resellerId);
     return this.ticketService.toResponseDto(await this.ticketService.update(id, dto, user.id));
   }
 
+  @ResellerAllowed()
   @Patch(':id/status')
   @ApiOperation({ summary: 'Change ticket status' })
   @ApiResponse({ status: HttpStatus.OK, type: ServiceTicketResponseDto })
@@ -121,12 +139,15 @@ export class ServiceTicketController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateTicketStatusDto,
     @CurrentUser() user: { id: string },
+    @ResellerScope() resellerId?: string,
   ): Promise<ServiceTicketResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('ticket', id, resellerId);
     return this.ticketService.toResponseDto(
       await this.ticketService.updateStatus(id, dto, user.id),
     );
   }
 
+  @ResellerAllowed()
   @Patch(':id/checklist')
   @ApiOperation({ summary: 'Save part of a checkup inspection checklist' })
   @ApiResponse({ status: HttpStatus.OK, type: ServiceTicketResponseDto })
@@ -136,7 +157,9 @@ export class ServiceTicketController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateMaintenanceChecklistDto,
     @CurrentUser() user: { id: string },
+    @ResellerScope() resellerId?: string,
   ): Promise<ServiceTicketResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('ticket', id, resellerId);
     return this.ticketService.toResponseDto(
       await this.ticketService.updateChecklist(id, dto, user.id),
     );

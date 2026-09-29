@@ -31,6 +31,7 @@ import { systemSizeKwOf } from '../../../common/utils';
 import { LeadClosureService } from '../../customers/services/lead-closure.service';
 import type { DocumentEntity } from '../../documents/entities/document.entity';
 import { DocumentService } from '../../documents/services';
+import { CommissionBirthService } from '../../employees/commissions/services/commission-birth.service';
 import { IntegrationService } from '../../integrations/services';
 import { pgDateToIso, todayIst } from '../../ledger/domain/dates';
 import { paiseToRupees, rupeesToPaise, splitByPercentage } from '../../ledger/domain/paise';
@@ -75,6 +76,7 @@ export class QuoteService {
     private readonly dataSource: DataSource,
     private readonly eventEmitter: EventEmitter2,
     private readonly leadClosureService: LeadClosureService,
+    private readonly commissionBirth: CommissionBirthService,
   ) {}
 
   /**
@@ -111,6 +113,16 @@ export class QuoteService {
     if (customer.status === CustomerStatus.INACTIVE) {
       throw new BadRequestException('Cannot perform this action: customer is inactive');
     }
+
+    // Spec §10.4 (amended): a quote's reseller is its customer's, always.
+    // Whatever the caller sent on `createDto.resellerId` (including a
+    // reseller trying to point his own quote at a different reseller) is
+    // ignored — the only path onto a reseller's book is customers.assign.
+    const [owner] = await this.dataSource.query(
+      `SELECT reseller_id FROM customer_profiles WHERE id = $1`,
+      [createDto.customerId],
+    );
+    const resellerId: string | null = owner?.reseller_id ?? null;
 
     const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault();
 
@@ -149,7 +161,7 @@ export class QuoteService {
           customerId: createDto.customerId,
           propertyId: createDto.propertyId,
           salesPersonId: createDto.salesPersonId,
-          resellerId: createDto.resellerId,
+          resellerId,
           quoteNumber,
           quoteDate: createDto.quoteDate ? new Date(createDto.quoteDate) : new Date(),
           validUntil: new Date(createDto.validUntil),
@@ -477,6 +489,21 @@ export class QuoteService {
       throw new BadRequestException('Cannot update accepted or rejected quotes');
     }
 
+    // Spec §10.4 (amended): a quote's reseller comes from its customer and is
+    // never set directly here. The only exception is clearing it (`null`),
+    // and only before the quote has gone anywhere — a quote already SENT (or
+    // later) is out in the world attributed to that reseller.
+    if (updateDto.resellerId !== undefined) {
+      if (updateDto.resellerId !== null) {
+        throw new BadRequestException(
+          "A quote's reseller comes from its customer. Change it on the customer.",
+        );
+      }
+      if (quote.status !== QuoteStatus.DRAFT) {
+        throw new BadRequestException('The reseller can only be removed from a draft quote.');
+      }
+    }
+
     const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault();
 
     const latestVersionNumber = Math.max(...(quote.versions?.map((v) => v.versionNumber) ?? [0]));
@@ -705,6 +732,20 @@ export class QuoteService {
       } catch (error) {
         this.logger.error(
           `Quote ${id} accepted but its followups could not be closed: ${String(error)}`,
+        );
+      }
+    }
+
+    // The reseller's commission, born with the deal. Best-effort in the same
+    // shape as the lead closure above: the acceptance has already saved, and a
+    // failure here must not read as "the acceptance did not save". The Fix
+    // strip on /resellers lists any accepted deal left without its row.
+    if (statusDto.status === QuoteStatus.ACCEPTED && quote.resellerId) {
+      try {
+        await this.commissionBirth.createForAcceptedQuote(id, updatedBy);
+      } catch (error) {
+        this.logger.error(
+          `Quote ${id} accepted but its commission could not be created: ${String(error)}`,
         );
       }
     }

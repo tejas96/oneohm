@@ -10,6 +10,7 @@ import {
   DocumentCategory,
   DocumentEntityType,
   DocumentTag,
+  ExpenseCategory,
   FinanceSequenceScope,
   PaymentMethod,
 } from '@tejas96/shared/types';
@@ -27,6 +28,14 @@ import {
 import { isFutureIst, toIsoDate, todayIst } from '../domain/dates';
 import { LedgerAllocationEntity, LedgerEntryEntity } from '../entities';
 import { LedgerRepository } from '../repositories/ledger.repository';
+
+/**
+ * A commission payout is undone through the reseller's Close recovery, which
+ * also moves the commission out of `paid`. A plain ledger reversal would undo
+ * the money and leave the commission marked paid.
+ */
+export const COMMISSION_REVERSAL_REFUSED =
+  "A commission payout cannot be reversed here. Use Close recovery on the reseller's page.";
 
 export interface ProofDocumentInput {
   fileKey: string;
@@ -85,6 +94,7 @@ export interface RecordExpenseInput {
   category: string;
   payee?: string;
   paymentMethod?: string;
+  reference?: string;
   notes?: string;
   proofDocument?: ProofDocumentInput;
   /** Required when `paymentMethod` is `credit`. A bill is owed to someone. */
@@ -242,6 +252,7 @@ export class LedgerWriteService {
         paymentMethod: input.paymentMethod ?? null,
         counterparty: input.payee ?? null,
         category: input.category,
+        reference: input.reference ?? null,
         notes: input.notes ?? null,
         vendorId: input.vendorId ?? null,
         // A bill on credit is a cost taken on, not cash gone. Every money-out
@@ -426,6 +437,9 @@ export class LedgerWriteService {
       }
       if (original.reversesId) {
         throw new ConflictException('Cannot reverse a reversal — reverse the original entry');
+      }
+      if (original.category === ExpenseCategory.COMMISSION) {
+        throw new BadRequestException(COMMISSION_REVERSAL_REFUSED);
       }
 
       const existing = await this.ledgerRepository.findReversalOf(entryId, manager);

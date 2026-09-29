@@ -133,6 +133,12 @@ export class ServiceTicketRepository {
     if (query.createdBy) {
       qb.andWhere('ticket.createdBy = :createdBy', { createdBy: query.createdBy });
     }
+    if (query.resellerId) {
+      qb.andWhere(
+        `ticket.customerId IN (SELECT cp.id FROM customer_profiles cp WHERE cp.reseller_id = :resellerId)`,
+        { resellerId: query.resellerId },
+      );
+    }
     if (query.search) {
       qb.andWhere('(ticket.title ILIKE :search OR ticket.ticketNumber ILIKE :search)', {
         search: `%${query.search}%`,

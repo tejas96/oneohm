@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CustomerStatus, type PaginatedResponse } from '@tejas96/shared/types';
+import { CustomerStatus, LeadSource, type PaginatedResponse } from '@tejas96/shared/types';
 
 import {
   ApiAction,
@@ -20,6 +20,7 @@ import {
   ApiReadOne,
   ApiUpdate,
 } from '../../../common/decorators';
+import { ResellerAllowed, ResellerOwnershipService, ResellerScope } from '../../../common/reseller';
 import { toDto, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -50,11 +51,15 @@ import { CustomerService } from '../services/customer.service';
 @Controller('customers')
 @UseGuards(JwtAuthGuard)
 export class CustomerController {
-  constructor(private readonly customerService: CustomerService) {}
+  constructor(
+    private readonly customerService: CustomerService,
+    private readonly ownership: ResellerOwnershipService,
+  ) {}
 
   /**
    * Create a new customer
    */
+  @ResellerAllowed()
   @ApiCreate({
     summary: 'Create a new customer',
     description: 'Creates a new customer/lead in the system.',
@@ -69,7 +74,12 @@ export class CustomerController {
   async create(
     @Body() createDto: CreateCustomerDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerResponseDto> {
+    if (resellerId) {
+      createDto.resellerId = resellerId;
+      createDto.leadSource = LeadSource.RESELLER;
+    }
     const customer = await this.customerService.create(createDto, currentUser.id);
     return toDto(CustomerResponseDto, customer, { groups: ['detail'] });
   }
@@ -78,6 +88,7 @@ export class CustomerController {
    * Get all customers with filtering, sorting, and pagination
    * Unified endpoint supporting search, filters, and sorting via query parameters
    */
+  @ResellerAllowed()
   @ApiReadAll({
     summary: 'Get all customers',
     description:
@@ -90,6 +101,7 @@ export class CustomerController {
   async findAll(
     @CurrentUser() currentUser: CurrentUserType,
     @Query() query: CustomerQueryDto,
+    @ResellerScope() resellerId?: string,
   ): Promise<PaginatedResponse<CustomerResponseDto>> {
     // Substitute 'me' with actual user ID for createdBy filter
     if (query.createdBy === 'me') {
@@ -99,6 +111,15 @@ export class CustomerController {
     // Substitute 'me' with actual user ID for assigneeId filter
     if (query.assigneeId === 'me') {
       query.assigneeId = currentUser.id;
+    }
+
+    // Server truth overwrites anything the caller sent for this filter.
+    // A reseller's caseload is every customer he brought in, and staff usually
+    // create those for him — so `mine` (created by or assigned to me) would hide
+    // them. The reseller scope already narrows the list to his own.
+    if (resellerId) {
+      query.resellerId = resellerId;
+      query.mine = undefined;
     }
 
     // Use unified findAll with query DTO
@@ -118,6 +139,7 @@ export class CustomerController {
    * Returns all (groupCode, groupName) pairs used to populate the group selector.
    * NOTE: Must be defined BEFORE :id routes to avoid route conflicts.
    */
+  @ResellerAllowed()
   @Get('groups')
   @ApiOperation({
     summary: 'Get customer groups',
@@ -148,6 +170,7 @@ export class CustomerController {
    * Used to prevent duplicate customer creation in the lead wizard
    * NOTE: This MUST be defined BEFORE :id routes to avoid route conflicts
    */
+  @ResellerAllowed()
   @Get('check-availability')
   @ApiOperation({
     summary: 'Check phone/email availability',
@@ -243,6 +266,7 @@ export class CustomerController {
   /**
    * Get customer by ID
    */
+  @ResellerAllowed()
   @ApiReadOne({
     summary: 'Get customer by ID',
     description: 'Retrieve a specific customer by their ID.',
@@ -251,7 +275,9 @@ export class CustomerController {
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() _currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('customer', id, resellerId);
     const customer = await this.customerService.findById(id);
     return toDto(CustomerResponseDto, customer, { groups: ['detail'] });
   }
@@ -259,6 +285,7 @@ export class CustomerController {
   /**
    * Update customer (partial update)
    */
+  @ResellerAllowed()
   @ApiUpdate({
     summary: 'Update customer',
     description: 'Update customer information.',
@@ -275,14 +302,22 @@ export class CustomerController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateCustomerDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerResponseDto> {
-    const customer = await this.customerService.update(id, updateDto, currentUser.id);
+    if (resellerId) {
+      await this.ownership.assertOwns('customer', id, resellerId);
+      delete updateDto.resellerId;
+      delete updateDto.leadSource;
+      delete updateDto.resellerChangeReason;
+    }
+    const customer = await this.customerService.update(id, updateDto, currentUser.id, currentUser);
     return toDto(CustomerResponseDto, customer, { groups: ['detail'] });
   }
 
   /**
    * Update customer status (generic)
    */
+  @ResellerAllowed()
   @ApiAction({
     path: 'status',
     summary: 'Update customer status',
@@ -293,7 +328,9 @@ export class CustomerController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateCustomerStatusDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('customer', id, resellerId);
     const customer = await this.customerService.updateStatus(id, statusDto.status, currentUser.id);
     return toDto(CustomerResponseDto, customer, { groups: ['detail'] });
   }
@@ -302,6 +339,7 @@ export class CustomerController {
    * Assign or unassign a customer to a user
    * Send assigneeId as a valid UUID to assign, or null to unassign.
    */
+  @ResellerAllowed()
   @Patch(':id/assignee')
   @ApiOperation({
     summary: 'Assign or unassign a customer',
@@ -324,7 +362,9 @@ export class CustomerController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() assigneeDto: UpdateAssigneeDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('customer', id, resellerId);
     const customer = await this.customerService.assignCustomer(
       id,
       assigneeDto.assigneeId,
@@ -353,6 +393,7 @@ export class CustomerController {
   /**
    * Mark a property-less enquiry as lost
    */
+  @ResellerAllowed()
   @ApiAction({
     path: 'lost',
     summary: 'Mark a customer lead as lost',
@@ -364,7 +405,9 @@ export class CustomerController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: MarkLostDto,
     @CurrentUser() currentUser: CurrentUserType,
+    @ResellerScope() resellerId?: string,
   ): Promise<CustomerResponseDto> {
+    if (resellerId) await this.ownership.assertOwns('customer', id, resellerId);
     const customer = await this.customerService.markLost(
       id,
       dto.reason,
