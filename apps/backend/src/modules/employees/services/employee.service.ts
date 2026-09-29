@@ -300,6 +300,15 @@ export class EmployeeService {
           'This reseller has customers, quotes or commissions, so the profile type cannot change.',
         );
       }
+
+      // chk_employee_profiles_aadhaar_reseller_only: only reseller rows may hold an Aadhaar number.
+      const keptAadhaar =
+        dto.aadhaarNumber !== undefined ? dto.aadhaarNumber : existing.aadhaarNumber;
+      if (dto.profileKind === EmployeeProfileKind.STAFF && keptAadhaar) {
+        throw new BadRequestException(
+          'Remove the Aadhaar number before changing this reseller to staff.',
+        );
+      }
     }
 
     if (existing.profileKind === EmployeeProfileKind.RESELLER) {
