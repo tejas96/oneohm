@@ -16,8 +16,8 @@ import { formatBusinessDate } from '@/lib/utils';
 /**
  * One row of the strip.
  *
- * A real component, not a plain function called from `.map()` — `since` and
- * `before` change length as rows get fixed, and `useGatedAction` is a hook.
+ * A real component, not a plain function called from `.map()` — the list
+ * changes length as rows get fixed, and `useGatedAction` is a hook.
  * Calling a hook from a loop-body function whose iteration count varies across
  * renders breaks the rules of hooks; giving each row its own component gives
  * each item a stable hook-call sequence instead.
@@ -93,9 +93,8 @@ export function MissingCommissionsStrip(): JSX.Element | null {
   const [dismissing, setDismissing] = useState<{ row: MissingRow } | null>(null);
   const m = useCommissionMutations();
 
-  const since = data?.sinceLaunch ?? [];
-  const before = data?.beforeLaunch ?? [];
-  const total = since.length + before.length;
+  const rows = data?.rows ?? [];
+  const total = rows.length;
   if (total === 0) return null;
 
   const row = (r: MissingRow): JSX.Element => (
@@ -123,18 +122,7 @@ export function MissingCommissionsStrip(): JSX.Element | null {
           ? '1 accepted deal has no commission row.'
           : `${total} accepted deals have no commission row.`}
         <Collapse in={open}>
-          {since.length > 0 && (
-            <Box sx={{ mt: 1 }}>
-              <strong>Since launch</strong>
-              {since.map(row)}
-            </Box>
-          )}
-          {before.length > 0 && (
-            <Box sx={{ mt: 1 }}>
-              <strong>Before launch</strong> — decide each one
-              {before.map(row)}
-            </Box>
-          )}
+          <Box sx={{ mt: 1 }}>{rows.map(row)}</Box>
         </Collapse>
       </Alert>
       {dismissing && (

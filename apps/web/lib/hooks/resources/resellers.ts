@@ -138,10 +138,7 @@ export function useReseller(
   });
 }
 
-export function useMissingCommissions(): UseQueryResult<
-  { sinceLaunch: MissingRow[]; beforeLaunch: MissingRow[]; liveFrom: string | null },
-  AxiosError
-> {
+export function useMissingCommissions(): UseQueryResult<{ rows: MissingRow[] }, AxiosError> {
   return useQuery({
     queryKey: keys.missing(),
     queryFn: async ({ signal }) =>
