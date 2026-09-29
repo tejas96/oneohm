@@ -67,6 +67,8 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
   const userRoleMutations = useUserRoleMutations();
   const [assignRoleOpen, setAssignRoleOpen] = useState(false);
   const [statusChangeTarget, setStatusChangeTarget] = useState<string | null>(null);
+  // Open state is separate so the dialog keeps its verb while it animates closed.
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [removeRoleTarget, setRemoveRoleTarget] = useState<string | null>(null);
 
   const deleteConfirmation = useDeleteConfirmation<AdminUser>({
@@ -78,11 +80,16 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
 
   const isSelf = currentUser?.id === userId;
 
+  const openStatusDialog = (status: string): void => {
+    setStatusChangeTarget(status);
+    setStatusDialogOpen(true);
+  };
+
   const confirmStatusChange = useCallback(async (): Promise<void> => {
     if (!statusChangeTarget) return;
     try {
       await mutations.statusChange.mutateAsync({ id: userId, status: statusChangeTarget });
-      setStatusChangeTarget(null);
+      setStatusDialogOpen(false);
     } catch {
       // error toast handled by FDAL mutation config
     }
@@ -267,7 +274,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
                 variant="outline"
                 size="sm"
                 disabled={isSelf}
-                onClick={() => setStatusChangeTarget('inactive')}
+                onClick={() => openStatusDialog('inactive')}
               >
                 <UserX className="mr-2 size-4" />{' '}
                 {isSelf ? 'Cannot deactivate yourself' : 'Deactivate'}
@@ -276,13 +283,13 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
                 variant="outline"
                 size="sm"
                 disabled={isSelf}
-                onClick={() => setStatusChangeTarget('suspended')}
+                onClick={() => openStatusDialog('suspended')}
               >
                 <UserMinus className="mr-2 size-4" /> Suspend
               </Button>
             </>
           ) : (
-            <Button size="sm" onClick={() => setStatusChangeTarget('active')}>
+            <Button size="sm" onClick={() => openStatusDialog('active')}>
               <UserCheck className="mr-2 size-4" /> Activate
             </Button>
           )}
@@ -372,12 +379,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={!!statusChangeTarget}
-        onOpenChange={(open) => {
-          if (!open) setStatusChangeTarget(null);
-        }}
-      >
+      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle>
@@ -406,7 +408,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setStatusChangeTarget(null)}
+              onClick={() => setStatusDialogOpen(false)}
               disabled={mutations.statusChange.isPending}
             >
               Cancel
