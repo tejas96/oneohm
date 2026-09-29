@@ -14,6 +14,7 @@ import * as bcrypt from 'bcrypt';
 import type ms from 'ms';
 import { MoreThan } from 'typeorm';
 
+import { accountStatusMessage } from './account-status.service';
 import { OtpService } from './otp.service';
 import { PlatformSmsService } from './platform-sms.service';
 import { ConfigService } from '../../../config/config.service';
@@ -79,7 +80,7 @@ export class AuthService {
 
       if (deletedUser) {
         this.logger.warn(`Deleted user login attempt: ${email}`);
-        throw new UnauthorizedException(this.getAccountStatusMessage(deletedUser.status));
+        throw new UnauthorizedException(accountStatusMessage(deletedUser.status));
       }
 
       this.logger.warn(`Failed login attempt for email: ${email}`);
@@ -90,7 +91,7 @@ export class AuthService {
     // so non-active users always get a clear account-status message
     if (user.status !== UserStatus.ACTIVE) {
       this.logger.warn(`Non-active user login attempt: ${email} (status: ${user.status})`);
-      throw new UnauthorizedException(this.getAccountStatusMessage(user.status));
+      throw new UnauthorizedException(accountStatusMessage(user.status));
     }
 
     // Verify password
@@ -204,7 +205,7 @@ export class AuthService {
         .getOne();
 
       if (deletedUser) {
-        throw new UnauthorizedException(this.getAccountStatusMessage(deletedUser.status));
+        throw new UnauthorizedException(accountStatusMessage(deletedUser.status));
       }
       throw new UnauthorizedException('User not found');
     }
@@ -212,7 +213,7 @@ export class AuthService {
     // Check if user is active
     if (user.status !== UserStatus.ACTIVE) {
       this.logger.warn(`Non-active user OTP login attempt: ${phone} (status: ${user.status})`);
-      throw new UnauthorizedException(this.getAccountStatusMessage(user.status));
+      throw new UnauthorizedException(accountStatusMessage(user.status));
     }
 
     // Verify phone if not already verified
@@ -342,14 +343,14 @@ export class AuthService {
         .getOne();
 
       if (deletedUser) {
-        throw new UnauthorizedException(this.getAccountStatusMessage(deletedUser.status));
+        throw new UnauthorizedException(accountStatusMessage(deletedUser.status));
       }
       throw new UnauthorizedException('Invalid email or password');
     }
 
     if (user.status !== UserStatus.ACTIVE) {
       this.logger.warn(`Non-active user login attempt: ${email} (status: ${user.status})`);
-      throw new UnauthorizedException(this.getAccountStatusMessage(user.status));
+      throw new UnauthorizedException(accountStatusMessage(user.status));
     }
 
     const isPasswordValid = await user.validatePassword(password);
@@ -578,19 +579,6 @@ export class AuthService {
     this.logger.log(`Password reset successfully for user: ${user.email}`);
 
     return { message: 'Password reset successfully' };
-  }
-
-  private getAccountStatusMessage(status: string): string {
-    const messages: Partial<Record<UserStatus, string>> = {
-      [UserStatus.INACTIVE]: 'Your account is inactive. Please contact your administrator.',
-      [UserStatus.SUSPENDED]: 'Your account has been suspended. Please contact your administrator.',
-      [UserStatus.ARCHIVED]: 'Your account has been removed. Please contact your administrator.',
-      [UserStatus.PENDING]: 'Your account is pending approval. Please contact your administrator.',
-    };
-    return (
-      messages[status as UserStatus] ??
-      'Your account is not active. Please contact your administrator.'
-    );
   }
 
   private async generateTokens(
