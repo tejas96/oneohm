@@ -358,7 +358,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
                 {deleteConfirmation.target?.firstName} {deleteConfirmation.target?.lastName}
               </span>
               ? They will be removed and can no longer sign in. Their history (customers, quotes,
-              commissions) is kept. An admin can restore them from the Archived tab.
+              commissions) is kept. An admin can restore them: filter Users by Archived status.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
