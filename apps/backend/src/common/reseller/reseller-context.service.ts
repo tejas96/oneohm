@@ -36,14 +36,20 @@ export class ResellerContextService {
   }
 
   /** Spec §7.4: a reseller can only be given work on a customer he brought in. By users.id. */
-  async assertAssignableUser(assigneeUserId: string | null | undefined, customerId: string): Promise<void> {
+  async assertAssignableUser(
+    assigneeUserId: string | null | undefined,
+    customerId: string,
+  ): Promise<void> {
     if (!assigneeUserId) return;
     const resellerId = await this.resellerIdForUser(assigneeUserId);
     if (resellerId) await this.assertCustomerIsResellers(resellerId, customerId);
   }
 
   /** Same rule, for routes that take an employee_profiles.id (service tickets). */
-  async assertAssignableProfile(assigneeProfileId: string | null | undefined, customerId: string): Promise<void> {
+  async assertAssignableProfile(
+    assigneeProfileId: string | null | undefined,
+    customerId: string,
+  ): Promise<void> {
     if (!assigneeProfileId) return;
     const [row] = await this.dataSource.query(
       `SELECT id FROM employee_profiles WHERE id = $1 AND profile_kind = 'reseller'`,
@@ -58,7 +64,9 @@ export class ResellerContextService {
       [customerId, resellerId],
     );
     if (!row) {
-      throw new BadRequestException('A reseller can only be given work on customers they brought in.');
+      throw new BadRequestException(
+        'A reseller can only be given work on customers they brought in.',
+      );
     }
   }
 }

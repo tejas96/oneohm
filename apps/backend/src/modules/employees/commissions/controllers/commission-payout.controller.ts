@@ -17,7 +17,10 @@ export class CommissionPayoutController {
   constructor(private readonly payouts: CommissionPayoutService) {}
 
   @Post('record-payment')
-  recordPayment(@Body() dto: RecordCommissionPaymentDto, @CurrentUser() user: CurrentUserType): Promise<CommissionRow[]> {
+  recordPayment(
+    @Body() dto: RecordCommissionPaymentDto,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<CommissionRow[]> {
     return this.payouts.recordPayment(dto, user);
   }
 }

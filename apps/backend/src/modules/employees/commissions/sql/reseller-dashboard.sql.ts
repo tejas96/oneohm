@@ -1,23 +1,53 @@
 export interface ResellerSummary {
-  resellerId: string; name: string; code: string | null; status: string;
+  resellerId: string;
+  name: string;
+  code: string | null;
+  status: string;
   ratePercent: number | null;
-  leads: number; quoted: number; won: number; winRate: number | null;
-  revenuePaise: number; pendingPaise: number; owedPaise: number; paidPaise: number; toRecoverPaise: number;
+  leads: number;
+  quoted: number;
+  won: number;
+  winRate: number | null;
+  revenuePaise: number;
+  pendingPaise: number;
+  owedPaise: number;
+  paidPaise: number;
+  toRecoverPaise: number;
 }
 
-export interface ResellerTotals { pendingPaise: number; owedPaise: number; paidPaise: number; toRecoverPaise: number; }
+export interface ResellerTotals {
+  pendingPaise: number;
+  owedPaise: number;
+  paidPaise: number;
+  toRecoverPaise: number;
+}
 
 export interface ResellerHeader {
-  resellerId: string; name: string; code: string | null; status: string; ratePercent: number | null;
-  bankName: string | null; accountLast4: string | null; gstin: string | null; phone: string | null;
+  resellerId: string;
+  name: string;
+  code: string | null;
+  status: string;
+  ratePercent: number | null;
+  bankName: string | null;
+  accountLast4: string | null;
+  gstin: string | null;
+  phone: string | null;
 }
 
 export interface MissingRow {
-  quoteId: string; quoteNumber: string; acceptedAt: string; resellerId: string; resellerName: string; customerName: string;
+  quoteId: string;
+  quoteNumber: string;
+  acceptedAt: string;
+  resellerId: string;
+  resellerName: string;
+  customerName: string;
 }
 
 /** IST midnight at the start of the period, as a UTC instant; null = all time. */
-export function periodStart(period: 'month' | 'fy' | 'all' | undefined, now = new Date()): Date | null {
+export function periodStart(
+  period: 'month' | 'fy' | 'all' | undefined,
+  now = new Date(),
+): Date | null {
   if (!period || period === 'all') return null;
   const ist = new Date(now.getTime() + 330 * 60_000); // shift to IST wall clock
   const y = ist.getUTCFullYear();

@@ -24,7 +24,13 @@ function Money({ paise, danger }: { paise: number; danger?: boolean }): JSX.Elem
 }
 
 /** Always visible `⋮` — never a hover reveal. */
-function RowMenu({ row, onOpen }: { row: ResellerSummary; onOpen: (r: ResellerSummary) => void }): JSX.Element {
+function RowMenu({
+  row,
+  onOpen,
+}: {
+  row: ResellerSummary;
+  onOpen: (r: ResellerSummary) => void;
+}): JSX.Element {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   return (
     <>
@@ -62,7 +68,9 @@ function RowMenu({ row, onOpen }: { row: ResellerSummary; onOpen: (r: ResellerSu
   );
 }
 
-export function buildResellerColumns(onOpen: (r: ResellerSummary) => void): CrmColumn<ResellerSummary>[] {
+export function buildResellerColumns(
+  onOpen: (r: ResellerSummary) => void,
+): CrmColumn<ResellerSummary>[] {
   return [
     {
       field: 'name',
@@ -86,7 +94,12 @@ export function buildResellerColumns(onOpen: (r: ResellerSummary) => void): CrmC
       // them — "RATELEADS → QUOTED → WON" in the header, "5%0 → 0 → 0" in
       // the cells. CrmTable's grid has no column gap, so alignment is the
       // only thing that keeps adjacent tracks apart.
-      renderCell: (r) => (r.ratePercent === null ? <CrmStatusPill tone="warning" label="Not set" /> : `${r.ratePercent}%`),
+      renderCell: (r) =>
+        r.ratePercent === null ? (
+          <CrmStatusPill tone="warning" label="Not set" />
+        ) : (
+          `${r.ratePercent}%`
+        ),
     },
     {
       field: 'funnel',
@@ -101,10 +114,34 @@ export function buildResellerColumns(onOpen: (r: ResellerSummary) => void): CrmC
         </Box>
       ),
     },
-    { field: 'revenue', header: 'Revenue', track: crm['col-reseller-money'], align: 'right', renderCell: (r) => <Money paise={r.revenuePaise} /> },
-    { field: 'pending', header: 'Pending', track: crm['col-reseller-money'], align: 'right', renderCell: (r) => <Money paise={r.pendingPaise} /> },
-    { field: 'owed', header: 'Owed', track: crm['col-reseller-money'], align: 'right', renderCell: (r) => <Money paise={r.owedPaise} /> },
-    { field: 'paid', header: 'Paid', track: crm['col-reseller-money'], align: 'right', renderCell: (r) => <Money paise={r.paidPaise} /> },
+    {
+      field: 'revenue',
+      header: 'Revenue',
+      track: crm['col-reseller-money'],
+      align: 'right',
+      renderCell: (r) => <Money paise={r.revenuePaise} />,
+    },
+    {
+      field: 'pending',
+      header: 'Pending',
+      track: crm['col-reseller-money'],
+      align: 'right',
+      renderCell: (r) => <Money paise={r.pendingPaise} />,
+    },
+    {
+      field: 'owed',
+      header: 'Owed',
+      track: crm['col-reseller-money'],
+      align: 'right',
+      renderCell: (r) => <Money paise={r.owedPaise} />,
+    },
+    {
+      field: 'paid',
+      header: 'Paid',
+      track: crm['col-reseller-money'],
+      align: 'right',
+      renderCell: (r) => <Money paise={r.paidPaise} />,
+    },
     {
       field: 'recover',
       header: 'To recover',

@@ -112,7 +112,14 @@ export class FollowupController {
     // Server truth overwrites anything the caller sent for this filter.
     const resellerId = resellerScope ?? resellerIdParam;
     const hasFilters =
-      status || assignedToUserId || customerId || propertyId || priority || from || to || resellerId;
+      status ||
+      assignedToUserId ||
+      customerId ||
+      propertyId ||
+      priority ||
+      from ||
+      to ||
+      resellerId;
 
     if (hasFilters) {
       const result = await this.followupService.findWithFilters(

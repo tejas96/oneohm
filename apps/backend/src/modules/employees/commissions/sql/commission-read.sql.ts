@@ -1,4 +1,8 @@
-import type { CommissionBaseSource, CommissionRateSource, CommissionState } from '@tejas96/shared/utils';
+import type {
+  CommissionBaseSource,
+  CommissionRateSource,
+  CommissionState,
+} from '@tejas96/shared/utils';
 
 /**
  * One commission row as every screen needs it, with the displayed state

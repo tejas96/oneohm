@@ -39,12 +39,21 @@ function Actions({
 
   const items: JSX.Element[] = [];
   const g = (key: string, label: string, onClick: () => void): JSX.Element => (
-    <GatedMenuItem key={key} permission="finance.payments.record" subject={label} onAction={onClick}>
+    <GatedMenuItem
+      key={key}
+      permission="finance.payments.record"
+      subject={label}
+      onAction={onClick}
+    >
       {label}
     </GatedMenuItem>
   );
   if (row.state === 'pending') {
-    items.push(g('a', 'Approve', act('approve')), g('e', 'Edit', act('edit')), g('c', 'Cancel', act('cancel')));
+    items.push(
+      g('a', 'Approve', act('approve')),
+      g('e', 'Edit', act('edit')),
+      g('c', 'Cancel', act('cancel')),
+    );
   }
   if (row.state === 'needs_amount' || row.state === 'on_hold') {
     items.push(g('e', 'Edit', act('edit')), g('c', 'Cancel', act('cancel')));
@@ -53,7 +62,11 @@ function Actions({
     items.push(g('e', 'Edit', act('edit')), g('c', 'Cancel', act('cancel')));
   }
   if (row.state === 'approved') {
-    items.push(g('p', 'Record payment', act('pay')), g('e', 'Edit', act('edit')), g('c', 'Cancel', act('cancel')));
+    items.push(
+      g('p', 'Record payment', act('pay')),
+      g('e', 'Edit', act('edit')),
+      g('c', 'Cancel', act('cancel')),
+    );
   }
   if (row.state === 'payment_in_review') {
     items.push(
@@ -153,7 +166,8 @@ export function buildCommissionColumns(
       track: crm['col-reseller-maths'],
       renderCell: (r) => (
         <Box sx={{ fontVariantNumeric: 'tabular-nums' }}>
-          {formatPaise(r.basePaise)} × {r.ratePercent}% = <strong>{formatPaise(r.amountPaise)}</strong>
+          {formatPaise(r.basePaise)} × {r.ratePercent}% ={' '}
+          <strong>{formatPaise(r.amountPaise)}</strong>
           {(r.baseSource === 'manual' || r.rateSource === 'manual') && (
             <CrmStatusPill tone="neutral" label="edited" />
           )}
@@ -172,9 +186,14 @@ export function buildCommissionColumns(
       track: crm['col-reseller-state'],
       renderCell: (r) => (
         <Box>
-          <CrmStatusPill tone={COMMISSION_STATE_TONE[r.state]} label={COMMISSION_STATE_LABEL[r.state]} />
+          <CrmStatusPill
+            tone={COMMISSION_STATE_TONE[r.state]}
+            label={COMMISSION_STATE_LABEL[r.state]}
+          />
           <Box sx={{ fontSize: crm['text-row-sm'], color: color['text-tertiary'] }}>
-            {r.state === 'paid' && r.paidAt ? `${formatBusinessDate(r.paidAt)} · ${r.paymentReference ?? ''}` : null}
+            {r.state === 'paid' && r.paidAt
+              ? `${formatBusinessDate(r.paidAt)} · ${r.paymentReference ?? ''}`
+              : null}
             {r.state === 'payment_in_review' ? r.payoutRequestNo : null}
             {r.state === 'cancelled' ? r.cancelReason : null}
             {r.state === 'recovered' ? r.recoveryNotes : null}

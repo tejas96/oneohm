@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { commissionAmount, commissionBase, type CommissionPricingInput } from '@tejas96/shared/utils';
+import {
+  commissionAmount,
+  commissionBase,
+  type CommissionPricingInput,
+} from '@tejas96/shared/utils';
 import { DataSource, type EntityManager } from 'typeorm';
 
 /**
@@ -98,7 +102,9 @@ export class CommissionBirthService {
 
     const id = inserted[0]?.id ?? null;
     if (id) {
-      this.logger.log(`Commission ${id} for quote ${quoteId}: ₹${amount} (${baseSource}, ${rate}%)`);
+      this.logger.log(
+        `Commission ${id} for quote ${quoteId}: ₹${amount} (${baseSource}, ${rate}%)`,
+      );
     }
     return id;
   }

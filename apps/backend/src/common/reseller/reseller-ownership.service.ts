@@ -2,7 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
-export type OwnedKind = 'customer' | 'property' | 'quote' | 'project' | 'followup' | 'ticket' | 'document';
+export type OwnedKind =
+  | 'customer'
+  | 'property'
+  | 'quote'
+  | 'project'
+  | 'followup'
+  | 'ticket'
+  | 'document';
 
 /**
  * One SQL per kind: does this id belong to this reseller? 404 when not —
@@ -38,7 +45,11 @@ export class ResellerOwnershipService {
   }
 
   /** Document lists and uploads name their parent: only his customer or property. */
-  async assertOwnsDocumentParent(entityType: string, entityId: string, resellerId: string): Promise<void> {
+  async assertOwnsDocumentParent(
+    entityType: string,
+    entityId: string,
+    resellerId: string,
+  ): Promise<void> {
     if (entityType === 'customer') return this.assertOwns('customer', entityId, resellerId);
     if (entityType === 'property') return this.assertOwns('property', entityId, resellerId);
     throw new NotFoundException('Not found');

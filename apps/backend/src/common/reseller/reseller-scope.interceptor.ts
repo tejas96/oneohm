@@ -1,5 +1,9 @@
 import {
-  ForbiddenException, Injectable, type CallHandler, type ExecutionContext, type NestInterceptor,
+  ForbiddenException,
+  Injectable,
+  type CallHandler,
+  type ExecutionContext,
+  type NestInterceptor,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { from, map, switchMap, type Observable } from 'rxjs';
@@ -30,7 +34,9 @@ export class ResellerScopeInterceptor implements NestInterceptor {
 
   intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
     if (ctx.getType() !== 'http') return next.handle();
-    const req = ctx.switchToHttp().getRequest<{ user?: CurrentUserType; resellerId?: string | null }>();
+    const req = ctx
+      .switchToHttp()
+      .getRequest<{ user?: CurrentUserType; resellerId?: string | null }>();
     if (!req.user?.id) return next.handle();
 
     return from(this.context.resellerIdForUser(req.user.id)).pipe(

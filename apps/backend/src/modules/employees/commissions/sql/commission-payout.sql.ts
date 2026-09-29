@@ -30,7 +30,14 @@ export async function markCommissionPaid(
             updated_by = $4, updated_at = now()
       WHERE payout_request_id = $1 AND status = 'approved'
       RETURNING id`,
-    [input.payoutRequestId, input.ledgerEntryId, input.valueDate, input.approverId, input.paymentMethod, input.reference],
+    [
+      input.payoutRequestId,
+      input.ledgerEntryId,
+      input.valueDate,
+      input.approverId,
+      input.paymentMethod,
+      input.reference,
+    ],
   );
   if (rows.length !== 1) {
     // Spec §8 step 4 (amended): nothing is posted; the approver rejects it.

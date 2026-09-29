@@ -156,8 +156,10 @@ export class QuoteCalculatorController {
     // reseller's ownership must fail closed on an id he does not hold,
     // whatever else is wrong with the rest of the body.
     if (resellerId) {
-      if (input.customerId) await this.ownership.assertOwns('customer', input.customerId, resellerId);
-      if (input.propertyId) await this.ownership.assertOwns('property', input.propertyId, resellerId);
+      if (input.customerId)
+        await this.ownership.assertOwns('customer', input.customerId, resellerId);
+      if (input.propertyId)
+        await this.ownership.assertOwns('property', input.propertyId, resellerId);
     }
 
     const calculation = await this.calculatorService.calculateQuote(input);
@@ -190,7 +192,12 @@ export class QuoteCalculatorController {
       // to him entirely, so the audit hook lives only here. Logs
       // the exact `discountAmount` the check above just used.
       if (resellerId) {
-        await this.auditRejectedDiscount(resellerId, input.customerId, discountAmount, currentUser.id);
+        await this.auditRejectedDiscount(
+          resellerId,
+          input.customerId,
+          discountAmount,
+          currentUser.id,
+        );
       }
       throw new BadRequestException('Discount cannot exceed 50% of the margin');
     }

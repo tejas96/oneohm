@@ -1,5 +1,13 @@
 import {
-  Body, ConflictException, Controller, Get, Param, ParseUUIDPipe, Post, Query, UseGuards,
+  Body,
+  ConflictException,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
@@ -34,10 +42,14 @@ export class ResellerDashboardController {
   }
 
   @Post('missing-commissions/:quoteId/create')
-  async createMissing(@Param('quoteId', ParseUUIDPipe) quoteId: string, @CurrentUser() user: CurrentUserType) {
+  async createMissing(
+    @Param('quoteId', ParseUUIDPipe) quoteId: string,
+    @CurrentUser() user: CurrentUserType,
+  ) {
     requirePermission(user, 'finance.payments.record');
     const id = await this.birth.createForAcceptedQuote(quoteId, user.id);
-    if (!id) throw new ConflictException('This quote already has a commission, or no longer earns one.');
+    if (!id)
+      throw new ConflictException('This quote already has a commission, or no longer earns one.');
     return { id };
   }
 
@@ -49,12 +61,17 @@ export class ResellerDashboardController {
   ) {
     requirePermission(user, 'finance.payments.record');
     const id = await this.birth.dismissMissing(quoteId, dto.note, user.id);
-    if (!id) throw new ConflictException('This quote already has a commission, or no longer earns one.');
+    if (!id)
+      throw new ConflictException('This quote already has a commission, or no longer earns one.');
     return { id };
   }
 
   @Get(':id')
-  detail(@Param('id', ParseUUIDPipe) id: string, @Query() q: ResellerPeriodQueryDto, @CurrentUser() user: CurrentUserType) {
+  detail(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() q: ResellerPeriodQueryDto,
+    @CurrentUser() user: CurrentUserType,
+  ) {
     requirePermission(user, 'finance.view');
     return this.dashboard.detail(id, q.period);
   }

@@ -45,7 +45,7 @@ export enum ExpenseCategory {
 
 /** Categories that may be recorded manually; COMMISSION is excluded. */
 export const MANUAL_EXPENSE_CATEGORIES: readonly ExpenseCategory[] = Object.values(
-  ExpenseCategory
+  ExpenseCategory,
 ).filter((c) => c !== ExpenseCategory.COMMISSION);
 
 /**

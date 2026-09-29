@@ -17,7 +17,13 @@ import {
   MUISelect,
 } from '@/components/ui';
 import { useCommissionMutations, type CommissionRow } from '@/lib/hooks/resources/resellers';
-import { formatPaise, paiseToRupees, parseRupeeInput, rupeeInputError, type RupeeInput } from '@/lib/utils/paise';
+import {
+  formatPaise,
+  paiseToRupees,
+  parseRupeeInput,
+  rupeeInputError,
+  type RupeeInput,
+} from '@/lib/utils/paise';
 
 /**
  * `parseRupeeInput`, but ₹0 is a valid answer here.
@@ -135,7 +141,9 @@ export function EditCommissionDialog({
   // no word of why.
   const parsedBase = parseRupeeInputAllowZero(base);
   const baseError =
-    baseTouched || base !== String(row.basePaise / 100) ? rupeeInputErrorAllowZero(parsedBase) : undefined;
+    baseTouched || base !== String(row.basePaise / 100)
+      ? rupeeInputErrorAllowZero(parsedBase)
+      : undefined;
 
   const parsedRate = parseRatePercent(rate);
   const rateError =
@@ -149,7 +157,9 @@ export function EditCommissionDialog({
   // (`undefined` when unchanged) rather than a boolean re-checked later
   // against `.ok` a second time.
   const baseAmountForSave =
-    parsedBase.ok && parsedBase.paise !== row.basePaise ? paiseToRupees(parsedBase.paise) : undefined;
+    parsedBase.ok && parsedBase.paise !== row.basePaise
+      ? paiseToRupees(parsedBase.paise)
+      : undefined;
   const ratePercentForSave =
     parsedRate.ok && Math.round(parsedRate.value * 100) !== Math.round(row.ratePercent * 100)
       ? parsedRate.value
@@ -265,7 +275,11 @@ export function RecordCommissionPaymentDialog({
           value={valueDate}
           onChange={(e) => setValueDate(e.target.value)}
           inputProps={{ max: todayIst() }}
-          error={showFutureDateError ? `Pick today or earlier — money cannot arrive in the future.` : undefined}
+          error={
+            showFutureDateError
+              ? `Pick today or earlier — money cannot arrive in the future.`
+              : undefined
+          }
         />
         <MUISelect
           fieldLabel="Method"
@@ -338,8 +352,10 @@ export function CloseRecoveryDialog({
   const amountError =
     amountTouched || amount !== String(row.amountPaise / 100)
       ? (rupeeInputErrorAllowZero(parsedAmount) ??
-      (overCap ? `Cannot exceed ${formatPaise(row.amountPaise)} — that is all that was paid.` : undefined))
-    : undefined;
+        (overCap
+          ? `Cannot exceed ${formatPaise(row.amountPaise)} — that is all that was paid.`
+          : undefined))
+      : undefined;
 
   const valid = parsedAmount.ok && !overCap && note.trim().length >= 3;
   const writeOff = parsedAmount.ok && !overCap ? row.amountPaise - parsedAmount.paise : 0;
@@ -361,7 +377,12 @@ export function CloseRecoveryDialog({
           error={amountError}
         />
         {writeOff > 0 && <div>{formatPaise(writeOff)} will be written off.</div>}
-        <MUIInput fieldLabel="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <MUIInput
+          fieldLabel="Date"
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
         <MUIInput
           fieldLabel="Note"
           required

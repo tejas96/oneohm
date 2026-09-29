@@ -5,7 +5,11 @@ import { type JSX, useState } from 'react';
 
 import { ReasonDialog } from './commission-dialogs';
 
-import { useCommissionMutations, useMissingCommissions, type MissingRow } from '@/lib/hooks/resources/resellers';
+import {
+  useCommissionMutations,
+  useMissingCommissions,
+  type MissingRow,
+} from '@/lib/hooks/resources/resellers';
 import { useGatedAction } from '@/lib/rbac';
 import { formatBusinessDate } from '@/lib/utils';
 
@@ -31,15 +35,24 @@ function MissingCommissionRow({
   creating: boolean;
   dismissing: boolean;
 }): JSX.Element {
-  const create = useGatedAction('finance.payments.record', () => onCreate(r.quoteId), 'Fix missing commissions');
+  const create = useGatedAction(
+    'finance.payments.record',
+    () => onCreate(r.quoteId),
+    'Fix missing commissions',
+  );
   // Opens the confirm dialog (`ReasonDialog`) rather than prompting inline,
   // so the dismissal note is validated like every other reason.
-  const dismiss = useGatedAction('finance.payments.record', () => onDismissRequest(r), 'Fix missing commissions');
+  const dismiss = useGatedAction(
+    'finance.payments.record',
+    () => onDismissRequest(r),
+    'Fix missing commissions',
+  );
 
   return (
     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', py: 0.75, flexWrap: 'wrap' }}>
       <Box sx={{ flex: '1 1 260px' }}>
-        <strong>{r.quoteNumber}</strong> · {r.customerName} · {r.resellerName} · won {formatBusinessDate(r.acceptedAt)}
+        <strong>{r.quoteNumber}</strong> · {r.customerName} · {r.resellerName} · won{' '}
+        {formatBusinessDate(r.acceptedAt)}
       </Box>
       <Button
         size="small"
@@ -106,7 +119,9 @@ export function MissingCommissionsStrip(): JSX.Element | null {
           </Button>
         }
       >
-        {total === 1 ? '1 accepted deal has no commission row.' : `${total} accepted deals have no commission row.`}
+        {total === 1
+          ? '1 accepted deal has no commission row.'
+          : `${total} accepted deals have no commission row.`}
         <Collapse in={open}>
           {since.length > 0 && (
             <Box sx={{ mt: 1 }}>

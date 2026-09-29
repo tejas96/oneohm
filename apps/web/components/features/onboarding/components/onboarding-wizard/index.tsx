@@ -393,7 +393,8 @@ export function OnboardingWizard({
 
     // Moving the lead source off Reseller clears the reseller, same as the
     // backend rule — never send a stale id alongside a non-reseller source.
-    const resolvedResellerId = data.leadSource === LeadSource.RESELLER ? (formResellerId ?? null) : null;
+    const resolvedResellerId =
+      data.leadSource === LeadSource.RESELLER ? (formResellerId ?? null) : null;
     const previousResellerId = initialCustomer?.resellerId ?? null;
     const resellerChanged = resolvedResellerId !== previousResellerId;
 

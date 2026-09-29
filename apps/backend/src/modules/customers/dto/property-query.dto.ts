@@ -216,7 +216,8 @@ export class PropertyQueryDto {
   systemSizeMax?: number;
 
   @ApiPropertyOptional({
-    description: 'Only properties belonging to customers brought in by this reseller (employee_profiles.id)',
+    description:
+      'Only properties belonging to customers brought in by this reseller (employee_profiles.id)',
   })
   @IsOptional()
   @IsUUID()

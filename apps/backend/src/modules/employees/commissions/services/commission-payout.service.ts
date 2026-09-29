@@ -23,7 +23,10 @@ export class CommissionPayoutService {
    * all sharing the one bank reference when a single transfer paid several.
    * All or nothing: one ineligible row fails the whole batch with its name.
    */
-  async recordPayment(dto: RecordCommissionPaymentDto, user: CurrentUserType): Promise<CommissionRow[]> {
+  async recordPayment(
+    dto: RecordCommissionPaymentDto,
+    user: CurrentUserType,
+  ): Promise<CommissionRow[]> {
     requirePermission(user, 'finance.payments.record');
     // Sorted, so two overlapping batches lock rows in the same order and
     // cannot deadlock each other.

@@ -5,8 +5,13 @@ import { DataSource } from 'typeorm';
 import { CommissionActionsService } from './commission-actions.service';
 import { COMMISSION_ROW_SQL } from '../sql/commission-read.sql';
 import {
-  MISSING_COMMISSIONS_SQL, periodStart, RESELLER_SUMMARY_SQL,
-  type MissingRow, type ResellerHeader, type ResellerSummary, type ResellerTotals,
+  MISSING_COMMISSIONS_SQL,
+  periodStart,
+  RESELLER_SUMMARY_SQL,
+  type MissingRow,
+  type ResellerHeader,
+  type ResellerSummary,
+  type ResellerTotals,
 } from '../sql/reseller-dashboard.sql';
 
 type Period = 'month' | 'fy' | 'all' | undefined;
@@ -34,10 +39,15 @@ export class ResellerDashboardService {
       return {
         ...(r as unknown as ResellerSummary),
         ratePercent: r.ratePercent === null ? null : Number(r.ratePercent),
-        leads: toInt(r.leads), quoted, won,
+        leads: toInt(r.leads),
+        quoted,
+        won,
         winRate: quoted === 0 ? null : Math.round((won / quoted) * 1000) / 10,
-        revenuePaise: toInt(r.revenuePaise), pendingPaise: toInt(r.pendingPaise),
-        owedPaise: toInt(r.owedPaise), paidPaise: toInt(r.paidPaise), toRecoverPaise: toInt(r.toRecoverPaise),
+        revenuePaise: toInt(r.revenuePaise),
+        pendingPaise: toInt(r.pendingPaise),
+        owedPaise: toInt(r.owedPaise),
+        paidPaise: toInt(r.paidPaise),
+        toRecoverPaise: toInt(r.toRecoverPaise),
       };
     });
   }
@@ -46,8 +56,10 @@ export class ResellerDashboardService {
     const rows = await this.summaries(period);
     const totals: ResellerTotals = rows.reduce(
       (t, r) => ({
-        pendingPaise: t.pendingPaise + r.pendingPaise, owedPaise: t.owedPaise + r.owedPaise,
-        paidPaise: t.paidPaise + r.paidPaise, toRecoverPaise: t.toRecoverPaise + r.toRecoverPaise,
+        pendingPaise: t.pendingPaise + r.pendingPaise,
+        owedPaise: t.owedPaise + r.owedPaise,
+        paidPaise: t.paidPaise + r.paidPaise,
+        toRecoverPaise: t.toRecoverPaise + r.toRecoverPaise,
       }),
       { pendingPaise: 0, owedPaise: 0, paidPaise: 0, toRecoverPaise: 0 },
     );
@@ -55,7 +67,12 @@ export class ResellerDashboardService {
       `SELECT count(*)::int AS n FROM customer_profiles
         WHERE lead_source = 'reseller' AND reseller_id IS NULL AND deleted_at IS NULL`,
     );
-    return { rows, totals, resellerUnknownCount: n as number, periodStart: periodStart(period)?.toISOString() ?? null };
+    return {
+      rows,
+      totals,
+      resellerUnknownCount: n as number,
+      periodStart: periodStart(period)?.toISOString() ?? null,
+    };
   }
 
   async detail(resellerId: string, period: Period) {
@@ -73,18 +90,26 @@ export class ResellerDashboardService {
       [resellerId],
     );
     const commissions = await this.actions.list({ resellerId });
-    return { reseller: h as ResellerHeader, summary, commissions, periodStart: periodStart(period)?.toISOString() ?? null };
+    return {
+      reseller: h as ResellerHeader,
+      summary,
+      commissions,
+      periodStart: periodStart(period)?.toISOString() ?? null,
+    };
   }
 
   async missing() {
     const liveFromRaw = process.env.COMMISSIONS_LIVE_FROM ?? null; // 'YYYY-MM-DD', IST
-    let liveFrom = liveFromRaw && /^\d{4}-\d{2}-\d{2}$/.test(liveFromRaw)
-      ? new Date(`${liveFromRaw}T00:00:00+05:30`)
-      : null;
+    let liveFrom =
+      liveFromRaw && /^\d{4}-\d{2}-\d{2}$/.test(liveFromRaw)
+        ? new Date(`${liveFromRaw}T00:00:00+05:30`)
+        : null;
     // '2026-13-01' passes the pattern but is no date; an Invalid Date would
     // compare false both ways and drop every row from both lists.
     if (liveFrom && Number.isNaN(liveFrom.getTime())) {
-      this.logger.warn(`COMMISSIONS_LIVE_FROM="${liveFromRaw}" is not a real date; treating it as unset`);
+      this.logger.warn(
+        `COMMISSIONS_LIVE_FROM="${liveFromRaw}" is not a real date; treating it as unset`,
+      );
       liveFrom = null;
     }
     const rows: MissingRow[] = await this.dataSource.query(MISSING_COMMISSIONS_SQL);

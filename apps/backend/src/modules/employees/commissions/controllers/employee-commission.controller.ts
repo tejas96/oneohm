@@ -1,11 +1,28 @@
-import { Body, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { ResellerAllowed, ResellerScope } from '../../../../common/reseller';
 import { CurrentUser } from '../../../auth/decorators';
 import { JwtAuthGuard } from '../../../auth/guards';
 import type { CurrentUserType } from '../../../auth/types';
-import { CloseRecoveryDto, CommissionListQueryDto, EditCommissionDto, ReasonDto, ResellerPeriodQueryDto } from '../dto';
+import {
+  CloseRecoveryDto,
+  CommissionListQueryDto,
+  EditCommissionDto,
+  ReasonDto,
+  ResellerPeriodQueryDto,
+} from '../dto';
 import { CommissionActionsService } from '../services/commission-actions.service';
 import { ResellerDashboardService } from '../services/reseller-dashboard.service';
 import type { CommissionRow } from '../sql/commission-read.sql';
@@ -53,19 +70,28 @@ export class EmployeeCommissionController {
   }
 
   @Get()
-  list(@Query() query: CommissionListQueryDto, @CurrentUser() user: CurrentUserType): Promise<CommissionRow[]> {
+  list(
+    @Query() query: CommissionListQueryDto,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<CommissionRow[]> {
     requirePermission(user, 'finance.view');
     return this.actions.list(query);
   }
 
   @Get(':id')
-  getOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: CurrentUserType): Promise<CommissionRow> {
+  getOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<CommissionRow> {
     requirePermission(user, 'finance.view');
     return this.actions.getOne(id);
   }
 
   @Post(':id/approve')
-  approve(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: CurrentUserType): Promise<CommissionRow> {
+  approve(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<CommissionRow> {
     return this.actions.approve(id, user);
   }
 

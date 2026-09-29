@@ -5,14 +5,24 @@ import Link from 'next/link';
 import { type JSX, useMemo, useState } from 'react';
 
 import { buildCommissionColumns, type CommissionAction } from './commission-columns';
-import { CloseRecoveryDialog, EditCommissionDialog, ReasonDialog, RecordCommissionPaymentDialog } from './commission-dialogs';
+import {
+  CloseRecoveryDialog,
+  EditCommissionDialog,
+  ReasonDialog,
+  RecordCommissionPaymentDialog,
+} from './commission-dialogs';
 import { PeriodChips, StatCard } from './stat-card';
 import { useClientPage } from './use-client-page';
 
 import { CrmTable } from '@/components/shared/crm-table';
 import { showToast } from '@/components/ui/sonner';
 import { ROUTES } from '@/lib/config/routes';
-import { useCommissionMutations, useReseller, type CommissionRow, type ResellerPeriod } from '@/lib/hooks/resources/resellers';
+import {
+  useCommissionMutations,
+  useReseller,
+  type CommissionRow,
+  type ResellerPeriod,
+} from '@/lib/hooks/resources/resellers';
 import { color, crm } from '@/lib/theme/tokens';
 import { getErrorMessage } from '@/lib/utils/error';
 import { formatPaise } from '@/lib/utils/paise';
@@ -53,7 +63,9 @@ export function ResellerDetailPage({ id }: { id: string }): JSX.Element {
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: { xs: 2, lg: 3 } }}>
         <Link href={ROUTES.ORG.RESELLERS}>← All resellers</Link>
         <Alert severity={notFound ? 'warning' : 'error'}>
-          {notFound ? 'Reseller not found. The link may be wrong, or this is not a reseller.' : getErrorMessage(q.error)}
+          {notFound
+            ? 'Reseller not found. The link may be wrong, or this is not a reseller.'
+            : getErrorMessage(q.error)}
         </Alert>
       </Box>
     );
@@ -74,10 +86,16 @@ export function ResellerDetailPage({ id }: { id: string }): JSX.Element {
         >
           Reseller
         </Box>
-        <Box component="h1" sx={{ m: 0, mt: '5px', mb: '3px', fontSize: crm['text-page-title'], fontWeight: 700 }}>
+        <Box
+          component="h1"
+          sx={{ m: 0, mt: '5px', mb: '3px', fontSize: crm['text-page-title'], fontWeight: 700 }}
+        >
           {h?.name ?? '…'}
         </Box>
-        <Box component="p" sx={{ m: 0, fontSize: crm['text-row-title'], color: color['text-secondary'] }}>
+        <Box
+          component="p"
+          sx={{ m: 0, fontSize: crm['text-row-title'], color: color['text-secondary'] }}
+        >
           {[
             h?.code,
             h?.ratePercent === null ? 'rate not set' : h ? `${h.ratePercent}%` : null,
@@ -90,13 +108,36 @@ export function ResellerDetailPage({ id }: { id: string }): JSX.Element {
         </Box>
       </Box>
 
-      <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)', lg: 'repeat(6, 1fr)' } }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 1.5,
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)', lg: 'repeat(6, 1fr)' },
+        }}
+      >
         <StatCard label="Leads" value={String(s?.leads ?? 0)} note="in this period" />
-        <StatCard label="Won" value={`${s?.won ?? 0} of ${s?.quoted ?? 0}`} note={s?.winRate === null || !s ? 'win rate —' : `win rate ${s.winRate}%`} />
-        <StatCard label="Revenue" value={formatPaise(s?.revenuePaise ?? 0)} note="before GST, after discount" />
-        <StatCard label="Owed now" value={formatPaise(s?.owedPaise ?? 0)} note="approved, not paid" />
+        <StatCard
+          label="Won"
+          value={`${s?.won ?? 0} of ${s?.quoted ?? 0}`}
+          note={s?.winRate === null || !s ? 'win rate —' : `win rate ${s.winRate}%`}
+        />
+        <StatCard
+          label="Revenue"
+          value={formatPaise(s?.revenuePaise ?? 0)}
+          note="before GST, after discount"
+        />
+        <StatCard
+          label="Owed now"
+          value={formatPaise(s?.owedPaise ?? 0)}
+          note="approved, not paid"
+        />
         <StatCard label="Paid" value={formatPaise(s?.paidPaise ?? 0)} note="all time" />
-        <StatCard label="To recover" value={formatPaise(s?.toRecoverPaise ?? 0)} note="paid on dead deals" danger={(s?.toRecoverPaise ?? 0) > 0} />
+        <StatCard
+          label="To recover"
+          value={formatPaise(s?.toRecoverPaise ?? 0)}
+          note="paid on dead deals"
+          danger={(s?.toRecoverPaise ?? 0) > 0}
+        />
       </Box>
 
       <PeriodChips value={period} onChange={setPeriod} />
@@ -123,7 +164,10 @@ export function ResellerDetailPage({ id }: { id: string }): JSX.Element {
             onClick: (sel) => {
               const ok = sel.filter((r) => r.state === 'approved');
               if (ok.length > 0) setOpen({ kind: 'pay', rows: ok });
-              else showToast.info('None of the selected rows is Approved. Only Approved rows can be paid.');
+              else
+                showToast.info(
+                  'None of the selected rows is Approved. Only Approved rows can be paid.',
+                );
             },
           },
         ]}
@@ -132,7 +176,9 @@ export function ResellerDetailPage({ id }: { id: string }): JSX.Element {
         emptyMessage="No commissions yet. One appears the moment a quote for this reseller's customer is accepted."
       />
 
-      {open?.kind === 'edit' && <EditCommissionDialog row={open.row} onClose={() => setOpen(null)} />}
+      {open?.kind === 'edit' && (
+        <EditCommissionDialog row={open.row} onClose={() => setOpen(null)} />
+      )}
       {open?.kind === 'pay' && (
         <RecordCommissionPaymentDialog
           rows={open.rows}
@@ -140,7 +186,9 @@ export function ResellerDetailPage({ id }: { id: string }): JSX.Element {
           onSent={() => setTableKey((k) => k + 1)}
         />
       )}
-      {open?.kind === 'recover' && <CloseRecoveryDialog row={open.row} onClose={() => setOpen(null)} />}
+      {open?.kind === 'recover' && (
+        <CloseRecoveryDialog row={open.row} onClose={() => setOpen(null)} />
+      )}
       {open?.kind === 'cancel' && (
         <ReasonDialog
           open
@@ -149,7 +197,9 @@ export function ResellerDetailPage({ id }: { id: string }): JSX.Element {
           confirmLabel="Cancel commission"
           busy={m.cancel.isPending}
           onClose={() => setOpen(null)}
-          onConfirm={(reason) => m.cancel.mutate({ id: open.row.id, reason }, { onSuccess: () => setOpen(null) })}
+          onConfirm={(reason) =>
+            m.cancel.mutate({ id: open.row.id, reason }, { onSuccess: () => setOpen(null) })
+          }
         />
       )}
     </Box>

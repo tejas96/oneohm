@@ -225,7 +225,8 @@ export class ProjectController {
     name: 'resellerId',
     required: false,
     type: String,
-    description: 'Filter by reseller (employee_profiles.id). Ignored and overwritten for a reseller caller.',
+    description:
+      'Filter by reseller (employee_profiles.id). Ignored and overwritten for a reseller caller.',
   })
   async findAll(
     @CurrentUser() currentUser: CurrentUserType,
@@ -305,10 +306,15 @@ export class ProjectController {
     // instead, so the member pin is skipped entirely rather than resolved.
     const effectiveMemberId = resellerId
       ? undefined
-      : resolveProjectListMemberId(currentUser.roles || [], currentUser.permissions || [], currentUser.id, {
-          customerId,
-          memberId,
-        });
+      : resolveProjectListMemberId(
+          currentUser.roles || [],
+          currentUser.permissions || [],
+          currentUser.id,
+          {
+            customerId,
+            memberId,
+          },
+        );
 
     // Server truth overwrites anything the caller sent for this filter.
     const effectiveResellerId = resellerId ?? resellerIdQuery;

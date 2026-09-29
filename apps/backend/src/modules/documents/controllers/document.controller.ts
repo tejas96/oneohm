@@ -128,7 +128,11 @@ export class DocumentController {
       if (!queryDto.entityType || !queryDto.entityId) {
         throw new BadRequestException('entityType and entityId are required.');
       }
-      await this.ownership.assertOwnsDocumentParent(queryDto.entityType, queryDto.entityId, resellerId);
+      await this.ownership.assertOwnsDocumentParent(
+        queryDto.entityType,
+        queryDto.entityId,
+        resellerId,
+      );
       const docs = await this.documentService.findByEntity(queryDto.entityType, queryDto.entityId, {
         tag: queryDto.tag,
         tags,
