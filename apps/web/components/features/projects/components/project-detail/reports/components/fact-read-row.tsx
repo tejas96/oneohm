@@ -109,6 +109,8 @@ export function FactReadRow({
           <Typography variant="body2" sx={{ whiteSpace: 'pre-line', overflowWrap: 'anywhere' }}>
             {value}
           </Typography>
+        ) : fact.emptyText && !missing ? (
+          <Typography variant="body2">{fact.emptyText}</Typography>
         ) : (
           <Typography variant="body2" sx={{ color: missing ? 'warning.main' : 'text.disabled' }}>
             {missing ? 'Missing' : 'Not set'}

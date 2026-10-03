@@ -151,6 +151,7 @@ export class ReportWorkspaceService {
             help: fact.help,
             edit: fact.edit,
             readOnlyNote: fact.readOnlyNote,
+            emptyText: fact.emptyText,
             maxLength: fact.maxLength,
             value: facts[fact.key as FactKey] ?? '',
             editValue: editValues[fact.key as FactKey] ?? '',
