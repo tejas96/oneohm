@@ -117,7 +117,8 @@ export const ANNEXURE_PROFORMA_A_REPORT: ReportDefinition = {
   description: 'MAHAVITARAN commissioning report for grid-connected solar PV plant.',
   documentTag: DocumentTag.ANNEXURE_PROFORMA_A,
   // 6: one-line header, WCR-style signatures (vendor name as the agency), page 2 top margin.
-  templateVersion: 6,
+  // 7: ground and rooftop + ground capacity print N/A when the site has no ground mount.
+  templateVersion: 7,
   facts: [
     req('consumer_name'),
     req('consumer_number'),

@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 
 import { COMPANY } from '@tejas96/shared/constants';
-import { formatRupees } from '@tejas96/shared/reports';
+import { formatRupees, REPORT_FACTS, type ReportFact } from '@tejas96/shared/reports';
 import Handlebars from 'handlebars';
 
 import { resolveReportAsset } from '../utils/report.utils';
@@ -23,12 +23,17 @@ function toDisplayString(value: unknown): string {
 export function registerReportHandlebarsHelpers(): void {
   Handlebars.registerHelper('eq', (a, b) => a === b);
 
-  /** Empty / whitespace-only values render as an underline for physical fill-in. */
-  Handlebars.registerHelper('dash', (value: unknown) =>
-    isBlank(value)
-      ? new Handlebars.SafeString('<span class="blank-line"></span>')
-      : toDisplayString(value),
-  );
+  /**
+   * Empty / whitespace-only values render as an underline for physical fill-in,
+   * or as the given text for a fact that may not apply ({{dash ground_kw "N/A"}}).
+   */
+  Handlebars.registerHelper('dash', (value: unknown, ...rest: unknown[]) => {
+    if (!isBlank(value)) return toDisplayString(value);
+    const emptyText = rest.length > 1 ? rest[0] : undefined;
+    return typeof emptyText === 'string' && emptyText
+      ? emptyText
+      : new Handlebars.SafeString('<span class="blank-line"></span>');
+  });
 
   /** Renders block only when every argument is non-empty. */
   Handlebars.registerHelper('ifAll', function (this: unknown, ...args: unknown[]) {
@@ -122,6 +127,13 @@ const RESERVED_MUSTACHE = new Set([
   'dash',
 ]);
 
+/** Facts that print a text (e.g. "N/A") in place of a blank line when empty. */
+const EMPTY_TEXT = new Map<string, string>(
+  (REPORT_FACTS as readonly ReportFact[]).flatMap((fact) =>
+    fact.emptyText ? [[fact.key, fact.emptyText] as const] : [],
+  ),
+);
+
 /**
  * Wrap bare {{field_key}} placeholders with {{dash field_key}} at compile time so
  * empty values never leave holes in tables, headers, or signatures.
@@ -143,7 +155,8 @@ export function autoDashFieldPlaceholders(source: string): string {
     if (RESERVED_MUSTACHE.has(token)) {
       return match;
     }
-    return `{{dash ${token}}}`;
+    const emptyText = EMPTY_TEXT.get(token);
+    return emptyText ? `{{dash ${token} "${emptyText}"}}` : `{{dash ${token}}}`;
   });
 }
 

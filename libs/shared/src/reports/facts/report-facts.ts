@@ -89,6 +89,8 @@ export interface ReportFact {
   readonly readOnlyNote?: string;
   /** Printed by reports but not shown on the form: composed or derived from facts that are. */
   readonly hidden?: boolean;
+  /** Printed and shown in place of an empty value, for a fact that may not apply (no ground mount → "N/A"). */
+  readonly emptyText?: string;
   /** A shown fact that is one part of a hidden composed fact (the site address). */
   readonly partOf?: string;
   /** A hidden fact worked out from a shown one (Wp from kW). */
@@ -402,8 +404,9 @@ export const REPORT_FACTS = [
     group: 'system',
     source: 'property',
     placeholder: 'e.g. 2',
-    help: `The kW placed on the ground, saved on this site: the site page and the survey show the same value. ${OUT_OF_DATE}`,
+    help: `The kW placed on the ground, saved on this site: the site page and the survey show the same value. Reports print N/A when it is empty. ${OUT_OF_DATE}`,
     edit: { target: 'property', field: 'groundCapacityKw', input: 'number' },
+    emptyText: 'N/A',
   },
   {
     key: 're_installed_capacity_rooftop_ground_kw',
@@ -412,7 +415,8 @@ export const REPORT_FACTS = [
     group: 'system',
     source: 'property',
     hidden: true,
-    help: 'Rooftop plus ground mount kW, printed only when the site has both.',
+    help: 'Rooftop plus ground mount kW, printed only when the site has both; N/A otherwise.',
+    emptyText: 'N/A',
   },
   {
     key: 'module_make',
