@@ -183,12 +183,12 @@ export function registerReportPartials(): void {
     'dateBlank',
     '<span class="blank-line rpt-date-guide">DD-MM-YYYY</span>',
   );
-  // The vendor signs with the stamp: name above it, the line and role below.
+  // The vendor signs with the stamp: the stamp first, then the name, the line and the role.
   Handlebars.registerPartial('vendorStamp', vendorStampHtml());
   Handlebars.registerPartial(
     'vendorSignature',
     autoDashFieldPlaceholders(
-      `<div class="rpt-sig rpt-sig--vendor"><div class="rpt-sig-name">{{name}}</div>${vendorStampHtml()}<div class="rpt-sig-rule"></div><div class="rpt-sig-role">{{role}}</div></div>`,
+      `<div class="rpt-sig rpt-sig--vendor">${vendorStampHtml()}<div class="rpt-sig-name">{{name}}</div><div class="rpt-sig-rule"></div><div class="rpt-sig-role">{{role}}</div></div>`,
     ),
   );
   Handlebars.registerPartial('letterhead', letterheadHtml());

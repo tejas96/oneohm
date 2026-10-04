@@ -152,10 +152,7 @@ thead th {
 .rpt-sig .rpt-sig-name .blank-line {
   display: none;
 }
-/* {{> vendorSignature}}: the name sits above the stamp, the stamp on the line. */
-.rpt-sig--vendor .rpt-sig-name {
-  padding-bottom: 4px;
-}
+/* {{> vendorSignature}}: the stamp, then the name on the line. */
 .rpt-stamp {
   display: block;
   height: 64px;
