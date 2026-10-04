@@ -392,7 +392,7 @@ export const REPORT_FACTS = [
     group: 'system',
     source: 'property',
     placeholder: 'e.g. 5',
-    help: `The kW placed on the roof, saved on this site: the site page and the survey show the same value. ${OUT_OF_DATE}`,
+    help: `The kW placed on the roof, saved on this site: the site page and the survey show the same value. N/A when only ground kW is saved. ${OUT_OF_DATE}`,
     edit: { target: 'property', field: 'rooftopCapacityKw', input: 'number' },
   },
   {
@@ -402,7 +402,7 @@ export const REPORT_FACTS = [
     group: 'system',
     source: 'property',
     placeholder: 'e.g. 2',
-    help: `The kW placed on the ground, saved on this site: the site page and the survey show the same value. ${OUT_OF_DATE}`,
+    help: `The kW placed on the ground, saved on this site: the site page and the survey show the same value. N/A when only rooftop kW is saved. ${OUT_OF_DATE}`,
     edit: { target: 'property', field: 'groundCapacityKw', input: 'number' },
   },
   {
@@ -412,7 +412,7 @@ export const REPORT_FACTS = [
     group: 'system',
     source: 'property',
     hidden: true,
-    help: 'Rooftop plus ground mount kW, printed only when the site has both.',
+    help: 'Rooftop plus ground mount kW when the site has both; N/A when it has only one.',
   },
   {
     key: 'module_make',

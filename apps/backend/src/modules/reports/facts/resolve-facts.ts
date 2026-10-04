@@ -107,12 +107,18 @@ export function resolveSourceFacts({
   const rooftopKw =
     Number(property.rooftopCapacityKw) > 0 ? Number(property.rooftopCapacityKw) : null;
   const groundKw = Number(property.groundCapacityKw) > 0 ? Number(property.groundCapacityKw) : null;
-  facts.re_installed_capacity_rooftop_kw = str(rooftopKw);
-  facts.re_installed_capacity_ground_kw = str(groundKw);
+  // With one mount kW known, the other mount and "rooftop + ground" do not apply: N/A.
+  // With neither known, all stay blank: N/A could hide a ground mount nobody typed.
+  const mountKnown = rooftopKw != null || groundKw != null;
+  const kwOrNa = (kw: number | null): string => (kw != null ? str(kw) : mountKnown ? 'N/A' : '');
+  facts.re_installed_capacity_rooftop_kw = kwOrNa(rooftopKw);
+  facts.re_installed_capacity_ground_kw = kwOrNa(groundKw);
   facts.re_installed_capacity_rooftop_ground_kw =
     rooftopKw != null && groundKw != null
       ? str(Math.round((rooftopKw + groundKw) * 100) / 100)
-      : '';
+      : mountKnown
+        ? 'N/A'
+        : '';
   facts.capacity_type = [rooftopKw != null ? 'Rooftop' : '', groundKw != null ? 'Ground mount' : '']
     .filter(Boolean)
     .join(' + ');
@@ -192,6 +198,9 @@ export function resolveSourceFacts({
   return facts;
 }
 
+/** A saved mount kW as typed (2.5, not the column's 2.50); blank when none. */
+const savedKw = (kw: unknown): string => (Number(kw) > 0 ? String(Number(kw)) : '');
+
 /**
  * What an editable field's input starts from, where that differs from the
  * printed value: the stored property type, DISCOM id, connection type and RE
@@ -215,6 +224,9 @@ export function resolveEditValues(
     site_discom: str(property.discomId),
     site_connection_type: str(property.connectionType),
     re_arrangement_type: str(property.reArrangementType),
+    // The input starts from the saved kW, never the printed N/A.
+    re_installed_capacity_rooftop_kw: savedKw(property.rooftopCapacityKw),
+    re_installed_capacity_ground_kw: savedKw(property.groundCapacityKw),
   };
 }
 
