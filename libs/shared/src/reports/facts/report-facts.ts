@@ -299,7 +299,7 @@ export const REPORT_FACTS = [
     group: 'sanction',
     source: 'manual',
     placeholder: 'e.g. 1295 / K.MAHANKAL / 76717990',
-    help: "The DISCOM's reference for this connection, as on its sanction letter. The WCR prints it as the sanction number and the DCR as the application number: one number, typed once.",
+    help: "The DISCOM's reference for this connection, as on its sanction letter. The WCR and the DCR print it as the sanction number: one number, typed once.",
   },
   {
     key: 'sanction_date',
@@ -307,7 +307,7 @@ export const REPORT_FACTS = [
     type: 'date',
     group: 'sanction',
     source: 'manual',
-    help: 'The date on the DISCOM sanction letter. The WCR prints it after the sanction number and the DCR after the application number.',
+    help: 'The date on the DISCOM sanction letter. The WCR and the DCR print it after the sanction number.',
   },
   {
     key: 'sanctioned_capacity_kw',
@@ -541,6 +541,23 @@ export const REPORT_FACTS = [
     source: 'manual',
     placeholder: 'e.g. 2026',
     help: "The year on the inverter's nameplate.",
+  },
+  {
+    key: 'purchase_order_number',
+    label: 'Module purchase order number',
+    type: 'text',
+    group: 'system',
+    source: 'manual',
+    placeholder: 'e.g. PO/2026/0412',
+    help: "Our purchase order for these PV modules, as on the supplier's DCR certificate. The DCR prints it; empty prints a line to fill by hand.",
+  },
+  {
+    key: 'purchase_order_date',
+    label: 'Module purchase order date',
+    type: 'date',
+    group: 'system',
+    source: 'manual',
+    help: 'The date of the module purchase order. The DCR prints it; empty prints a line to fill by hand.',
   },
   {
     key: 'cell_manufacturer_name',

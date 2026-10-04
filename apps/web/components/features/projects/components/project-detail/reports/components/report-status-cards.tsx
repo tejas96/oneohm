@@ -87,7 +87,11 @@ export function ReportStatusCards({
               </Link>
             ) : (
               <span className="text-[11.5px] text-foreground-tertiary">
-                {report.filed ? `Filed ${formatDate(report.filed.filedAt)}` : 'Not filed yet'}
+                {report.status === 'not_needed'
+                  ? report.notNeededReason
+                  : report.filed
+                    ? `Filed ${formatDate(report.filed.filedAt)}`
+                    : 'Not filed yet'}
               </span>
             )}
             {report.filed && (

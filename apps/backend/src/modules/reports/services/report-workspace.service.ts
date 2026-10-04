@@ -44,6 +44,7 @@ import {
 } from '../facts/resolve-facts';
 import { formatGeneratedOn, GENERATED_ON } from '../renderer/render-values';
 import { TemplateRendererService } from '../renderer/template-renderer.service';
+import { notNeededReason } from '../utils/report-conditions';
 import { templateFileFor } from '../utils/report.utils';
 
 const REPORT_TAGS = new Set<string>(REPORT_DEFINITIONS.map((definition) => definition.documentTag));
@@ -70,9 +71,12 @@ function latestFiledByTag(docs: DocumentEntity[]): Map<string, DocumentEntity> {
 
 function statusOf(
   definition: ReportDefinition,
+  project: ProjectEntity,
   facts: Record<string, string>,
   filedDoc: DocumentEntity | undefined,
-): ReportStatusResult {
+): ReportStatusResult & { notNeededReason?: string } {
+  const reason = notNeededReason(definition, project);
+  if (reason) return { status: 'not_needed', missing: [], notNeededReason: reason };
   const meta = filedDoc?.metadata as { factsHash?: string; templateVersion?: number } | undefined;
   return getReportStatus(
     definition,
@@ -108,7 +112,7 @@ export class ReportWorkspaceService {
 
     const reports = REPORT_DEFINITIONS.map((definition) => {
       const filedDoc = filedByTag.get(definition.documentTag);
-      const { status, missing } = statusOf(definition, facts, filedDoc);
+      const { status, missing, notNeededReason } = statusOf(definition, project, facts, filedDoc);
       return {
         id: definition.id,
         name: definition.name,
@@ -116,6 +120,7 @@ export class ReportWorkspaceService {
         description: definition.description,
         status,
         missing,
+        notNeededReason,
         pages: definition.pages,
         filed: filedDoc
           ? {
@@ -250,6 +255,10 @@ export class ReportWorkspaceService {
     if (project.status === ProjectStatus.CANCELLED) {
       throw new BadRequestException(CANCELLED_MESSAGE);
     }
+    const reason = notNeededReason(definition, project);
+    if (reason) {
+      throw new BadRequestException(`${definition.name} is not needed: ${reason}.`);
+    }
     const factsHash = hashReportFacts(definition, facts);
     if (factsHash !== renderedFactsHash) {
       throw new ConflictException(
@@ -320,7 +329,9 @@ export class ReportWorkspaceService {
       });
       const filedByTag = latestFiledByTag(docsByProject.get(project.id) ?? []);
       counts[project.id] = REPORT_DEFINITIONS.filter((definition) =>
-        isPendingStatus(statusOf(definition, facts, filedByTag.get(definition.documentTag)).status),
+        isPendingStatus(
+          statusOf(definition, project, facts, filedByTag.get(definition.documentTag)).status,
+        ),
       ).length;
     }
     return counts;

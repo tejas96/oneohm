@@ -51,6 +51,8 @@ export interface WorkspaceReport {
   description: string;
   status: ReportStatus;
   missing: MissingFact[];
+  /** Why the report is not needed, when status is `not_needed`. */
+  notNeededReason?: string;
   pages?: number;
   filed: FiledReportInfo | null;
 }

@@ -1,6 +1,13 @@
 import type { FactKey } from './facts/report-facts';
 import { DocumentTag } from '../types/enums/document.enum';
 
+/**
+ * A project fact that decides whether a report is needed at all. The backend
+ * checks it (report-conditions.ts); a report whose condition fails reads
+ * "Not needed" and never counts as pending. Add a value here to add a check.
+ */
+export type ReportCondition = 'subsidy';
+
 export interface ReportFactRef {
   key: FactKey;
   required?: boolean;
@@ -17,6 +24,8 @@ export interface ReportDefinition {
   templateVersion: number;
   /** Exact page count the PDF must have. Only declared where it has been measured. */
   pages?: number;
+  /** Needed only when this holds for the project (e.g. the DCR only with a subsidy). */
+  onlyWhen?: ReportCondition;
   facts: readonly ReportFactRef[];
 }
 
@@ -70,7 +79,10 @@ export const DCR_REPORT: ReportDefinition = {
   // 4: prints the one application / sanction number and date the WCR prints.
   // 6: the company signatory makes the declaration (not the customer); module capacity in Wp.
   // 7: the company stamp under "(Signature With Official Seal)".
-  templateVersion: 7,
+  // 8: the client's new format: "Annexure-I", sanction number issued by MSEDCL, purchase order lines.
+  templateVersion: 8,
+  // Needed only with a subsidy: the DCR backs the subsidy claim.
+  onlyWhen: 'subsidy',
   facts: [
     req('vendor_name'),
     req('installed_capacity_kw'),
@@ -82,6 +94,8 @@ export const DCR_REPORT: ReportDefinition = {
     req('module_count'),
     opt('module_serial_numbers'),
     req('module_make'),
+    opt('purchase_order_number'),
+    opt('purchase_order_date'),
     opt('cell_manufacturer_name'),
     opt('cell_gst_invoice_no'),
     req('signatory_name'),
