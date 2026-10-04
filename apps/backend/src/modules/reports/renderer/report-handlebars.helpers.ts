@@ -83,6 +83,14 @@ export function registerReportHandlebarsHelpers(): void {
   });
 }
 
+/** The director's signature and company seal, the same image the quote PDF prints. */
+function vendorStampHtml(): string {
+  const stamp = readFileSync(resolveReportAsset('renderer', 'assets', 'vendor-stamp.png')).toString(
+    'base64',
+  );
+  return `<img class="rpt-stamp" src="data:image/png;base64,${stamp}" alt="Signature and seal" />`;
+}
+
 /** The company letterhead: logo, legal name, registration, office and contacts. Built from COMPANY only. */
 function letterheadHtml(): string {
   const e = Handlebars.escapeExpression;
@@ -149,7 +157,7 @@ export function autoDashFieldPlaceholders(source: string): string {
 
 /**
  * Shared blocks any report template can use: {{> docTitle …}}, {{> signature …}},
- * {{> dateBlank}} and {{> letterhead}}.
+ * {{> vendorSignature …}}, {{> vendorStamp}}, {{> dateBlank}} and {{> letterhead}}.
  *
  * Wrapper/element classes are prefixed `rpt-` so the shared CSS in
  * report-print-base.css can target them without colliding with the several
@@ -174,6 +182,14 @@ export function registerReportPartials(): void {
   Handlebars.registerPartial(
     'dateBlank',
     '<span class="blank-line rpt-date-guide">DD-MM-YYYY</span>',
+  );
+  // The vendor signs with the stamp: name above it, the line and role below.
+  Handlebars.registerPartial('vendorStamp', vendorStampHtml());
+  Handlebars.registerPartial(
+    'vendorSignature',
+    autoDashFieldPlaceholders(
+      `<div class="rpt-sig rpt-sig--vendor"><div class="rpt-sig-name">{{name}}</div>${vendorStampHtml()}<div class="rpt-sig-rule"></div><div class="rpt-sig-role">{{role}}</div></div>`,
+    ),
   );
   Handlebars.registerPartial('letterhead', letterheadHtml());
 }

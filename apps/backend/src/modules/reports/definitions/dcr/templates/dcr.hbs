@@ -93,7 +93,11 @@
 
       .sig-block .sig-label {
         font-weight: 600;
-        margin-bottom: 24px;
+        margin-bottom: 4px;
+      }
+
+      .sig-block .rpt-stamp {
+        margin-bottom: 6px;
       }
 
       .sig-block .for-company {
@@ -173,6 +177,7 @@
         <!-- Signature block -->
         <div class="sig-block">
           <div class="sig-label">(Signature With Official Seal)</div>
+          {{> vendorStamp}}
 
           <div class="for-company">For M/S <strong>{{vendor_name}}</strong></div>
 
