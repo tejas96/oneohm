@@ -13,6 +13,8 @@ const PAGE_BREAK_AVOID_SELECTORS = [
   '.rpt-sig-row',
   // The model agreement's last clause kept with its signatures.
   '.sign-off',
+  // A clause heading and its first paragraph (wrapped by keepHeadingsWithText).
+  '.rpt-keep',
   '.guarantee-heading',
   '.guarantee-text',
   '.identity-block',
@@ -31,8 +33,10 @@ type Html2PdfOptions = {
 
 function buildPdfOptions(filename?: string): Html2PdfOptions {
   return {
-    // Margins come from body padding in report-print-base.css (same as iframe preview).
-    margin: [0, 0, 0, 0],
+    // 12mm top and bottom on EVERY page (mm: top, left, bottom, right). Body padding only
+    // reaches page 1's top: page 2 on started at the sheet's edge and text ran to the
+    // bottom edge. Left and right stay body padding (report-print-base.css).
+    margin: [12, 0, 12, 0],
     filename,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: {
@@ -52,6 +56,22 @@ function buildPdfOptions(filename?: string): Html2PdfOptions {
       avoid: PAGE_BREAK_AVOID_SELECTORS,
     },
   };
+}
+
+/**
+ * html2pdf ignores `break-after: avoid`, so a clause heading could end a page
+ * with its text on the next. Wrap each heading with the element after it; the
+ * wrapper is in the avoid list, so the pair moves to the next page together.
+ */
+function keepHeadingsWithText(doc: Document): void {
+  for (const heading of Array.from(doc.querySelectorAll('.clause-heading'))) {
+    const next = heading.nextElementSibling;
+    if (!next || !heading.parentNode) continue;
+    const keep = doc.createElement('div');
+    keep.className = 'rpt-keep';
+    heading.parentNode.insertBefore(keep, heading);
+    keep.append(heading, next);
+  }
 }
 
 async function waitForLayout(): Promise<void> {
@@ -92,6 +112,7 @@ async function mountReportHtml(html: string): Promise<{ cleanup: () => void; roo
     doc.body.insertBefore(style, doc.body.firstChild);
   }
 
+  keepHeadingsWithText(doc);
   await ensureReportFontsReady(doc);
   await waitForLayout();
 

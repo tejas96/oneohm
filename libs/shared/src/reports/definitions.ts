@@ -40,7 +40,8 @@ export const WCR_REPORT: ReportDefinition = {
   documentTag: DocumentTag.WCR,
   // 3: lightning arrester "Standard", CMC 5 years, printed as fixed values.
   // 4: the vendor signs with the company stamp, under the company name.
-  templateVersion: 4,
+  // 5: 12mm top and bottom margin on every page; "610 Wp"; blank Aadhaar prints a line; inverter brand once.
+  templateVersion: 5,
   pages: 2,
   facts: [
     req('vendor_name'),
@@ -80,7 +81,8 @@ export const DCR_REPORT: ReportDefinition = {
   // 6: the company signatory makes the declaration (not the customer); module capacity in Wp.
   // 7: the company stamp under "(Signature With Official Seal)".
   // 8: the client's new format: "Annexure-I", sanction number issued by MSEDCL, purchase order lines.
-  templateVersion: 8,
+  // 9: 12mm top and bottom margin on every page.
+  templateVersion: 9,
   // Needed only with a subsidy: the DCR backs the subsidy claim.
   onlyWhen: 'subsidy',
   facts: [
@@ -115,7 +117,8 @@ export const NET_METERING_AGREEMENT_REPORT: ReportDefinition = {
   // line, no "Shri.", customer name optional.
   // 4: the client's new format: title once on page 1, kW, MSEDCL registered office,
   // clause 11.0, no signatures or witnesses (submission is the agreement).
-  templateVersion: 4,
+  // 5: page margins; clause headings stay with their first paragraph.
+  templateVersion: 5,
   facts: [
     opt('consumer_name'),
     req('site_address'),
@@ -134,7 +137,8 @@ export const ANNEXURE_PROFORMA_A_REPORT: ReportDefinition = {
   // 7: a mount that does not apply (and rooftop + ground) prints N/A once the other mount's kW is saved.
   // 8: the installation date blanks carry a light DD-MM-YYYY guide.
   // 9: the agency signs with the company stamp, under the company name.
-  templateVersion: 9,
+  // 10: page margins; DD-MM-YYYY guides on the page 1 Date line and the MSEDCL inspection date.
+  templateVersion: 10,
   facts: [
     req('consumer_name'),
     req('consumer_number'),
@@ -168,7 +172,8 @@ export const MODEL_AGREEMENT_REPORT: ReportDefinition = {
     'MNRE model agreement between the applicant and the vendor (Rooftop Solar Programme Ph-II).',
   documentTag: DocumentTag.MODEL_AGREEMENT,
   // 2: the vendor signs with the company stamp, under the company name.
-  templateVersion: 2,
+  // 3: page margins; headings stay with their text; inverter brand once.
+  templateVersion: 3,
   facts: [
     req('consumer_name'),
     req('consumer_number'),
@@ -194,7 +199,8 @@ export const METER_TEST_LETTER_REPORT: ReportDefinition = {
   documentTag: DocumentTag.METER_TEST_LETTER,
   // 2: the vendor signs with the company stamp, under the company name.
   // 3: the client's layout: no letterhead, one-paragraph request, stamp, then the consumer and meter lines.
-  templateVersion: 3,
+  // 4: 12mm top and bottom margin on every page.
+  templateVersion: 4,
   facts: [
     req('vendor_name'),
     req('consumer_name'),
