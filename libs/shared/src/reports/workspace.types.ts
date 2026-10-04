@@ -29,8 +29,6 @@ export interface WorkspaceFact {
   overridden?: boolean;
   /** Longest value accepted, when larger than the type's own limit. */
   maxLength?: number;
-  /** Shown in place of an empty value: the fact does not apply (no ground mount → "N/A"). */
-  emptyText?: string;
   /** A read-only fact's reason, shown in place of its source (e.g. worked out from other facts). */
   readOnlyNote?: string;
   /** Overridable quote facts: the quote's own value, which Reset brings back. */
