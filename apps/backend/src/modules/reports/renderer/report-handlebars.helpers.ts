@@ -148,8 +148,8 @@ export function autoDashFieldPlaceholders(source: string): string {
 }
 
 /**
- * Shared blocks any report template can use: {{> docTitle …}}, {{> signature …}}
- * and {{> letterhead}}.
+ * Shared blocks any report template can use: {{> docTitle …}}, {{> signature …}},
+ * {{> dateBlank}} and {{> letterhead}}.
  *
  * Wrapper/element classes are prefixed `rpt-` so the shared CSS in
  * report-print-base.css can target them without colliding with the several
@@ -169,6 +169,11 @@ export function registerReportPartials(): void {
     autoDashFieldPlaceholders(
       `<div class="rpt-sig"><div class="rpt-sig-space"></div><div class="rpt-sig-name">{{name}}</div><div class="rpt-sig-rule"></div><div class="rpt-sig-role">{{role}}</div></div>`,
     ),
+  );
+  // A date written by hand on the printed copy: a blank line with a light DD-MM-YYYY guide.
+  Handlebars.registerPartial(
+    'dateBlank',
+    '<span class="blank-line rpt-date-guide">DD-MM-YYYY</span>',
   );
   Handlebars.registerPartial('letterhead', letterheadHtml());
 }
