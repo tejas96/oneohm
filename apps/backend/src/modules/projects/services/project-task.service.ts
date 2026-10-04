@@ -950,8 +950,10 @@ export class ProjectTaskService {
     };
     allProjects: Array<{ id: string; name: string; projectNumber: string }>;
   }> {
+    // Done tasks are loaded only for the Done filter: the default list is open work.
+    const showingDone = filters.status === TaskStatus.DONE;
     const [allTasks, completedThisWeek] = await Promise.all([
-      this.taskRepository.findAllByUserId(userId, {}),
+      this.taskRepository.findAllByUserId(userId, showingDone ? { status: TaskStatus.DONE } : {}),
       this.taskRepository.countCompletedThisWeek(userId),
     ]);
     const statusMap = this.getStatusCatalogMap();
@@ -966,12 +968,14 @@ export class ProjectTaskService {
 
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const visibleTotal = enrichedTasks.length;
-    const visibleOverdue = enrichedTasks.filter((t) => {
+    // A finished task is never overdue or due today.
+    const openTasks = showingDone ? [] : enrichedTasks;
+    const visibleOverdue = openTasks.filter((t) => {
       const d = t.endDate as string | Date | undefined;
       const dateStr = this.normalizeTaskDateString(d);
       return dateStr != null && dateStr < todayStr;
     }).length;
-    const visibleDueToday = enrichedTasks.filter(
+    const visibleDueToday = openTasks.filter(
       (t) => this.normalizeTaskDateString(t.endDate as string | Date | undefined) === todayStr,
     ).length;
 
@@ -982,7 +986,9 @@ export class ProjectTaskService {
       completedThisWeek,
     };
 
-    const groups = await this.buildGroups(enrichedTasks, groupBy, today, statusMap, priorityMap);
+    // Due-date groups would file finished work under "Overdue": done tasks group by project.
+    const groupedBy = showingDone && groupBy === 'dueDate' ? 'project' : groupBy;
+    const groups = await this.buildGroups(enrichedTasks, groupedBy, today, statusMap, priorityMap);
 
     for (const group of groups) {
       (group.tasks as EnrichedMyTask[]).sort(
@@ -1844,13 +1850,15 @@ export class ProjectTaskService {
     }
 
     const endDate = task.endDate ? new Date(task.endDate) : null;
-    const isOverdue = endDate
-      ? (() => {
-          const d = new Date(endDate);
-          d.setHours(0, 0, 0, 0);
-          return d < today;
-        })()
-      : false;
+    // A finished task is never overdue, whatever its due date was.
+    const isOverdue =
+      endDate && task.status !== TaskStatus.DONE
+        ? (() => {
+            const d = new Date(endDate);
+            d.setHours(0, 0, 0, 0);
+            return d < today;
+          })()
+        : false;
 
     const msPerDay = 86_400_000;
     const daysSinceLastUpdate = Math.floor(

@@ -114,8 +114,12 @@ export function TaskRow({
   const statusColor = currentStatusCfg?.color ?? DEFAULT_STATUS_COLOR[task.status] ?? '#94a3b8';
   const statusLabel = currentStatusCfg?.label ?? TASK_STATUS_LABELS[task.status] ?? task.status;
 
-  const dueDateMuiColor = task.endDate ? getDueDateMuiColor(task.endDate) : 'text.disabled';
-  const dueDatePendingLabel = task.endDate ? formatDueDatePendingLabel(task.endDate) : '';
+  // A finished task is not late: its due date reads plain, with no "Nd late" line.
+  const isDone = task.status === TaskStatus.DONE;
+  const dueDateMuiColor =
+    task.endDate && !isDone ? getDueDateMuiColor(task.endDate) : 'text.disabled';
+  const dueDatePendingLabel =
+    task.endDate && !isDone ? formatDueDatePendingLabel(task.endDate) : '';
   const latestComment = task.latestCommentPreview;
   const commentPreview = latestComment ? collapseCommentPreview(latestComment) : null;
   const spineColor = getSpineColor(isOverdue, task.priority);

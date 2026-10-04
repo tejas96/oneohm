@@ -22,6 +22,10 @@ interface EmployeeSelectorProps {
   onChange: (userId: string | undefined) => void;
   /** The signed-in user, so they can be dropped from the list of others. */
   selfUserId: string;
+  /** Overrides the default gate (`dashboard.employees.view`), e.g. admins only on My tasks. */
+  allowed?: boolean;
+  /** The first option, meaning "the signed-in user". */
+  selfLabel?: string;
 }
 
 /**
@@ -39,9 +43,11 @@ export function EmployeeSelector({
   value,
   onChange,
   selfUserId,
+  allowed: allowedOverride,
+  selfLabel = 'My work',
 }: EmployeeSelectorProps): React.JSX.Element | null {
   const { can } = useCan();
-  const allowed = can('dashboard.employees.view');
+  const allowed = allowedOverride ?? can('dashboard.employees.view');
 
   // `enabled` keeps the request from firing at all for the ~everyone case.
   const { data: employees } = useEmployees({
@@ -65,8 +71,8 @@ export function EmployeeSelector({
 
     others.sort((a, b) => a.label.localeCompare(b.label));
 
-    return [{ value: MINE, label: 'My work' }, ...others];
-  }, [employees, selfUserId]);
+    return [{ value: MINE, label: selfLabel }, ...others];
+  }, [employees, selfUserId, selfLabel]);
 
   const selected = options.find((option) => option.value === (value ?? MINE)) ?? options[0] ?? null;
 

@@ -31,12 +31,16 @@ import { MyTasksSkeleton, SummaryChipsSkeleton } from './my-tasks-skeleton';
 import { useCollapsedGroups } from '../hooks/use-collapsed-groups';
 import { useTaskKeyboardNav } from '../hooks/use-task-keyboard-nav';
 
+import { EmployeeSelector } from '@/components/features/dashboard/components/employee-selector';
+import { useEmployees } from '@/components/features/employees/hooks/use-employees';
 import { TaskDrawer, useUpdateTask } from '@/components/features/tasks';
 import { myTasksSummaryKeys } from '@/components/features/tasks/hooks/use-my-tasks-summary';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { showToast } from '@/components/ui/sonner';
 import { useDebounce, useUrlFilters } from '@/lib/hooks';
 import { useGatedAction } from '@/lib/rbac';
+import { FULL_ACCESS_ROLES } from '@/lib/stores/auth-store';
+import { useAuth } from '@/providers/auth-provider';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -50,6 +54,8 @@ const MY_TASKS_URL_DEFAULTS = {
   search: '',
   dueDateFilter: '',
   address: '',
+  /** Whose tasks an admin is viewing; empty = the signed-in user's own. */
+  userId: '',
 };
 
 // ---------------------------------------------------------------------------
@@ -181,6 +187,15 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   const priorityFilter = urlFilters.priority;
   const dueDateFilter = urlFilters.dueDateFilter;
   const groupBy = (urlFilters.groupBy || 'dueDate') as GroupByMode;
+
+  // Admins and super admins may open anyone's task list; the backend ignores the id for others.
+  const { user } = useAuth();
+  const isAdmin = (user?.roles ?? []).some((role) => FULL_ACCESS_ROLES.includes(role));
+  const viewedUserId = isAdmin && urlFilters.userId !== user?.id ? urlFilters.userId : '';
+  const { data: staff } = useEmployees({ enabled: isAdmin && Boolean(viewedUserId) });
+  const viewed = staff?.find((employee) => employee.userId === viewedUserId);
+  const viewedName =
+    [viewed?.user?.firstName, viewed?.user?.lastName].filter(Boolean).join(' ') || 'this person';
   const [searchInput, setSearchInput] = useState(urlFilters.search || '');
   const debouncedSearch = useDebounce(searchInput, MY_TASKS_SEARCH_DEBOUNCE_MS);
   const [addressInput, setAddressInput] = useState(urlFilters.address || '');
@@ -219,6 +234,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
       search: debouncedSearch || undefined,
       dueDateFilter: (dueDateFilter as MyTaskFilters['dueDateFilter']) || undefined,
       address: debouncedAddress || undefined,
+      userId: viewedUserId || undefined,
     }),
     [
       groupBy,
@@ -228,6 +244,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
       debouncedSearch,
       dueDateFilter,
       debouncedAddress,
+      viewedUserId,
     ],
   );
 
@@ -258,6 +275,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     filters.search,
     filters.dueDateFilter,
     filters.address,
+    filters.userId,
     groupBy,
   ]);
 
@@ -293,10 +311,11 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     useCollapsedGroups(groupBy, groupKeys, { lazyProjectGroups: isLazyProjectGroups });
 
   // Reuse grouped summary for nav badge cache — avoids a duplicate /tasks/my/summary call.
+  // Never while viewing someone else: the badge counts the signed-in user's own tasks.
   useEffect(() => {
-    if (!summary) return;
+    if (!summary || viewedUserId) return;
     queryClient.setQueryData(myTasksSummaryKeys.all(), summary);
-  }, [summary, queryClient]);
+  }, [summary, queryClient, viewedUserId]);
 
   // All tasks flat for keyboard nav indexing
   const allTasks = useMemo(() => {
@@ -471,7 +490,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     dueDateFilter ||
     debouncedAddress;
   const morningBrief =
-    !showListLoading && summary && !briefDismissed
+    !viewedUserId && !showListLoading && summary && !briefDismissed
       ? getMorningBrief(summary.overdue, summary.dueToday)
       : null;
 
@@ -518,7 +537,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
             component="h1"
             sx={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2 }}
           >
-            My tasks
+            {viewedUserId ? `${viewedName}'s tasks` : 'My tasks'}
           </Typography>
           {morningBrief ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
@@ -541,8 +560,21 @@ export function ProjectMyTasksPage(): React.JSX.Element {
             </Box>
           ) : (
             <Typography sx={{ fontSize: '13px', color: 'var(--ds-text-secondary)', mt: 0.5 }}>
-              Everything assigned to you, across every project
+              {viewedUserId
+                ? `Everything assigned to ${viewedName}, across every project`
+                : 'Everything assigned to you, across every project'}
             </Typography>
+          )}
+          {isAdmin && (
+            <Box sx={{ mt: 1 }}>
+              <EmployeeSelector
+                value={viewedUserId || undefined}
+                onChange={(id) => setFilter('userId', id ?? '')}
+                selfUserId={user?.id ?? ''}
+                allowed={isAdmin}
+                selfLabel="My tasks"
+              />
+            </Box>
           )}
         </Box>
 

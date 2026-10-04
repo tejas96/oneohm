@@ -222,6 +222,8 @@ export interface MyTaskFilters {
   search?: string;
   dueDateFilter?: DueDateFilter;
   address?: string;
+  /** Whose tasks: another user's id (admins only; the backend ignores it for anyone else). */
+  userId?: string;
 }
 
 // ============================================================================

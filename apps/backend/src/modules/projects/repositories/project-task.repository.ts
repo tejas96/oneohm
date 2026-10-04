@@ -23,6 +23,9 @@ const REPOSITORY_CONSTANTS = {
   UNASSIGNED_TASK_FILTER: '__unassigned__',
 } as const;
 
+/** "Done" on My tasks lists the tasks finished in this many days. */
+export const MY_TASKS_DONE_WINDOW_DAYS = 30;
+
 @Injectable()
 export class ProjectTaskRepository {
   constructor(
@@ -659,8 +662,16 @@ export class ProjectTaskRepository {
       .where('task.deleted_at IS NULL')
       .andWhere('project.status != :cancelledStatus', { cancelledStatus: ProjectStatus.CANCELLED });
 
-    // Status filter
-    if (filters.status && filters.status !== TaskStatus.DONE) {
+    // Status filter. Done tasks show only when asked for, and only recent ones:
+    // a person can hold hundreds, and the list is a work queue, not an archive.
+    if (filters.status === TaskStatus.DONE) {
+      const since = new Date();
+      since.setDate(since.getDate() - MY_TASKS_DONE_WINDOW_DAYS);
+      qb.andWhere('task.status = :status', { status: TaskStatus.DONE }).andWhere(
+        'task.updated_at >= :doneSince',
+        { doneSince: since },
+      );
+    } else if (filters.status) {
       qb.andWhere('task.status = :status', { status: filters.status });
     } else {
       qb.andWhere('task.status NOT IN (:...excludedStatuses)', {

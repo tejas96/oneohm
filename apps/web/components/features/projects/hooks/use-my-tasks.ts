@@ -52,6 +52,7 @@ function serializeMyTaskFilters(filters: MyTaskFilters): string {
     search: filters.search ?? '',
     dueDateFilter: filters.dueDateFilter ?? '',
     address: filters.address ?? '',
+    userId: filters.userId ?? '',
   });
 }
 
@@ -64,6 +65,7 @@ function buildMyTasksParams(filters: MyTaskFilters, groupKey?: string): string {
   if (filters.search) params.set('search', filters.search);
   if (filters.dueDateFilter) params.set('dueDateFilter', filters.dueDateFilter);
   if (filters.address) params.set('address', filters.address);
+  if (filters.userId) params.set('userId', filters.userId);
   if (groupKey) params.set('groupKey', groupKey);
   return params.toString();
 }
