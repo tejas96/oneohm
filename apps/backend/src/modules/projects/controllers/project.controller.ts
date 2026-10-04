@@ -43,6 +43,7 @@ import { ProjectRepository } from '../repositories';
 import { ProjectCancellationService } from '../services/project-cancellation.service';
 import { ProjectTeamService } from '../services/project-team.service';
 import { ProjectService } from '../services/project.service';
+import type { OnboardingBlocker } from '../utils/onboarding-checks';
 
 /**
  * Project Controller
@@ -401,6 +402,16 @@ export class ProjectController {
     return plainToInstance(ProjectResponseDto, projects, {
       excludeExtraneousValues: true,
     });
+  }
+
+  /** Must be defined before :id, like convert-from-quote below. */
+  @Get('onboarding-blockers')
+  @ApiOperation({ summary: 'What still blocks a site from becoming a project; empty when ready' })
+  @ApiQuery({ name: 'propertyId', required: true, type: String })
+  async getOnboardingBlockers(
+    @Query('propertyId', ParseUUIDPipe) propertyId: string,
+  ): Promise<{ blockers: OnboardingBlocker[] }> {
+    return { blockers: await this.projectService.getOnboardingBlockers(propertyId) };
   }
 
   /**

@@ -9,15 +9,16 @@ import {
   normalizeConsumerNumber,
 } from '../utils/validation';
 
+/**
+ * Optional when a site is added: it is often unknown at the first visit. It is
+ * required before the site becomes a project (backend onboarding checks).
+ * Empty stays empty; anything typed must be a valid number.
+ */
 const consumerNumberSchema = z
   .string()
   .transform(normalizeConsumerNumber)
-  .pipe(
-    z
-      .string()
-      .min(1, 'Consumer number is required')
-      .regex(CONSUMER_NUMBER_REGEX, CONSUMER_NUMBER_MESSAGE),
-  );
+  .pipe(z.union([z.literal(''), z.string().regex(CONSUMER_NUMBER_REGEX, CONSUMER_NUMBER_MESSAGE)]))
+  .optional();
 
 const consumerNameSchema = z
   .string()

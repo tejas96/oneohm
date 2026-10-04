@@ -2,7 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { isValidConsumerNumber } from '@tejas96/shared/utils';
 
 const UTILITY_DETAILS_INCOMPLETE_MESSAGE =
-  'Consumer name, consumer number, DISCOM, and connection type are required with a valid 10–12 digit consumer number.';
+  'Consumer name, DISCOM and connection type are required; a consumer number, when given, must be 10–12 digits.';
 
 export interface UtilityDetailsFields {
   consumerNumber?: string | null;
@@ -12,10 +12,11 @@ export interface UtilityDetailsFields {
 }
 
 function isUtilityDetailsComplete(property: UtilityDetailsFields): boolean {
+  // The consumer number may be empty until onboarding (projects/utils/onboarding-checks.ts).
+  const consumerNumber = property.consumerNumber?.trim();
   return Boolean(
     property.consumerName?.trim() &&
-      property.consumerNumber?.trim() &&
-      isValidConsumerNumber(property.consumerNumber) &&
+      (!consumerNumber || isValidConsumerNumber(consumerNumber)) &&
       property.discomId &&
       property.connectionType,
   );

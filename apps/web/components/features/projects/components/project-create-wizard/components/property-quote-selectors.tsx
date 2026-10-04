@@ -9,10 +9,12 @@ import type { UseFormReturn } from 'react-hook-form';
 import type { ProjectCreateFormData } from '../../../schemas/project-create.schema';
 
 import { MUISelect, MUITypography } from '@/components/ui';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 import {
   type CustomerQuote,
   useCustomerPropertiesByCustomer,
   useCustomerQuotes,
+  useOnboardingBlockers,
 } from '@/lib/hooks/resources';
 import { formatCurrency } from '@/lib/utils';
 
@@ -46,6 +48,9 @@ export function PropertyQuoteSelectors({
 
   const selectedProperty = properties.find((p) => p.id === selectedPropertyId) ?? null;
   const propertyConverted = selectedProperty?.status === PropertyStatus.CONVERTED;
+  const { data: blockers = [] } = useOnboardingBlockers(
+    selectedPropertyId && !propertyConverted ? selectedPropertyId : undefined,
+  );
 
   const filteredQuotes = allQuotes.filter(
     (q) => !selectedPropertyId || !q.propertyId || q.propertyId === selectedPropertyId,
@@ -105,6 +110,25 @@ export function PropertyQuoteSelectors({
             className="mt-2"
           >
             This property has already been converted to a project.
+          </Alert>
+        )}
+        {blockers.length > 0 && (
+          <Alert severity="error" className="mt-2">
+            <strong>This site cannot become a project yet.</strong>
+            <ul className="mt-1 list-disc pl-5">
+              {blockers.map((blocker) => (
+                <li key={blocker.code}>{blocker.message}</li>
+              ))}
+            </ul>
+            <a
+              href={buildRoute(ROUTES.PROPERTIES.EDIT, { id: selectedPropertyId })}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1 inline-block font-medium underline"
+            >
+              Open the site to fix it
+            </a>
+            , then come back: this check runs again.
           </Alert>
         )}
       </div>

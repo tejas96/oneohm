@@ -338,3 +338,27 @@ export function useProjectListResource(filters: ProjectListFilters = {}) {
     staleTime: STALE_TIMES.fast,
   });
 }
+
+/** One thing a site still needs before it can become a project (backend onboarding checks). */
+export interface OnboardingBlocker {
+  code: string;
+  message: string;
+}
+
+/** What still blocks this site from becoming a project; an empty list means ready. */
+export function useOnboardingBlockers(propertyId: string | undefined) {
+  return useQuery({
+    queryKey: ['projects', 'onboarding-blockers', propertyId ?? ''],
+    queryFn: async ({ signal }): Promise<OnboardingBlocker[]> => {
+      const { data } = await apiClient.get<{ blockers: OnboardingBlocker[] }>(
+        `/projects/onboarding-blockers?propertyId=${encodeURIComponent(propertyId ?? '')}`,
+        { signal },
+      );
+      return data.blockers;
+    },
+    enabled: Boolean(propertyId),
+    // Always fresh: the user may have just fixed the site in another tab.
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+  });
+}
