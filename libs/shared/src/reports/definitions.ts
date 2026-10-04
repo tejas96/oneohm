@@ -189,7 +189,6 @@ export const METER_TEST_LETTER_REPORT: ReportDefinition = {
     req('meter_serial_number'),
     req('meter_make'),
     req('meter_capacity'),
-    opt('signatory_designation'),
   ],
 };
 
