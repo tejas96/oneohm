@@ -232,6 +232,26 @@ function applyMatchingPropertyFilter(
   }
 }
 
+/**
+ * The search box also finds a customer by one of their sites: its consumer
+ * number or its site code. Uses the caller's :searchTerm (lower-case, %-wrapped)
+ * and :consumerNumberTerm (siteSearchParams).
+ */
+const SITE_MATCHES_SEARCH = `EXISTS (
+            SELECT 1 FROM customer_properties site
+            WHERE site.customer_id = customer.id
+              AND site.deleted_at IS NULL
+              AND (
+                COALESCE(site.consumer_number, '') LIKE :consumerNumberTerm OR
+                LOWER(COALESCE(site.property_code, '')) LIKE :searchTerm
+              )
+          )`;
+
+/** Consumer numbers are stored as digits: "2799 9000 0951" or "2799-9000-0951" still match. */
+function siteSearchParams(search: string): { consumerNumberTerm: string } {
+  return { consumerNumberTerm: `%${search.replace(/[\s-]/g, '').toLowerCase()}%` };
+}
+
 @Injectable()
 export class CustomerProfileRepository {
   constructor(
@@ -597,7 +617,7 @@ export class CustomerProfileRepository {
    * Search customers by name, phone, or email
    * Full-text-ish search across customer fields
    *
-   * @param searchQuery - Search term (searches first name, last name, phone, email, group)
+   * @param searchQuery - Search term (name, phone, email, city, group, a site's consumer number or site code)
    * @param createdBy - Optional: filter by creator (for field workers)
    * @param page - Page number
    * @param limit - Items per page
@@ -627,9 +647,10 @@ export class CustomerProfileRepository {
           LOWER(customer.email) LIKE :searchTerm OR
           LOWER(customer.city) LIKE :searchTerm OR
           LOWER(COALESCE(customer.group_code, '')) LIKE :searchTerm OR
-          LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm
+          LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm OR
+          ${SITE_MATCHES_SEARCH}
         )`,
-        { searchTerm },
+        { searchTerm, ...siteSearchParams(searchQuery) },
       );
 
     // Filter by creator OR assignee (for field workers — covers both own-created and assigned)
@@ -710,9 +731,10 @@ export class CustomerProfileRepository {
           LOWER(customer.email) LIKE :searchTerm OR
           LOWER(customer.city) LIKE :searchTerm OR
           LOWER(COALESCE(customer.group_code, '')) LIKE :searchTerm OR
-          LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm
+          LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm OR
+          ${SITE_MATCHES_SEARCH}
         )`,
-        { searchTerm },
+        { searchTerm, ...siteSearchParams(query.search) },
       );
     }
 

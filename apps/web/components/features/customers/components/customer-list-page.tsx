@@ -1634,7 +1634,7 @@ export function CustomerListPage(): JSX.Element {
         refetching={isFetching && !isLoading}
         initialSearch={urlState.state.search}
         onSearchChange={urlState.setSearch}
-        searchPlaceholder="Search name, phone, site code"
+        searchPlaceholder="Search name, phone, consumer no., site code"
         quickFilters={quickFilters}
         activeQuickFilter={activeStatusFilter}
         onQuickFilterChange={handleQuickFilterChange}
