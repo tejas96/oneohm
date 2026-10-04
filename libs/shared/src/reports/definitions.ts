@@ -118,7 +118,8 @@ export const ANNEXURE_PROFORMA_A_REPORT: ReportDefinition = {
   documentTag: DocumentTag.ANNEXURE_PROFORMA_A,
   // 6: one-line header, WCR-style signatures (vendor name as the agency), page 2 top margin.
   // 7: a mount that does not apply (and rooftop + ground) prints N/A once the other mount's kW is saved.
-  templateVersion: 7,
+  // 8: the installation date blanks carry a light DD-MM-YYYY guide.
+  templateVersion: 8,
   facts: [
     req('consumer_name'),
     req('consumer_number'),

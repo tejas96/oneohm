@@ -77,6 +77,22 @@ thead th {
 }
 
 /*
+ * {{> dateBlank}}: light enough to write the date over it by hand. Padding, not
+ * height: the PDF export (html2canvas) draws text a few px lower than the
+ * browser, and with no room under it the guide sat on the line.
+ */
+.blank-line.rpt-date-guide {
+  height: auto;
+  padding-bottom: 6px;
+  color: #b8b8b8;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  line-height: 12px;
+  text-align: center;
+}
+
+/*
  * ── Centered document title (replaces the header bar) ──
  * Scoped to the `.rpt-doc-head` wrapper the docTitle partial emits
  * (report-handlebars.helpers.ts) — several other report templates (DCR,
