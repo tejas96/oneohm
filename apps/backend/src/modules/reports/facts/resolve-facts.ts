@@ -175,7 +175,7 @@ export function resolveSourceFacts({
   if (inverters.length > 0) {
     facts.inverter_make_model = inverters
       .map((inv) =>
-        `${[inv.brand, inv.name].filter(Boolean).join(' ')} ${str(inv.capacityKw)} kW × ${str(inv.quantity)}`.trim(),
+        `${makeAndModel(inv.brand, inv.name)} ${str(inv.capacityKw)} kW × ${str(inv.quantity)}`.trim(),
       )
       .join(', ');
     facts.inverter_make = Array.from(
@@ -191,6 +191,14 @@ export function resolveSourceFacts({
   facts.module_serial_numbers = [...panelSerials].sort().join(', ');
 
   return facts;
+}
+
+/** "Sungrow" + "Sungrow 12KW…" prints the brand once: catalog names often start with it. */
+function makeAndModel(brand: string | null | undefined, name: string | null | undefined): string {
+  const make = str(brand).trim();
+  const model = str(name).trim();
+  if (make && model.toLowerCase().startsWith(make.toLowerCase())) return model;
+  return [make, model].filter(Boolean).join(' ');
 }
 
 /** A saved mount kW as typed (2.5, not the column's 2.50); blank when none. */

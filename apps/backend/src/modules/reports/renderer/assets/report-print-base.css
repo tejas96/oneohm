@@ -24,7 +24,12 @@ body {
   font-size: 9pt;
   line-height: 1.45;
   color: #1a1a1a;
-  padding: 12mm;
+  /*
+   * Sides: 12mm. Top and bottom of every page come from the PDF export's margins
+   * (render-report-pdf.ts). The 6mm at the end keeps the last line whole: html2canvas
+   * draws text a few px below its box, and with no room the final line was cut.
+   */
+  padding: 0 12mm 6mm;
 }
 
 .pdf-wrapper,
@@ -74,6 +79,14 @@ thead th {
   height: 14px;
   vertical-align: bottom;
   margin: 0 4px;
+}
+
+/* A date written by hand on a signature line: the light guide alone, the rule is the line. */
+.rpt-sig .rpt-date-hint {
+  color: #b8b8b8;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 2px;
 }
 
 /*

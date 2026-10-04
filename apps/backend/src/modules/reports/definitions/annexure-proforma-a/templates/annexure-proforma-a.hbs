@@ -126,8 +126,6 @@
         .proforma-title-block {
           text-align: center;
           margin-bottom: 16px;
-          /* Page 2 starts at the sheet's edge after the break: give it page 1's 12mm. */
-          padding-top: 12mm;
         }
   
         .proforma-title-block .p-heading {
@@ -290,7 +288,7 @@
   
           <!-- Signatures as on the WCR: space to sign, the name above the line, the role below. -->
           <div class="rpt-sig-row" style="margin-top: 36px">
-            {{> signature name=installation_date role="Date"}}
+            <div class="rpt-sig"><div class="rpt-sig-space"></div><div class="rpt-sig-name"><span class="rpt-date-hint">DD-MM-YYYY</span></div><div class="rpt-sig-rule"></div><div class="rpt-sig-role">Date</div></div>
             {{> signature name=consumer_name role="Signature of Consumer"}}
           </div>
   
@@ -324,7 +322,7 @@
           </div>
   
           <p class="proforma-final">
-            The above RTS installation has been inspected by me for Pre-Commissioning Testing of Roof Top Solar Connection on date as per guidelines issued by the office of The Chief Engineer vide letter no 21653 on dt. 18.08.2022 and found in order for commissioning.
+            The above RTS installation has been inspected by me for Pre-Commissioning Testing of Roof Top Solar Connection on {{> dateBlank}} as per guidelines issued by the office of The Chief Engineer vide letter no 21653 on dt. 18.08.2022 and found in order for commissioning.
           </p>
   
           <div class="rpt-sig-row" style="margin-top: 28px">

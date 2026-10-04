@@ -7,7 +7,7 @@ import { RENDER_VALUES } from './render-values';
 import { resolveReportAsset, templateFileFor } from '../utils/report.utils';
 
 /** Printed as blank lines until these facts exist. */
-const KNOWN_UNDECLARED = new Set(['installation_date']);
+const KNOWN_UNDECLARED = new Set<string>();
 
 type Call = Pick<hbs.AST.MustacheStatement, 'path' | 'params' | 'hash'>;
 

@@ -74,11 +74,13 @@ export function registerReportHandlebarsHelpers(): void {
       ? new Handlebars.SafeString('<span class="blank-line"></span>')
       : formatRupees(toDisplayString(value)),
   );
+  /** 12 digits print as "1234 5678 9012"; empty prints a line to fill, like every other blank. */
   Handlebars.registerHelper('formatAadhaar', (value: unknown) => {
+    if (isBlank(value)) return new Handlebars.SafeString('<span class="blank-line"></span>');
     const digits = typeof value === 'string' ? value.replace(/\D/g, '') : '';
     return digits.length === 12
       ? `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8)}`
-      : '—';
+      : toDisplayString(value);
   });
 }
 
