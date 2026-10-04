@@ -7,4 +7,5 @@ export const REPORT_STATUS_META: Record<ReportStatus, { label: string; tone: Ton
   ready: { label: 'Ready to generate', tone: 'accent' },
   filed: { label: 'Filed', tone: 'success' },
   stale: { label: 'Out of date', tone: 'danger' },
+  not_needed: { label: 'Not needed', tone: 'neutral' },
 };

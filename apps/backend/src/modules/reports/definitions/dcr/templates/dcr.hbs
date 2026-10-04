@@ -36,6 +36,13 @@
         border-bottom: 2px solid #1a1a1a;
       }
 
+      .doc-header .annexure-label {
+        text-align: right;
+        font-size: 10pt;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
       .doc-header .doc-title {
         font-size: 11pt;
         font-weight: 700;
@@ -127,8 +134,10 @@
       <div class="pdf-page">
 
         <div class="doc-header">
+          <div class="annexure-label">Annexure-I</div>
           <div class="doc-title">
-            Undertaking / Self-Declaration for Domestic Content Requirement Fulfilment
+            Undertaking/Self-Declaration for Domestic Content Requirement (DCR) fulfillment (On a
+            plain Paper)
           </div>
         </div>
 
@@ -136,10 +145,10 @@
         <p class="clause">
           1. This is to certify that M/S <strong>{{vendor_name}}</strong> has installed
           <strong>{{installed_capacity_kw}} KW</strong> Grid Connected Rooftop Solar PV Power Plant for
-          <strong>{{consumer_name}}</strong> at <strong>{{site_address}}</strong> Under
-          application number <strong>{{sanction_number}}</strong> dated
-          <strong>{{formatDate sanction_date}}</strong> under Maharashtra State Electricity Distribution
-          Co. Ltd.
+          <strong>{{consumer_name}}</strong> at <strong>{{site_address}}</strong> under
+          sanction number <strong>{{sanction_number}}</strong> dated
+          <strong>{{formatDate sanction_date}}</strong> issued by Maharashtra State Electricity
+          Distribution Co. Ltd.
         </p>
 
         <!-- Clause 2 -->
@@ -150,18 +159,20 @@
         </p>
 
         <ul class="module-list">
-          <li>1) <strong>PV Module Capacity:</strong> <strong>{{withUnit module_wattage "Wp"}}</strong></li>
-          <li>2) <strong>Number of PV Modules:</strong> <strong>{{module_count}}</strong></li>
-          <li>3) <strong>Sr No of PV Module:</strong> <strong>{{module_serial_numbers}}</strong></li>
-          <li>4) <strong>PV Module Make:</strong> <strong>{{module_make}}</strong></li>
-          <li>5) <strong>Cell manufacturer's name:</strong> <strong>{{cell_manufacturer_name}}</strong></li>
-          <li>6) <strong>Cell GST Invoice No:</strong> <strong>{{cell_gst_invoice_no}}</strong></li>
+          <li>1. <strong>PV Module Capacity:</strong> <strong>{{withUnit module_wattage "Wp"}}</strong></li>
+          <li>2. <strong>Number of PV Modules:</strong> <strong>{{module_count}}</strong></li>
+          <li>3. <strong>Sr No of PV Module:</strong> <strong>{{module_serial_numbers}}</strong></li>
+          <li>4. <strong>PV Module Make:</strong> <strong>{{module_make}}</strong></li>
+          <li>5. <strong>Purchase Order Number:</strong> <strong>{{purchase_order_number}}</strong></li>
+          <li>6. <strong>Purchase Order Date:</strong> <strong>{{formatDate purchase_order_date}}</strong></li>
+          <li>7. <strong>Cell manufacturer's name:</strong> <strong>{{cell_manufacturer_name}}</strong></li>
+          <li>8. <strong>Cell GST invoice No:</strong> <strong>{{cell_gst_invoice_no}}</strong></li>
         </ul>
 
         <!-- Clause 3 -->
         <p class="clause">
           3. The above undertaking is based on the certificate issued by PV Module
-          manufacturer/supplier while supplying the above-mentioned order.
+          manufacturer/supplier while supplying the above mentioned order.
         </p>
 
         <!-- Clause 4 -->

@@ -1,7 +1,7 @@
 'use client';
 
 import { Alert } from '@mui/material';
-import type { ReportWorkspace } from '@tejas96/shared/reports';
+import { isPendingStatus, type ReportWorkspace } from '@tejas96/shared/reports';
 import { FileCheck2 } from 'lucide-react';
 import NextLink from 'next/link';
 
@@ -26,9 +26,10 @@ export function ReportsCard({
   projectPath,
   className,
 }: ReportsCardProps): React.JSX.Element {
-  const all = reports.data?.reports ?? [];
+  // A report that is not needed for this project is neither filed nor outstanding.
+  const all = (reports.data?.reports ?? []).filter((r) => r.status !== 'not_needed');
   const locked = reports.data?.locked ?? false;
-  const outstanding = locked ? [] : all.filter((r) => r.status !== 'filed');
+  const outstanding = locked ? [] : all.filter((r) => isPendingStatus(r.status));
   const filedCount = all.length - outstanding.length;
   const donePct = all.length > 0 ? (filedCount / all.length) * 100 : 0;
   const tabHref = `${projectPath}?tab=reports`;

@@ -1,7 +1,12 @@
 'use client';
 
 import { Alert, Box } from '@mui/material';
-import type { WorkspaceFact, WorkspaceReport } from '@tejas96/shared/reports';
+import {
+  isGeneratableStatus,
+  isPendingStatus,
+  type WorkspaceFact,
+  type WorkspaceReport,
+} from '@tejas96/shared/reports';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useProjectReports } from '../../../hooks';
@@ -76,7 +81,7 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
   const pickedId = picked === ALL_REPORTS ? null : picked;
 
   const previewId =
-    pickedId ?? reports.find((r) => r.status !== 'filed')?.id ?? reports[0]?.id ?? null;
+    pickedId ?? reports.find((r) => isPendingStatus(r.status))?.id ?? reports[0]?.id ?? null;
   const previewReport = reports.find((r) => r.id === previewId);
   const render = useReportRender(
     projectId,
@@ -88,11 +93,14 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
     () =>
       pickedId
         ? reports.filter((r) => r.id === pickedId)
-        : reports.filter((r) => r.status !== 'filed'),
+        : reports.filter((r) => isPendingStatus(r.status)),
     [pickedId, reports],
   );
   // What Generate would actually send: missing reports never go, they only get named in the skipped line.
-  const sendableTargets = useMemo(() => targets.filter((r) => r.status !== 'missing'), [targets]);
+  const sendableTargets = useMemo(
+    () => targets.filter((r) => isGeneratableStatus(r.status)),
+    [targets],
+  );
   const allTargetsMissing = targets.length > 0 && sendableTargets.length === 0;
 
   const runGenerate = useGatedAction(
@@ -108,9 +116,12 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
   const locked = workspace?.locked ?? false;
 
   const unsavedReason = unsavedCount > 0 ? 'Save your changes first' : undefined;
-  const missingReason = allTargetsMissing
-    ? `Fill in the missing details first${targets.length > 1 ? ` — ${targets.length} reports` : ''}`
-    : undefined;
+  const notNeeded = targets.length === 1 && targets[0]?.status === 'not_needed' ? targets[0] : null;
+  const missingReason = notNeeded
+    ? `Not needed: ${notNeeded.notNeededReason ?? 'it does not apply to this project'}`
+    : allTargetsMissing
+      ? `Fill in the missing details first${targets.length > 1 ? ` — ${targets.length} reports` : ''}`
+      : undefined;
   // Unsaved changes take precedence: Generate would print the stored values, not them.
   const blockedReason = unsavedReason ?? missingReason;
 

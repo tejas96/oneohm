@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import type { WorkspaceReport } from '@tejas96/shared/reports';
+import { isGeneratableStatus, type WorkspaceReport } from '@tejas96/shared/reports';
 import { FileCategory } from '@tejas96/shared/types';
 import { useCallback, useState } from 'react';
 
@@ -81,7 +81,7 @@ export function useGenerateReports(projectId: string) {
 
   const generate = useCallback(
     async (reports: WorkspaceReport[]): Promise<GenerateOutcome[]> => {
-      const sendable = reports.filter((r) => r.status !== 'missing');
+      const sendable = reports.filter((r) => isGeneratableStatus(r.status));
       setOutcomes([]);
       setSkipped(reports.filter((r) => r.status === 'missing'));
       setRunningTotal(sendable.length);

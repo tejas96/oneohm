@@ -1,7 +1,8 @@
 import type { ReportDefinition } from './definitions';
 import { type FactKey, getFact } from './facts/report-facts';
 
-export type ReportStatus = 'missing' | 'ready' | 'filed' | 'stale';
+/** `not_needed`: the report's `onlyWhen` condition does not hold for this project. */
+export type ReportStatus = 'missing' | 'ready' | 'filed' | 'stale' | 'not_needed';
 
 export interface FiledReportMeta {
   factsHash?: string;
@@ -51,5 +52,10 @@ export function getReportStatus(
 }
 
 export function isPendingStatus(status: ReportStatus): boolean {
-  return status !== 'filed';
+  return status !== 'filed' && status !== 'not_needed';
+}
+
+/** Generate files these; missing reports are skipped and named, not-needed ones ignored. */
+export function isGeneratableStatus(status: ReportStatus): boolean {
+  return status === 'ready' || status === 'stale';
 }
