@@ -234,17 +234,23 @@ function applyMatchingPropertyFilter(
 
 /**
  * The search box also finds a customer by one of their sites: its consumer
- * number or its site code. Uses the caller's :searchTerm (lower-case, %-wrapped).
+ * number or its site code. Uses the caller's :searchTerm (lower-case, %-wrapped)
+ * and :consumerNumberTerm (siteSearchParams).
  */
 const SITE_MATCHES_SEARCH = `EXISTS (
             SELECT 1 FROM customer_properties site
             WHERE site.customer_id = customer.id
               AND site.deleted_at IS NULL
               AND (
-                LOWER(COALESCE(site.consumer_number, '')) LIKE :searchTerm OR
+                COALESCE(site.consumer_number, '') LIKE :consumerNumberTerm OR
                 LOWER(COALESCE(site.property_code, '')) LIKE :searchTerm
               )
           )`;
+
+/** Consumer numbers are stored as digits: "2799 9000 0951" or "2799-9000-0951" still match. */
+function siteSearchParams(search: string): { consumerNumberTerm: string } {
+  return { consumerNumberTerm: `%${search.replace(/[\s-]/g, '').toLowerCase()}%` };
+}
 
 @Injectable()
 export class CustomerProfileRepository {
@@ -644,7 +650,7 @@ export class CustomerProfileRepository {
           LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm OR
           ${SITE_MATCHES_SEARCH}
         )`,
-        { searchTerm },
+        { searchTerm, ...siteSearchParams(searchQuery) },
       );
 
     // Filter by creator OR assignee (for field workers — covers both own-created and assigned)
@@ -728,7 +734,7 @@ export class CustomerProfileRepository {
           LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm OR
           ${SITE_MATCHES_SEARCH}
         )`,
-        { searchTerm },
+        { searchTerm, ...siteSearchParams(query.search) },
       );
     }
 
