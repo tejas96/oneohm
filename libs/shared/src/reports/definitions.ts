@@ -193,7 +193,8 @@ export const METER_TEST_LETTER_REPORT: ReportDefinition = {
   description: 'Letter asking MSEDCL to test the generation meter, with or without CT.',
   documentTag: DocumentTag.METER_TEST_LETTER,
   // 2: the vendor signs with the company stamp, under the company name.
-  templateVersion: 2,
+  // 3: the client's layout: no letterhead, one-paragraph request, stamp, then the consumer and meter lines.
+  templateVersion: 3,
   facts: [
     req('vendor_name'),
     req('consumer_name'),
