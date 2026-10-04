@@ -53,10 +53,6 @@ export function applyOverrides(
     const value = fact.overridable ? stored[fact.key]?.trim() : undefined;
     if (value) next[fact.key as FactKey] = value;
   }
-  const kw = Number(next.installed_capacity_kw);
-  if (stored.installed_capacity_kw?.trim() && Number.isFinite(kw)) {
-    next.installed_capacity_wp = str(Math.round(kw * 1000));
-  }
   return next;
 }
 
@@ -139,7 +135,6 @@ export function resolveSourceFacts({
     contractValue != null && contractValue > 0 ? str(Math.round(contractValue)) : '';
 
   facts.installed_capacity_kw = str(kw);
-  facts.installed_capacity_wp = kw != null ? str(Math.round(kw * 1000)) : '';
 
   // A mixed panel set is joined, never truncated to its first entry: this is
   // filed with the utility, and the first entry understated module count and
