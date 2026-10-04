@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { FormProvider } from 'react-hook-form';
 
 import { WizardFooter } from './components/wizard-footer';
@@ -57,8 +57,13 @@ function ProjectCreatePageInner(): React.JSX.Element {
   const router = useRouter();
   const { form, currentStep, goNext, goBack, goTo } = useProjectCreateForm();
   const { submit, isPending } = useProjectCreateSubmit(form);
-  // The site's onboarding checks (step 1 lists them): no step moves on while any fails.
+  // The site's onboarding checks (step 1 lists them): a blocked site stays on step 1.
+  // No bypass: a link that opens a later step comes back to step 1, and Next stays off.
   const { data: blockers = [] } = useOnboardingBlockers(form.watch('propertyId') || undefined);
+  const blocked = blockers.length > 0;
+  useEffect(() => {
+    if (blocked && currentStep !== 0) goTo(0);
+  }, [blocked, currentStep, goTo]);
 
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === TOTAL_STEPS - 1;
@@ -116,7 +121,7 @@ function ProjectCreatePageInner(): React.JSX.Element {
           isFirstStep={isFirstStep}
           isLastStep={isLastStep}
           isSubmitting={isPending}
-          isNextDisabled={blockers.length > 0}
+          isNextDisabled={blocked}
         />
       </div>
     </div>
