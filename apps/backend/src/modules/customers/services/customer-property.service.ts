@@ -231,6 +231,8 @@ export class CustomerPropertyService {
 
     const property = await this.propertyRepository.create({
       ...restCreateDto,
+      // Empty means "not known yet": stored as null, never as ''.
+      consumerNumber: restCreateDto.consumerNumber?.trim() || undefined,
       documents: this.normalizeDocuments(documents),
       changeRequests: normalizeChangeRequestsForStorage(changeRequests, createdBy ?? ''),
       isPrimary,
@@ -531,6 +533,19 @@ export class CustomerPropertyService {
       }
     }
 
+    // A project's reports print the consumer number: once the site is a project it stays.
+    const clearsConsumerNumber =
+      updateDto.consumerNumber !== undefined && !updateDto.consumerNumber?.trim();
+    if (
+      clearsConsumerNumber &&
+      property.consumerNumber &&
+      property.status === PropertyStatus.CONVERTED
+    ) {
+      throw new BadRequestException(
+        'This site is already a project: its consumer number cannot be removed, only changed.',
+      );
+    }
+
     // Check for consumer number conflicts (if being updated)
     if (updateDto.consumerNumber && updateDto.consumerNumber !== property.consumerNumber) {
       const existingByConsumerNumber = await this.propertyRepository.findByConsumerNumber(
@@ -557,6 +572,7 @@ export class CustomerPropertyService {
       documents: this.normalizeDocuments(documents),
       updatedBy,
     };
+    if (clearsConsumerNumber) updatePayload.consumerNumber = null;
 
     if (changeRequests !== undefined) {
       updatePayload.changeRequests = mergeChangeRequestsForUpdate(

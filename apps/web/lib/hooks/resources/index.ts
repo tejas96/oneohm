@@ -114,6 +114,8 @@ export {
   useConvertFromQuote,
   useUpdateProjectWarehouse,
   useProjectListResource,
+  useOnboardingBlockers,
+  type OnboardingBlocker,
   type ProjectSummary,
   type ActivityFeedItem,
   type TeamWorkloadEntry,

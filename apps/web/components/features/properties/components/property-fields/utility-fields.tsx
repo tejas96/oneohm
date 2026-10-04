@@ -103,7 +103,6 @@ export function UtilityFields(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <MUIInput
           fieldLabel="Consumer number"
-          required
           id="consumerNumber"
           placeholder="10–12 digits"
           size="small"
@@ -121,6 +120,11 @@ export function UtilityFields(): React.JSX.Element {
             },
           })}
           error={errors.consumerNumber?.message as string | undefined}
+          helperText={
+            errors.consumerNumber?.message
+              ? undefined
+              : 'Can be added later. Needed before the site becomes a project.'
+          }
         />
 
         <MUIInput

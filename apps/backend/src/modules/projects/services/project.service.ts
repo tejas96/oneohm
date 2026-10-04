@@ -53,6 +53,7 @@ import {
   ProjectTeamRepository,
   WorkflowStepRepository,
 } from '../repositories';
+import { onboardingBlockers, type OnboardingBlocker } from '../utils/onboarding-checks';
 import { buildTaskFromStep } from '../utils/task-from-step';
 
 const PROJECT_CONSTANTS = {
@@ -411,6 +412,15 @@ export class ProjectService {
    * 8. Add PM + team members if provided
    * 9. Apply explicit task assignments from API payload
    */
+  /** What still blocks this site from becoming a project (the create-project page lists it). */
+  async getOnboardingBlockers(propertyId: string): Promise<OnboardingBlocker[]> {
+    const property = await this.customerPropertyRepository.findByIdAndOrganization(propertyId);
+    if (!property) {
+      throw new NotFoundException(`Property with ID ${propertyId} not found`);
+    }
+    return onboardingBlockers(property);
+  }
+
   async convertFromQuote(
     quoteId: string,
     createdBy: string,
@@ -454,6 +464,14 @@ export class ProjectService {
       throw new BadRequestException(
         'This property has already been converted to a project. Cannot create another.',
       );
+    }
+
+    const blockers = onboardingBlockers(property);
+    if (blockers.length > 0) {
+      throw new BadRequestException({
+        message: `This site is not ready to become a project. ${blockers.map((b) => b.message).join(' ')}`,
+        blockers,
+      });
     }
 
     const existingProject = await this.projectRepository.findLiveByPropertyId(quote.propertyId);

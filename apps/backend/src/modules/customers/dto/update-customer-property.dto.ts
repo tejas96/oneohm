@@ -101,14 +101,14 @@ export class UpdateCustomerPropertyDto {
   // ==================== Electricity/Consumer Details ====================
   @ApiPropertyOptional({
     example: '279692003475',
-    description: 'Electricity consumer number (10–12 digits)',
+    description:
+      'Electricity consumer number (10–12 digits). Empty or null clears it, unless the site is already a project.',
   })
-  @ValidateIf((o: UpdateCustomerPropertyDto) => o.consumerNumber !== undefined)
+  @ValidateIf((o: UpdateCustomerPropertyDto) => Boolean(o.consumerNumber))
   @IsString()
-  @IsNotEmpty()
   @Matches(CONSUMER_NUMBER_REGEX, { message: 'Consumer number must be 10–12 digits' })
   @MaxLength(50)
-  consumerNumber?: string;
+  consumerNumber?: string | null;
 
   @ApiPropertyOptional({
     example: 'Rajesh Kumar',

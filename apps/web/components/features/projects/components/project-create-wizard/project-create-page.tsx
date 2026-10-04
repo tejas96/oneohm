@@ -17,6 +17,7 @@ import { Step6Review } from './steps/step-6-review';
 import { Stepper } from '@/components/shared/wizards/stepper';
 import { MUIBreadcrumb, MUITypography } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
+import { useOnboardingBlockers } from '@/lib/hooks/resources';
 
 // ── Breadcrumb items ───────────────────────────────────────────
 
@@ -56,6 +57,8 @@ function ProjectCreatePageInner(): React.JSX.Element {
   const router = useRouter();
   const { form, currentStep, goNext, goBack, goTo } = useProjectCreateForm();
   const { submit, isPending } = useProjectCreateSubmit(form);
+  // The site's onboarding checks (step 1 lists them): no step moves on while any fails.
+  const { data: blockers = [] } = useOnboardingBlockers(form.watch('propertyId') || undefined);
 
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === TOTAL_STEPS - 1;
@@ -113,6 +116,7 @@ function ProjectCreatePageInner(): React.JSX.Element {
           isFirstStep={isFirstStep}
           isLastStep={isLastStep}
           isSubmitting={isPending}
+          isNextDisabled={blockers.length > 0}
         />
       </div>
     </div>

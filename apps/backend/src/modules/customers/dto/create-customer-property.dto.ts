@@ -21,6 +21,7 @@ import {
   Matches,
   MaxLength,
   Min,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
@@ -104,15 +105,16 @@ export class CreateCustomerPropertyDto {
   gpsCoordinates?: GpsCoordinatesDto;
 
   // ==================== Electricity/Consumer Details ====================
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: '279692003475',
-    description: 'Electricity consumer number (10–12 digits)',
+    description:
+      'Electricity consumer number (10–12 digits). Optional here; required before the site becomes a project.',
   })
+  @ValidateIf((o: CreateCustomerPropertyDto) => Boolean(o.consumerNumber))
   @IsString()
-  @IsNotEmpty()
   @Matches(CONSUMER_NUMBER_REGEX, { message: 'Consumer number must be 10–12 digits' })
   @MaxLength(50)
-  consumerNumber!: string;
+  consumerNumber?: string;
 
   @ApiProperty({
     example: 'Rajesh Kumar',
