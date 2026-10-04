@@ -87,3 +87,17 @@ export function resolveDashboardSubjectId(
     hasAdminBypassRole(roles) || permissions.includes('dashboard.employees.view');
   return canViewOthers && options.userId ? options.userId : currentUserId;
 }
+
+/**
+ * Whose "My tasks" list is read. Admins and super admins may pass another
+ * user's id to see that person's tasks as that person sees them; everyone
+ * else always gets their own, and the `userId` they sent is ignored — the
+ * same silent pin-to-self as `resolveDashboardSubjectId`, no 403.
+ */
+export function resolveTaskOwnerId(
+  roles: string[],
+  currentUserId: string,
+  userId?: string,
+): string {
+  return hasAdminBypassRole(roles) && userId ? userId : currentUserId;
+}

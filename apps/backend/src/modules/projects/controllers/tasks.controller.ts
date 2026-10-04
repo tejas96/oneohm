@@ -23,6 +23,7 @@ import { ResellerAllowed } from '../../../common/reseller';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
+import { resolveTaskOwnerId } from '../../iam/constants/admin-roles';
 import {
   AddCommentDto,
   GroupedMyTasksResponseDto,
@@ -35,6 +36,9 @@ import {
 import { ProjectTaskService } from '../services';
 
 type GroupByMode = 'dueDate' | 'priority' | 'project' | 'status';
+
+const USER_ID_HELP =
+  'Whose tasks to read (a USER id). Admins and super admins only; anyone else gets their own.';
 
 /**
  * TasksController
@@ -74,6 +78,7 @@ export class TasksController {
     type: String,
     description: 'Load tasks for a single group (lazy expand)',
   })
+  @ApiQuery({ name: 'userId', required: false, type: String, description: USER_ID_HELP })
   async getMyTasks(
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page?: string,
@@ -86,25 +91,23 @@ export class TasksController {
     @Query('dueDateFilter') dueDateFilter?: DueDateFilter,
     @Query('address') address?: string,
     @Query('groupKey') groupKey?: string,
+    @Query('userId', new ParseUUIDPipe({ optional: true })) userId?: string,
   ): Promise<
     | GroupedMyTasksResponseDto
     | MyTasksGroupTasksResponseDto
     | PaginatedResponse<ProjectTaskResponseDto>
   > {
+    const ownerId = resolveTaskOwnerId(currentUser.roles, currentUser.id, userId);
+
     if (groupBy && groupKey) {
-      const result = await this.taskService.getMyTasksGroupTasks(
-        currentUser.id,
-        groupBy,
-        groupKey,
-        {
-          status,
-          priority,
-          projectId,
-          search,
-          dueDateFilter,
-          address,
-        },
-      );
+      const result = await this.taskService.getMyTasksGroupTasks(ownerId, groupBy, groupKey, {
+        status,
+        priority,
+        projectId,
+        search,
+        dueDateFilter,
+        address,
+      });
 
       return plainToInstance(MyTasksGroupTasksResponseDto, result, {
         excludeExtraneousValues: true,
@@ -112,7 +115,7 @@ export class TasksController {
     }
 
     if (groupBy) {
-      const result = await this.taskService.getMyTasksGrouped(currentUser.id, groupBy, {
+      const result = await this.taskService.getMyTasksGrouped(ownerId, groupBy, {
         status,
         priority,
         projectId,
@@ -128,7 +131,7 @@ export class TasksController {
 
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
 
-    const result = await this.taskService.getMyTasks(currentUser.id, pageNum, limitNum, {
+    const result = await this.taskService.getMyTasks(ownerId, pageNum, limitNum, {
       status,
       priority,
     });
@@ -146,10 +149,14 @@ export class TasksController {
   @ApiOperation({
     summary: 'Get lightweight summary counts for current user tasks (for navigation badges)',
   })
+  @ApiQuery({ name: 'userId', required: false, type: String, description: USER_ID_HELP })
   async getMyTasksSummary(
     @CurrentUser() currentUser: CurrentUserType,
+    @Query('userId', new ParseUUIDPipe({ optional: true })) userId?: string,
   ): Promise<{ total: number; overdue: number; dueToday: number; completedThisWeek: number }> {
-    return this.taskService.getMyTasksSummary(currentUser.id);
+    return this.taskService.getMyTasksSummary(
+      resolveTaskOwnerId(currentUser.roles, currentUser.id, userId),
+    );
   }
 
   @Get(':id')
