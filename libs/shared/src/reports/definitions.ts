@@ -91,22 +91,20 @@ export const DCR_REPORT: ReportDefinition = {
 
 export const NET_METERING_AGREEMENT_REPORT: ReportDefinition = {
   id: 'net-metering-agreement',
-  name: 'Net Metering Connection Agreement',
+  name: 'Net Metering Agreement',
   shortName: 'Net metering',
-  description: 'Annexure-3 legal agreement between consumer and MSEDCL for net-metering.',
+  description: 'Net metering agreement between the consumer and MSEDCL.',
   documentTag: DocumentTag.NET_METERING_AGREEMENT,
   // 3: agreement date left blank to fill by hand, customer name in the witness
   // line, no "Shri.", customer name optional.
-  templateVersion: 3,
+  // 4: the client's new format: title once on page 1, kW, MSEDCL registered office,
+  // clause 11.0, no signatures or witnesses (submission is the agreement).
+  templateVersion: 4,
   facts: [
-    req('site_city'),
     opt('consumer_name'),
     req('site_address'),
     req('consumer_number'),
-    opt('licensee_address'),
-    req('installed_capacity_wp'),
-    opt('witness_licensee_name'),
-    req('signatory_licensee_name'),
+    req('installed_capacity_kw'),
   ],
 };
 

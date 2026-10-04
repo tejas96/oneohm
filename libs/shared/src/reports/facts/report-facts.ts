@@ -32,7 +32,6 @@ export type FactGroup =
   | 'sanction'
   | 'system'
   | 'installation'
-  | 'agreement'
   | 'meter'
   | 'signatory';
 
@@ -116,7 +115,6 @@ export const FACT_GROUPS: ReadonlyArray<{ id: FactGroup; title: string }> = [
   { id: 'sanction', title: 'DISCOM application' },
   { id: 'system', title: 'System' },
   { id: 'installation', title: 'Installation and service' },
-  { id: 'agreement', title: 'Net metering agreement' },
   { id: 'meter', title: 'Generation meter' },
   { id: 'signatory', title: 'Vendor signatory' },
 ];
@@ -373,17 +371,7 @@ export const REPORT_FACTS = [
     group: 'system',
     source: 'project',
     overridable: true,
-    help: `${FROM_QUOTE} The net metering agreement prints it in Wp.`,
-  },
-  {
-    key: 'installed_capacity_wp',
-    label: 'Installed capacity (Wp)',
-    type: 'number',
-    group: 'system',
-    source: 'project',
-    hidden: true,
-    derivedFrom: 'installed_capacity_kw',
-    help: 'The installed capacity in Wp, worked out from the kW on the approved quote.',
+    help: FROM_QUOTE,
   },
   {
     key: 're_installed_capacity_rooftop_kw',
@@ -603,31 +591,6 @@ export const REPORT_FACTS = [
     fixedValue: '5',
     hidden: true,
     help: 'Always 5 years of comprehensive maintenance. Not shown on the form.',
-  },
-
-  {
-    key: 'licensee_address',
-    label: 'Licensee address',
-    type: 'textarea',
-    group: 'agreement',
-    source: 'manual',
-    help: 'Address of the DISCOM office that signs the agreement.',
-  },
-  {
-    key: 'signatory_licensee_name',
-    label: 'Signatory (licensee)',
-    type: 'text',
-    group: 'agreement',
-    source: 'manual',
-    help: 'The DISCOM officer who signs the agreement.',
-  },
-  {
-    key: 'witness_licensee_name',
-    label: 'Witness (licensee)',
-    type: 'text',
-    group: 'agreement',
-    source: 'manual',
-    help: "The witness who signs on the DISCOM's side.",
   },
 
   {

@@ -79,7 +79,7 @@ export const DOCUMENT_TAG_LABELS: Record<DocumentTag, string> = {
   [DocumentTag.PANEL_STRUCTURE_INSTALLATION_VIEW]: 'Panel / Structure Installation View',
   [DocumentTag.WCR]: 'Work Completion Report',
   [DocumentTag.ANNEXURE_PROFORMA_A]: 'Annexure-I & Proforma-A',
-  [DocumentTag.NET_METERING_AGREEMENT]: 'Net Metering Connection Agreement',
+  [DocumentTag.NET_METERING_AGREEMENT]: 'Net Metering Agreement',
   [DocumentTag.DCR]: 'DCR Undertaking / Self-Declaration',
   [DocumentTag.MODEL_AGREEMENT]: 'Model Agreement',
   [DocumentTag.METER_TEST_LETTER]: 'Meter Test Covering Letter',
