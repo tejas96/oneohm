@@ -51,13 +51,9 @@
         margin-top: 8px;
       }
 
-      /* One signature on the left half, as on a letter, with room for the company stamp. */
+      /* One signature on the left half, as on a letter. */
       .rpt-sig-row {
-        margin-top: 0;
-      }
-
-      .rpt-sig .rpt-sig-space {
-        height: 64px;
+        margin-top: 10px;
       }
     </style>
   </head>
@@ -103,12 +99,11 @@
         </div>
 
         <div class="letter-close">
-          Yours faithfully,<br />
-          For <strong>{{vendor_name}}</strong>
+          Yours faithfully,
         </div>
 
         <div class="rpt-sig-row">
-          {{> signature name=signatory_name role=signatory_designation}}
+          {{> vendorSignature name=vendor_name role="Vendor"}}
           <div></div>
         </div>
       </div>

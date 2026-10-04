@@ -30,7 +30,8 @@ export const WCR_REPORT: ReportDefinition = {
   description: 'Solar plant installation completion certificate (WCR).',
   documentTag: DocumentTag.WCR,
   // 3: lightning arrester "Standard", CMC 5 years, printed as fixed values.
-  templateVersion: 3,
+  // 4: the vendor signs with the company stamp, under the company name.
+  templateVersion: 4,
   pages: 2,
   facts: [
     req('vendor_name'),
@@ -68,7 +69,8 @@ export const DCR_REPORT: ReportDefinition = {
   documentTag: DocumentTag.DCR,
   // 4: prints the one application / sanction number and date the WCR prints.
   // 6: the company signatory makes the declaration (not the customer); module capacity in Wp.
-  templateVersion: 6,
+  // 7: the company stamp under "(Signature With Official Seal)".
+  templateVersion: 7,
   facts: [
     req('vendor_name'),
     req('installed_capacity_kw'),
@@ -117,7 +119,8 @@ export const ANNEXURE_PROFORMA_A_REPORT: ReportDefinition = {
   // 6: one-line header, WCR-style signatures (vendor name as the agency), page 2 top margin.
   // 7: a mount that does not apply (and rooftop + ground) prints N/A once the other mount's kW is saved.
   // 8: the installation date blanks carry a light DD-MM-YYYY guide.
-  templateVersion: 8,
+  // 9: the agency signs with the company stamp, under the company name.
+  templateVersion: 9,
   facts: [
     req('consumer_name'),
     req('consumer_number'),
@@ -150,7 +153,8 @@ export const MODEL_AGREEMENT_REPORT: ReportDefinition = {
   description:
     'MNRE model agreement between the applicant and the vendor (Rooftop Solar Programme Ph-II).',
   documentTag: DocumentTag.MODEL_AGREEMENT,
-  templateVersion: 1,
+  // 2: the vendor signs with the company stamp, under the company name.
+  templateVersion: 2,
   facts: [
     req('consumer_name'),
     req('consumer_number'),
@@ -165,7 +169,6 @@ export const MODEL_AGREEMENT_REPORT: ReportDefinition = {
     req('inverter_make_model'),
     req('inverter_total_kw'),
     req('system_cost'),
-    req('signatory_name'),
   ],
 };
 
@@ -175,7 +178,8 @@ export const METER_TEST_LETTER_REPORT: ReportDefinition = {
   shortName: 'Meter test letter',
   description: 'Letter asking MSEDCL to test the generation meter, with or without CT.',
   documentTag: DocumentTag.METER_TEST_LETTER,
-  templateVersion: 1,
+  // 2: the vendor signs with the company stamp, under the company name.
+  templateVersion: 2,
   facts: [
     req('vendor_name'),
     req('consumer_name'),
@@ -185,8 +189,6 @@ export const METER_TEST_LETTER_REPORT: ReportDefinition = {
     req('meter_serial_number'),
     req('meter_make'),
     req('meter_capacity'),
-    req('signatory_name'),
-    opt('signatory_designation'),
   ],
 };
 
