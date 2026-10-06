@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { NotificationSeverity, NotificationType } from '@tejas96/shared/types';
+import type { EntityManager } from 'typeorm';
 
 import { FcmService } from './fcm.service';
 import { NotificationEntity } from '../entities/notification.entity';
@@ -46,16 +47,7 @@ export class NotificationService {
 
       let notification: NotificationEntity;
       try {
-        notification = await this.notificationRepository.create({
-          userId: input.userId,
-          type: input.type,
-          title: input.title,
-          body: input.body,
-          severity: input.severity ?? NotificationSeverity.INFO,
-          link: input.link,
-          metadata: input.metadata,
-          dedupeKey: input.dedupeKey,
-        });
+        notification = await this.notificationRepository.create(this.toRow(input));
       } catch (dbErr: any) {
         if (dbErr?.code === '23505') {
           this.logger.warn(
@@ -66,30 +58,47 @@ export class NotificationService {
         throw dbErr;
       }
 
-      try {
-        await this.fcmService.sendToUser({
-          userId: input.userId,
-          title: input.title,
-          body: input.body,
-          data: {
-            notificationId: notification.id,
-            type: notification.type,
-            severity: notification.severity,
-            link: notification.link,
-            ...notification.metadata,
-          },
-        });
-      } catch (fcmErr) {
-        this.logger.error(
-          `FCM push dispatch failed for notification ID ${notification.id} (user: ${input.userId})`,
-          fcmErr,
-        );
-      }
+      await this.push(notification);
 
       return notification;
     } catch (err) {
       this.logger.error('Failed to create notification', err);
       return null;
+    }
+  }
+
+  /**
+   * Saves the row on the caller's transaction and sends NO push — call
+   * `push()` after the transaction commits. Throws, so the caller's
+   * transaction rolls back. Ignores dedupeKey checks (callers have none).
+   */
+  async createInTransaction(
+    input: CreateNotificationInput,
+    manager: EntityManager,
+  ): Promise<NotificationEntity> {
+    return this.notificationRepository.create(this.toRow(input), manager);
+  }
+
+  /** Sends a saved row to the user's phones. Never throws. */
+  async push(notification: NotificationEntity): Promise<void> {
+    try {
+      await this.fcmService.sendToUser({
+        userId: notification.userId,
+        title: notification.title,
+        body: notification.body,
+        data: {
+          notificationId: notification.id,
+          type: notification.type,
+          severity: notification.severity,
+          link: notification.link,
+          ...notification.metadata,
+        },
+      });
+    } catch (fcmErr) {
+      this.logger.error(
+        `FCM push dispatch failed for notification ID ${notification.id} (user: ${notification.userId})`,
+        fcmErr,
+      );
     }
   }
 
@@ -112,5 +121,18 @@ export class NotificationService {
 
   async markAllRead(userId: string): Promise<void> {
     return this.notificationRepository.markAllRead(userId);
+  }
+
+  private toRow(input: CreateNotificationInput): Partial<NotificationEntity> {
+    return {
+      userId: input.userId,
+      type: input.type,
+      title: input.title,
+      body: input.body,
+      severity: input.severity ?? NotificationSeverity.INFO,
+      link: input.link,
+      metadata: input.metadata,
+      dedupeKey: input.dedupeKey,
+    };
   }
 }

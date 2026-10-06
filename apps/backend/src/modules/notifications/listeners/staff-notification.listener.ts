@@ -35,7 +35,10 @@ import {
   TaskBlockedEvent,
   TicketAssignedEvent,
 } from '../events/staff-notification.events';
-import { NotificationService } from '../services/notification.service';
+import {
+  type CreateNotificationInput,
+  NotificationService,
+} from '../services/notification.service';
 
 interface StaffMessage {
   type: NotificationType;
@@ -509,12 +512,14 @@ export class StaffNotificationListener {
     if (active.length === 0) return;
     const { group } = msg;
     if (!group) {
-      await this.create(recipientId, msg, {});
+      await this.notificationService.create(this.toInput(recipientId, msg, {}));
       return;
     }
     // Listeners run concurrently: the lock makes check-then-act one step per
-    // (person, group). It is held until the new row exists or the merge commits.
-    await this.dataSource.transaction(async (manager) => {
+    // (person, group). Everything runs on the transaction's one connection — a
+    // second pool connection here could deadlock behind a queue of waiters —
+    // and the push goes out only after the commit.
+    const created = await this.dataSource.transaction(async (manager) => {
       await manager.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [
         `${recipientId}|${group.key}`,
       ]);
@@ -530,11 +535,13 @@ export class StaffNotificationListener {
         );
       const previous = rows[0];
       if (!previous) {
-        await this.create(recipientId, msg, {
-          groupKey: group.key,
-          groupCounts: { [msg.type]: 1 },
-        });
-        return;
+        return this.notificationService.createInTransaction(
+          this.toInput(recipientId, msg, {
+            groupKey: group.key,
+            groupCounts: { [msg.type]: 1 },
+          }),
+          manager,
+        );
       }
       const counts = readCounts(previous.metadata);
       counts[msg.type] = (counts[msg.type] ?? 0) + 1;
@@ -561,15 +568,17 @@ export class StaffNotificationListener {
           }),
         ],
       );
+      return null;
     });
+    if (created) await this.notificationService.push(created);
   }
 
-  private async create(
+  private toInput(
     recipientId: string,
     msg: StaffMessage,
     extra: Record<string, unknown>,
-  ): Promise<void> {
-    await this.notificationService.create({
+  ): CreateNotificationInput {
+    return {
       userId: recipientId,
       type: msg.type,
       title: msg.title,
@@ -577,7 +586,7 @@ export class StaffNotificationListener {
       severity: msg.severity ?? NotificationSeverity.INFO,
       link: msg.target.link,
       metadata: { mobilePath: msg.target.mobilePath, ...msg.ids, ...extra },
-    });
+    };
   }
 
   private async guard(what: string, run: () => Promise<void>): Promise<void> {
