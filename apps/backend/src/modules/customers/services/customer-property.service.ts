@@ -34,6 +34,10 @@ import {
   ProjectCompletedEvent,
   PropertyCreatedEvent,
 } from '../../notifications/events/consumer-notification.events';
+import {
+  SiteWorkAssignedEvent,
+  STAFF_EVENTS,
+} from '../../notifications/events/staff-notification.events';
 import { SITE_EVENTS, SiteLoanChangedEvent } from '../../projects/events/site-loan-changed.event';
 import { QuoteRepository } from '../../quotes/repositories/quote.repository';
 import { StorageService } from '../../storage/services/storage.service';
@@ -646,6 +650,21 @@ export class CustomerPropertyService {
       this.eventEmitter.emit(
         CONSUMER_EVENTS.PROJECT_COMPLETED,
         new ProjectCompletedEvent(taskRuleSync.projectId, id, taskRuleSync.projectName),
+      );
+    }
+
+    // After the commit. `property` is the row before this save.
+    const actor = updatedBy ?? null;
+    if (updated.siteVisitAssignee && updated.siteVisitAssignee !== property.siteVisitAssignee) {
+      this.eventEmitter.emit(
+        STAFF_EVENTS.SITE_WORK_ASSIGNED,
+        new SiteWorkAssignedEvent(id, 'visit', updated.siteVisitAssignee, actor),
+      );
+    }
+    if (updated.siteSurveyAssignee && updated.siteSurveyAssignee !== property.siteSurveyAssignee) {
+      this.eventEmitter.emit(
+        STAFF_EVENTS.SITE_WORK_ASSIGNED,
+        new SiteWorkAssignedEvent(id, 'survey', updated.siteSurveyAssignee, actor),
       );
     }
 

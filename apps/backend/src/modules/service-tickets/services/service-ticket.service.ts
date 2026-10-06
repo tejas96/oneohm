@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   COMPANY,
@@ -20,6 +21,10 @@ import { DataSource, Repository } from 'typeorm';
 
 import { ResellerContextService } from '../../../common/reseller';
 import { EmployeeProfileEntity } from '../../employees/entities/employee-profile.entity';
+import {
+  STAFF_EVENTS,
+  TicketAssignedEvent,
+} from '../../notifications/events/staff-notification.events';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 import {
   type CreateServiceTicketDto,
@@ -45,6 +50,7 @@ export class ServiceTicketService {
     @InjectRepository(EmployeeProfileEntity)
     private readonly employeeRepository: Repository<EmployeeProfileEntity>,
     private readonly resellerContext: ResellerContextService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   // ============================================
@@ -56,7 +62,7 @@ export class ServiceTicketService {
     await this.assertEmployeeExists(dto.assignedToEmployeeId);
     await this.resellerContext.assertAssignableProfile(dto.assignedToEmployeeId, dto.customerId);
 
-    return this.dataSource.transaction(async (manager) => {
+    const created = await this.dataSource.transaction(async (manager) => {
       const ticketNumber = await this.ticketRepository.generateTicketNumber(COMPANY.code, manager);
 
       const ticket = manager.create(ServiceTicketEntity, {
@@ -88,6 +94,14 @@ export class ServiceTicketService {
 
       return saved;
     });
+
+    if (dto.assignedToEmployeeId) {
+      this.eventEmitter.emit(
+        STAFF_EVENTS.TICKET_ASSIGNED,
+        new TicketAssignedEvent(created.id, dto.assignedToEmployeeId, userId),
+      );
+    }
+    return created;
   }
 
   /**
@@ -186,6 +200,13 @@ export class ServiceTicketService {
       ...(dto.dueDate !== undefined ? { dueDate: dto.dueDate } : {}),
       updatedBy: userId,
     });
+
+    if (assigneeChanged && dto.assignedToEmployeeId) {
+      this.eventEmitter.emit(
+        STAFF_EVENTS.TICKET_ASSIGNED,
+        new TicketAssignedEvent(id, dto.assignedToEmployeeId, userId),
+      );
+    }
 
     return this.findById(id);
   }
