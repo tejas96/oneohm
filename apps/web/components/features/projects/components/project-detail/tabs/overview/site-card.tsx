@@ -217,7 +217,7 @@ export function SiteCard({ project, className }: SiteCardProps): React.JSX.Eleme
         />
         <Field label="Current load" value={formatCurrentLoadLabel(property?.currentLoad)} />
         <Field label="Consumer name" value={property?.consumerName} />
-        <Field label="Consumer number" value={property?.consumerNumber} mono wide />
+        {/* The consumer number lives in the page header, on every tab. */}
       </div>
 
       <DiscomPanel discom={property?.discom} />
