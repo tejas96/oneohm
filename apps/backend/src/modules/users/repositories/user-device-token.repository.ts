@@ -51,4 +51,14 @@ export class UserDeviceTokenRepository {
       .where('token IN (:...tokens)', { tokens })
       .execute();
   }
+
+  /** Signing out on a phone stops that phone getting this user's pushes. */
+  async deactivateForUser(userId: string, token: string): Promise<void> {
+    await this.repository
+      .createQueryBuilder()
+      .update(UserDeviceTokenEntity)
+      .set({ isActive: false })
+      .where('token = :token AND user_id = :userId', { token, userId })
+      .execute();
+  }
 }

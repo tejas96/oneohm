@@ -1,6 +1,13 @@
 import * as crypto from 'crypto';
 
-import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import {
   EmployeeProfileKind,
@@ -25,6 +32,7 @@ import { SecurityEventService } from '../../security-events/services/security-ev
 import { UserEntity } from '../../users/entities/user.entity';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { UserRepository } from '../../users/repositories/user.repository';
+import { DeviceTokenService } from '../../users/services/device-token.service';
 import { LoginDto, LoginResponseDto } from '../dto/login.dto';
 import { ProfileSummaryDto, LoginUserDto } from '../dto/profile-summary.dto';
 import { RefreshTokenResponseDto } from '../dto/refresh-token.dto';
@@ -57,6 +65,8 @@ export class AuthService {
     private readonly securityEventService: SecurityEventService,
     private readonly otpService: OtpService,
     private readonly platformSmsService: PlatformSmsService,
+    @Inject(forwardRef(() => DeviceTokenService))
+    private readonly deviceTokenService: DeviceTokenService,
   ) {}
 
   /**
@@ -399,8 +409,9 @@ export class AuthService {
     };
   }
 
-  logout(userId: string): void {
+  async logout(userId: string, deviceToken?: string): Promise<void> {
     // TODO: Invalidate refresh tokens (store them in Redis/DB)
+    if (deviceToken) await this.deviceTokenService.deactivateForUser(userId, deviceToken);
     this.logger.log(`User logged out: ${userId}`);
   }
 

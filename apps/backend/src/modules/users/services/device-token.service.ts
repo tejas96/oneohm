@@ -25,4 +25,8 @@ export class DeviceTokenService {
   async deactivateTokens(tokens: string[]): Promise<void> {
     return this.deviceTokenRepository.deactivateTokens(tokens);
   }
+
+  async deactivateForUser(userId: string, token: string): Promise<void> {
+    return this.deviceTokenRepository.deactivateForUser(userId, token);
+  }
 }
