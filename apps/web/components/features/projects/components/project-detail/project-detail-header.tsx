@@ -3,7 +3,7 @@
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import Button from '@mui/material/Button';
 import { ProjectStatus, type ProjectType } from '@tejas96/shared/types';
-import { FileText, MapPin, Phone, UserRound } from 'lucide-react';
+import { Copy, FileText, MapPin, Phone, UserRound, Zap } from 'lucide-react';
 import Link from 'next/link';
 import React, { useMemo } from 'react';
 
@@ -38,6 +38,7 @@ import { useCancellationCleanup } from '../../hooks/use-project-cancellation';
 import { ProjectStatusDropdown } from '../project-status-dropdown';
 
 import { rupeesShort } from '@/components/features/dashboard/business/lib/format';
+import { showToast } from '@/components/ui';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -139,6 +140,56 @@ function Fact({
     <a href={href} aria-label={label} className={linkClasses}>
       {inner}
     </a>
+  );
+}
+
+/**
+ * The DISCOM consumer number: typed into the MSEDCL portal and every form, so
+ * it sits in the header on every tab and one click copies it. Its only home
+ * on this page. A missing one says so and links to the site's edit form.
+ */
+function ConsumerNumberFact({
+  value,
+  propertyId,
+}: {
+  value: string | undefined;
+  propertyId: string;
+}): React.JSX.Element {
+  if (!value) {
+    return (
+      <Link
+        href={buildRoute(ROUTES.PROPERTIES.EDIT, { id: propertyId })}
+        className="inline-flex items-center gap-1.5 rounded-rf-xs text-[12px] font-medium text-error hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        <Zap className="size-3.5 shrink-0" aria-hidden />
+        No consumer no.
+      </Link>
+    );
+  }
+  const copy = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(value);
+      showToast.success('Consumer number copied');
+    } catch {
+      showToast.error('Could not copy the consumer number');
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={() => void copy()}
+      aria-label={`Copy consumer number ${value}`}
+      title="Copy"
+      className="group inline-flex min-w-0 items-center gap-1.5 rounded-rf-xs text-[12px] text-foreground-secondary transition-colors duration-fast hover:text-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    >
+      <Zap className="size-3.5 shrink-0 text-foreground-muted" aria-hidden />
+      <span>Consumer no.</span>
+      <Mono className="font-semibold text-foreground">{value}</Mono>
+      <Copy
+        className="size-3 shrink-0 text-foreground-muted group-hover:text-secondary"
+        aria-hidden
+      />
+    </button>
   );
 }
 
@@ -689,6 +740,11 @@ export const ProjectDetailHeader = React.memo(
                         {phone}
                       </Fact>
                     ) : null}
+                    <ConsumerNumberFact
+                      value={project.property.consumerNumber?.trim()}
+                      propertyId={project.property.id}
+                    />
+
                     {/* WhatsApp and email deliberately absent. This header is
                         for working the PROJECT; the customer's full contact
                         card is one click away on the customer link above, which
