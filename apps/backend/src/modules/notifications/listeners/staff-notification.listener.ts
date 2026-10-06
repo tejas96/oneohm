@@ -59,6 +59,17 @@ const FOLLOWUP_WHEN = new Intl.DateTimeFormat('en-IN', {
   hour12: false,
 });
 
+/** `document_collection` → `Document collection`. */
+function words(value: string): string {
+  const text = value.replace(/_/g, ' ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** Keeps the first `max` characters of free text, adding `…` when cut. */
+function clip(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
+}
+
 @Injectable()
 export class StaffNotificationListener {
   private readonly logger = new Logger(StaffNotificationListener.name);
@@ -95,7 +106,7 @@ export class StaffNotificationListener {
           WHERE project_id = $1 AND is_project_manager = true AND deleted_at IS NULL`,
         [task.projectId],
       );
-      const reason = task.blockedReason ? ` · ${task.blockedReason}` : '';
+      const reason = task.blockedReason ? ` · ${clip(task.blockedReason, 140)}` : '';
       for (const { userId } of managers) {
         await this.send(userId, e.actorUserId, {
           type: NotificationType.TASK_BLOCKED,
@@ -233,7 +244,7 @@ export class StaffNotificationListener {
       await this.send(e.assigneeUserId, e.actorUserId, {
         type: NotificationType.FOLLOWUP_ASSIGNED,
         title: 'Follow-up',
-        body: `${f.customerName} · ${f.type} · ${FOLLOWUP_WHEN.format(new Date(f.scheduledAt))}`,
+        body: `${f.customerName} · ${words(f.type)} · ${FOLLOWUP_WHEN.format(new Date(f.scheduledAt))}`,
         target: staffTargets.followup({
           id: e.followupId,
           customerId: f.customerId,
@@ -335,7 +346,7 @@ export class StaffNotificationListener {
                 t.status, t.ticket_number AS "ticketNumber", t.title,
                 pr.name AS "projectName"
            FROM service_tickets t
-           LEFT JOIN employee_profiles e ON e.id = t.assigned_to_employee_id
+           LEFT JOIN employee_profiles e ON e.id = t.assigned_to_employee_id AND e.deleted_at IS NULL
            LEFT JOIN projects pr ON pr.id = t.project_id
           WHERE t.id = $1 AND t.deleted_at IS NULL`,
         [e.ticketId],
@@ -385,8 +396,12 @@ export class StaffNotificationListener {
     msg: StaffMessage,
   ): Promise<void> {
     if (!recipientId || recipientId === actorUserId) return;
+    // Staff only: a customer or any user without a live employee profile is skipped.
     const active: unknown[] = await this.dataSource.query(
-      `SELECT 1 FROM users WHERE id = $1 AND deleted_at IS NULL AND status = 'active'`,
+      `SELECT 1 FROM users u
+        WHERE u.id = $1 AND u.deleted_at IS NULL AND u.status = 'active'
+          AND EXISTS (SELECT 1 FROM employee_profiles e
+                       WHERE e.user_id = u.id AND e.deleted_at IS NULL)`,
       [recipientId],
     );
     if (active.length === 0) return;
