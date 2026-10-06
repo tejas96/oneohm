@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, ButtonBase, Pagination, ToggleButton, ToggleButtonGroup } from '@mui/material';
-import { type JSX, useState } from 'react';
+import { type JSX, useEffect, useState } from 'react';
 
 import { NotificationRow, useOpenNotification } from '@/components/layout/notification-row';
 import { useNotificationActions, useNotificationsPage } from '@/lib/hooks/resources/notifications';
@@ -17,6 +17,13 @@ export function NotificationsPage(): JSX.Element {
 
   const items = query.data?.data ?? [];
   const totalPages = query.data?.meta.totalPages ?? 1;
+  const loaded = query.data !== undefined;
+
+  // Reading or clearing rows can shrink the list under you: never sit past the last page.
+  useEffect(() => {
+    const last = Math.max(totalPages, 1);
+    if (loaded && page > last) setPage(last);
+  }, [loaded, page, totalPages]);
 
   return (
     <Box sx={{ maxWidth: 720, mx: 'auto', p: { xs: 2, md: 3 } }}>
