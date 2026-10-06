@@ -34,7 +34,7 @@ export class ProjectTeamController {
   @ApiOperation({ summary: 'Add a team member to a project' })
   async addMember(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @CurrentUser() _currentUser: CurrentUserType,
+    @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: AddTeamMemberDto,
   ): Promise<TeamMemberResponseDto> {
     const member = await this.teamService.addMember({
@@ -42,6 +42,7 @@ export class ProjectTeamController {
       userId: dto.userId,
       roleName: dto.roleName,
       isProjectManager: dto.isProjectManager,
+      actorUserId: currentUser.id,
     });
 
     return plainToInstance(TeamMemberResponseDto, member, {

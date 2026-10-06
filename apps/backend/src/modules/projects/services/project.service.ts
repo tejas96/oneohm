@@ -41,6 +41,10 @@ import {
   ProjectCompletedEvent,
   ProjectOnboardedEvent,
 } from '../../notifications/events/consumer-notification.events';
+import {
+  ProjectAssignedEvent,
+  STAFF_EVENTS,
+} from '../../notifications/events/staff-notification.events';
 import { QuoteVersionEntity } from '../../quotes/entities/quote-version.entity';
 import { QuoteEntity } from '../../quotes/entities/quote.entity';
 import { QuoteService } from '../../quotes/services/quote.service';
@@ -555,6 +559,13 @@ export class ProjectService {
         project.name,
         project.projectNumber,
       ),
+    );
+
+    // After the creation transaction committed: everyone on the team and every
+    // task assignee hears once, with their role and task count.
+    this.eventEmitter.emit(
+      STAFF_EVENTS.PROJECT_ASSIGNED,
+      new ProjectAssignedEvent(project.id, createdBy),
     );
 
     return project;
