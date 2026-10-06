@@ -37,6 +37,11 @@ import {
   ProjectCompletedEvent,
 } from '../../notifications/events/consumer-notification.events';
 import {
+  STAFF_EVENTS,
+  TaskAssignedEvent,
+  TaskBlockedEvent,
+} from '../../notifications/events/staff-notification.events';
+import {
   type CreateProjectTaskDto,
   type UpdateProjectTaskDto,
   type UpdateTaskCrossProjectDto,
@@ -95,6 +100,27 @@ export class ProjectTaskService {
     private readonly changeRequestTaskService: ChangeRequestTaskService,
     private readonly taskSchedule: TaskScheduleService,
   ) {}
+
+  /**
+   * Tells the new assignee, and the project managers when the task became
+   * blocked. Call after the write has committed.
+   */
+  private emitTaskChanges(
+    taskId: string,
+    before: { assignee: string | null | undefined; status: TaskStatus | null | undefined },
+    after: { assignee: string | null | undefined; status: TaskStatus | null | undefined },
+    actorUserId: string,
+  ): void {
+    if (after.assignee && after.assignee !== before.assignee) {
+      this.eventEmitter.emit(
+        STAFF_EVENTS.TASK_ASSIGNED,
+        new TaskAssignedEvent(taskId, after.assignee, actorUserId),
+      );
+    }
+    if (after.status === TaskStatus.BLOCKED && before.status !== TaskStatus.BLOCKED) {
+      this.eventEmitter.emit(STAFF_EVENTS.TASK_BLOCKED, new TaskBlockedEvent(taskId, actorUserId));
+    }
+  }
 
   async create(createDto: CreateProjectTaskDto, currentUserId: string): Promise<ProjectTaskEntity> {
     if (!createDto.projectId) {
@@ -191,7 +217,14 @@ export class ProjectTaskService {
 
     await this.updateAllProgress(projectId);
 
-    return this.taskRepository.findById(saved.id, projectId) as Promise<ProjectTaskEntity>;
+    const result = (await this.taskRepository.findById(saved.id, projectId)) as ProjectTaskEntity;
+    this.emitTaskChanges(
+      saved.id,
+      { assignee: null, status: null },
+      { assignee: createDto.assignedToUserId, status: createDto.status },
+      currentUserId,
+    );
+    return result;
   }
 
   async findAll(
@@ -370,6 +403,13 @@ export class ProjectTaskService {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
 
+    this.emitTaskChanges(
+      id,
+      { assignee: existingTask.assignedToUserId, status: existingTask.status },
+      { assignee: updateDto.assignedToUserId, status: undefined },
+      currentUserId,
+    );
+
     // A dependency was added or taken away, so this task's effort may now start
     // from a different day — or stop being countable at all.
     if (updateDto.dependsOnTaskIds !== undefined) {
@@ -454,6 +494,13 @@ export class ProjectTaskService {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
 
+    this.emitTaskChanges(
+      id,
+      { assignee: existingTask.assignedToUserId, status: existingTask.status },
+      { assignee: undefined, status: newStatus },
+      currentUserId,
+    );
+
     // This task may have been the last thing holding others back. Their effort
     // starts counting from today.
     if (newStatus !== existingTask.status) {
@@ -530,6 +577,13 @@ export class ProjectTaskService {
     if (!updated) {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
+
+    this.emitTaskChanges(
+      id,
+      { assignee: existingTask.assignedToUserId, status: existingTask.status },
+      { assignee: assignedToUserId, status: undefined },
+      currentUserId,
+    );
     return updated;
   }
 
@@ -721,7 +775,11 @@ export class ProjectTaskService {
         relations: ['assignee', 'milestone', 'workflowStep'],
       });
 
-      return { updated, statusChanged: newStatus !== existingTask.status };
+      return {
+        updated,
+        statusChanged: newStatus !== existingTask.status,
+        oldStatus: existingTask.status,
+      };
     });
 
     if (!result.updated) {
@@ -734,6 +792,12 @@ export class ProjectTaskService {
       await this.updateAllProgress(projectId);
     }
 
+    this.emitTaskChanges(
+      id,
+      { assignee: undefined, status: result.oldStatus },
+      { assignee: undefined, status: newStatus },
+      currentUserId,
+    );
     return result.updated;
   }
 
@@ -1509,6 +1573,13 @@ export class ProjectTaskService {
         await this.updateAllProgress(task.projectId);
       }
     }
+
+    this.emitTaskChanges(
+      taskId,
+      { assignee: task.assignedToUserId, status: task.status },
+      { assignee: dto.assignedToUserId, status: dto.status },
+      currentUserId,
+    );
 
     // Finishing a task from My Work frees the tasks behind it, exactly as it
     // does on the project board.
