@@ -36,6 +36,11 @@ export const staffTargets = {
     link: `/properties/${propertyId}`,
     mobilePath: `more/site-activity/job/${propertyId}/${kind}`,
   }),
+  /** A site as a whole — where a grouped site notification opens. */
+  property: (propertyId: string): StaffTarget => ({
+    link: `/properties/${propertyId}`,
+    mobilePath: `property/${propertyId}`,
+  }),
   ticket: (ticketId: string): StaffTarget => ({
     link: `/service/${ticketId}`,
     mobilePath: `more/service-tickets/${ticketId}`,

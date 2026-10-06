@@ -5,6 +5,11 @@
  * deleted) notifies nobody. Skips the actor, inactive users and finished work.
  * Never throws: a notification failure must not look like a failed save.
  *
+ * Grouping: one action the web performs as several requests (onboarding's
+ * "Create site", removing a member from every task) must not ping a person
+ * five times. A message with a `group` merges into the recipient's unread
+ * row with the same group key from the last 2 minutes — no second push.
+ *
  * Uses @InjectDataSource() for lookups to avoid circular module imports
  * (same pattern as ConsumerNotificationListener).
  *
@@ -39,7 +44,55 @@ interface StaffMessage {
   severity?: NotificationSeverity;
   target: StaffTarget;
   ids: Record<string, string>;
+  /** Several of these for one person within 2 minutes become one row. */
+  group?: StaffGroup;
 }
+
+/** What a merged row says and opens: the project, site or customer as a whole. */
+interface StaffGroup {
+  key: string;
+  label: string;
+  target: StaffTarget;
+  /** The ids a merged row keeps in metadata. */
+  ids: Record<string, string>;
+}
+
+const GROUP_WINDOW = '2 minutes';
+
+const groups = {
+  project: (projectId: string, projectName: string): StaffGroup => ({
+    key: `project:${projectId}`,
+    label: projectName,
+    target: staffTargets.project(projectId),
+    ids: { projectId },
+  }),
+  property: (propertyId: string, customerId: string, place: string): StaffGroup => ({
+    key: `property:${propertyId}`,
+    label: place,
+    target: staffTargets.property(propertyId),
+    ids: { propertyId, customerId },
+  }),
+  customer: (customerId: string, customerName: string): StaffGroup => ({
+    key: `customer:${customerId}`,
+    label: customerName,
+    target: staffTargets.lead(customerId),
+    ids: { customerId },
+  }),
+};
+
+/** Merged body parts in this order: the types counted together, and their words. */
+const GROUP_PARTS: Array<[NotificationType[], (n: number) => string]> = [
+  [[NotificationType.TASK_ASSIGNED], (n) => (n === 1 ? '1 new task' : `${n} new tasks`)],
+  [[NotificationType.TASK_BLOCKED], (n) => (n === 1 ? '1 blocked task' : `${n} blocked tasks`)],
+  [
+    [NotificationType.PROJECT_ASSIGNED, NotificationType.PROJECT_TEAM_ADDED],
+    () => 'added to the team',
+  ],
+  [[NotificationType.LEAD_ASSIGNED], () => 'new lead'],
+  [[NotificationType.SITE_VISIT_ASSIGNED], () => 'site visit'],
+  [[NotificationType.SITE_SURVEY_ASSIGNED], () => 'site survey'],
+  [[NotificationType.FOLLOWUP_ASSIGNED], (n) => (n === 1 ? '1 follow-up' : `${n} follow-ups`)],
+];
 
 interface TaskRow {
   projectId: string;
@@ -70,6 +123,33 @@ function clip(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
 }
 
+/** How the site message names a place: property name or "<customer>'s site", then city. */
+function sitePlace(propertyName: string | null, customerName: string, city: string | null): string {
+  const place = propertyName || `${customerName}'s site`;
+  return city ? `${place}, ${city}` : place;
+}
+
+/** `metadata.groupCounts` of a saved row, ignoring anything that is not a count. */
+function readCounts(metadata: Record<string, unknown> | null): Record<string, number> {
+  const raw = metadata?.groupCounts;
+  const counts: Record<string, number> = {};
+  if (raw && typeof raw === 'object') {
+    for (const [type, n] of Object.entries(raw)) if (typeof n === 'number') counts[type] = n;
+  }
+  return counts;
+}
+
+/** "2 new tasks · site visit · 1 follow-up" — only the non-zero parts, first letter capitalised. */
+function groupBody(counts: Record<string, number>): string {
+  const parts: string[] = [];
+  for (const [types, say] of GROUP_PARTS) {
+    const n = types.reduce((sum, type) => sum + (counts[type] ?? 0), 0);
+    if (n > 0) parts.push(say(n));
+  }
+  const text = parts.join(' · ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 @Injectable()
 export class StaffNotificationListener {
   private readonly logger = new Logger(StaffNotificationListener.name);
@@ -92,6 +172,7 @@ export class StaffNotificationListener {
         body: `${task.taskName} – ${task.projectName}`,
         target: staffTargets.projectTasks(task.projectId),
         ids: { projectId: task.projectId, taskId: e.taskId },
+        group: groups.project(task.projectId, task.projectName),
       });
     });
   }
@@ -115,6 +196,7 @@ export class StaffNotificationListener {
           severity: NotificationSeverity.WARNING,
           target: staffTargets.projectTasks(task.projectId),
           ids: { projectId: task.projectId, taskId: e.taskId },
+          group: groups.project(task.projectId, task.projectName),
         });
       }
     });
@@ -162,6 +244,7 @@ export class StaffNotificationListener {
           body: parts.join(' · '),
           target: staffTargets.project(e.projectId),
           ids: { projectId: e.projectId },
+          group: groups.project(e.projectId, project.name),
         });
       }
     });
@@ -186,6 +269,7 @@ export class StaffNotificationListener {
         body: `${project.name} as ${role}`,
         target: staffTargets.project(e.projectId),
         ids: { projectId: e.projectId },
+        group: groups.project(e.projectId, project.name),
       });
     });
   }
@@ -214,6 +298,7 @@ export class StaffNotificationListener {
         body: lead.city ? `${lead.name}, ${lead.city}` : lead.name,
         target: staffTargets.lead(e.customerId),
         ids: { customerId: e.customerId },
+        group: groups.customer(e.customerId, lead.name),
       });
     });
   }
@@ -229,13 +314,17 @@ export class StaffNotificationListener {
         customerId: string;
         propertyId: string | null;
         customerName: string;
+        propertyName: string | null;
+        city: string | null;
       }> = await this.dataSource.query(
         `SELECT f.assigned_to_user_id AS "assigneeId", f.status, f.type,
                 f.scheduled_at AS "scheduledAt", f.customer_id AS "customerId",
                 f.property_id AS "propertyId",
-                TRIM(c.first_name || ' ' || COALESCE(c.last_name, '')) AS "customerName"
+                TRIM(c.first_name || ' ' || COALESCE(c.last_name, '')) AS "customerName",
+                p.property_name AS "propertyName", p.city
            FROM followups f
            JOIN customer_profiles c ON c.id = f.customer_id
+           LEFT JOIN customer_properties p ON p.id = f.property_id
           WHERE f.id = $1 AND f.deleted_at IS NULL`,
         [e.followupId],
       );
@@ -255,6 +344,13 @@ export class StaffNotificationListener {
           customerId: f.customerId,
           ...(f.propertyId ? { propertyId: f.propertyId } : {}),
         },
+        group: f.propertyId
+          ? groups.property(
+              f.propertyId,
+              f.customerId,
+              sitePlace(f.propertyName, f.customerName, f.city),
+            )
+          : groups.customer(f.customerId, f.customerName),
       });
     });
   }
@@ -318,13 +414,16 @@ export class StaffNotificationListener {
       const assignee = isVisit ? p.visitAssignee : p.surveyAssignee;
       const done = isVisit ? p.visitDone : p.surveyDone;
       if (assignee !== e.assigneeUserId || done) return;
-      const place = p.propertyName || `${p.customerName}'s site`;
+      const place = sitePlace(p.propertyName, p.customerName, p.city);
       await this.send(e.assigneeUserId, e.actorUserId, {
-        type: isVisit ? NotificationType.SITE_VISIT_ASSIGNED : NotificationType.SITE_SURVEY_ASSIGNED,
+        type: isVisit
+          ? NotificationType.SITE_VISIT_ASSIGNED
+          : NotificationType.SITE_SURVEY_ASSIGNED,
         title: isVisit ? 'Site visit' : 'Site survey',
-        body: p.city ? `${place}, ${p.city}` : place,
+        body: place,
         target: staffTargets.siteWork(e.propertyId, e.kind),
         ids: { propertyId: e.propertyId, customerId: p.customerId },
+        group: groups.property(e.propertyId, p.customerId, place),
       });
     });
   }
@@ -389,7 +488,10 @@ export class StaffNotificationListener {
     return rows[0] ?? null;
   }
 
-  /** Applies the skip rules, then saves the row (which also sends the push). */
+  /**
+   * Applies the skip rules, then saves the row (which also sends the push) —
+   * or, for a grouped message, merges into the recipient's recent unread row.
+   */
   private async send(
     recipientId: string | null,
     actorUserId: string | null,
@@ -405,6 +507,68 @@ export class StaffNotificationListener {
       [recipientId],
     );
     if (active.length === 0) return;
+    const { group } = msg;
+    if (!group) {
+      await this.create(recipientId, msg, {});
+      return;
+    }
+    // Listeners run concurrently: the lock makes check-then-act one step per
+    // (person, group). It is held until the new row exists or the merge commits.
+    await this.dataSource.transaction(async (manager) => {
+      await manager.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [
+        `${recipientId}|${group.key}`,
+      ]);
+      const rows: Array<{ id: string; metadata: Record<string, unknown> | null }> =
+        await manager.query(
+          `SELECT id, metadata FROM notifications
+            WHERE user_id = $1 AND read_at IS NULL
+              AND metadata->>'groupKey' = $2
+              AND created_at > now() - interval '${GROUP_WINDOW}'
+            ORDER BY created_at DESC
+            LIMIT 1`,
+          [recipientId, group.key],
+        );
+      const previous = rows[0];
+      if (!previous) {
+        await this.create(recipientId, msg, {
+          groupKey: group.key,
+          groupCounts: { [msg.type]: 1 },
+        });
+        return;
+      }
+      const counts = readCounts(previous.metadata);
+      counts[msg.type] = (counts[msg.type] ?? 0) + 1;
+      const blocked = (counts[NotificationType.TASK_BLOCKED] ?? 0) > 0;
+      // created_at moves to now so a slow run of saves keeps merging; no push.
+      // clock_timestamp(), not now(): now() is when this transaction began,
+      // which can be before the lock wait ended.
+      await manager.query(
+        `UPDATE notifications
+            SET title = $2, body = $3, severity = $4, link = $5, metadata = $6::jsonb,
+                created_at = clock_timestamp()
+          WHERE id = $1`,
+        [
+          previous.id,
+          group.label,
+          groupBody(counts),
+          blocked ? NotificationSeverity.WARNING : NotificationSeverity.INFO,
+          group.target.link,
+          JSON.stringify({
+            mobilePath: group.target.mobilePath,
+            ...group.ids,
+            groupKey: group.key,
+            groupCounts: counts,
+          }),
+        ],
+      );
+    });
+  }
+
+  private async create(
+    recipientId: string,
+    msg: StaffMessage,
+    extra: Record<string, unknown>,
+  ): Promise<void> {
     await this.notificationService.create({
       userId: recipientId,
       type: msg.type,
@@ -412,7 +576,7 @@ export class StaffNotificationListener {
       body: msg.body,
       severity: msg.severity ?? NotificationSeverity.INFO,
       link: msg.target.link,
-      metadata: { mobilePath: msg.target.mobilePath, ...msg.ids },
+      metadata: { mobilePath: msg.target.mobilePath, ...msg.ids, ...extra },
     });
   }
 

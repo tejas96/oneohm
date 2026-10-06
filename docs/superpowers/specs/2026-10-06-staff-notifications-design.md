@@ -20,10 +20,14 @@ staff notification, and no phone gets a push at all.
   - you assign the work to yourself;
   - the work is unassigned (assignee cleared);
   - the recipient is inactive or deleted (`users.status <> 'active'` or `deleted_at` set);
+  - the recipient is not staff (no live `employee_profiles` row);
   - the item is already finished (task `done`; ticket `resolved`/`closed`;
     follow-up `completed`/`cancelled`).
 - When one action gives many items to one person, that person gets one grouped
   notification.
+- Grouping replaces the per-item notification when several arrive for the same
+  project, site or customer within 2 minutes (see Part 2 → Listener → Grouping):
+  the person keeps one unread row that counts them, and gets one push.
 
 ## What exists (do not rebuild)
 
@@ -164,8 +168,34 @@ breaks the action that caused it.
 
 **Metadata rule.** `NotificationService` spreads `metadata` after `type`, `link`,
 `severity` and `notificationId` in the push data, so a clashing key overwrites
-them. Staff notifications put only `mobilePath` and entity ids (`projectId`,
-`taskId`, `customerId`, `followupId`, `propertyId`, `ticketId`) in metadata.
+them. Staff notifications put only `mobilePath`, entity ids (`projectId`,
+`taskId`, `customerId`, `followupId`, `propertyId`, `ticketId`) and, for grouped
+types, `groupKey` and `groupCounts` in metadata.
+
+**Grouping.** The web performs some single actions as several requests
+(onboarding "Create site" saves visit + survey assignees, then three
+follow-ups; removing a team member re-assigns each task). So a message with a
+group key merges instead of adding a row:
+
+| Types | Group key | Merged title | Merged link / mobilePath |
+|---|---|---|---|
+| `task_assigned`, `task_blocked`, `project_assigned`, `project_team_added` | `project:<projectId>` | project name | `/projects/<id>` / `projects/<id>` |
+| `site_visit_assigned`, `site_survey_assigned`, `followup_assigned` with a property | `property:<propertyId>` | the site text ("<property or customer's site>, <city>") | `/properties/<id>` / `property/<id>` |
+| `lead_assigned`, `followup_assigned` without a property | `customer:<customerId>` | customer name | `/customers/<id>` / `leads/<id>` |
+| `service_ticket_assigned`, bulk "Follow-ups moved to you" | none | — | — |
+
+- Before saving, the listener looks for the recipient's newest **unread** row
+  with the same `metadata.groupKey` created in the last **2 minutes**. Found →
+  update it: title = group label, body = per-type counts from
+  `metadata.groupCounts` ("2 new tasks · site visit · 1 follow-up"), severity
+  `warning` if any blocked task else `info`, link/mobilePath = the group's
+  target, `created_at` = now (a sliding window), **no extra push**. The row's
+  `type` stays as it was. Not found → `NotificationService.create()` as usual,
+  with `groupKey` and `groupCounts: { <type>: 1 }` stored so the next one can merge.
+- Concurrent listeners: the check and the update run in one transaction holding
+  `pg_advisory_xact_lock(hashtextextended('<recipientId>|<groupKey>', 0))`, held
+  until the new row exists or the merge commits.
+- Skip rules (self, inactive, not staff) apply before grouping.
 
 ### Morning summaries
 
