@@ -208,7 +208,7 @@ rows older than 180 days. Today the table is never cleaned.
 | project_assigned / project_team_added | `/projects/<projectId>` | `projects/<projectId>` |
 | lead_assigned | `/customers/<customerId>` | `leads/<customerId>` |
 | followup_assigned | `followupRecordHref(...)` (`components/features/followups/lib/followup-href.ts:20-40` — move or mirror it so the backend builds the same URL) | `more/followups/<followupId>` |
-| site_visit_assigned / site_survey_assigned | `/customers/<customerId>` | `more/site-activity/job/<propertyId>/visit` or `/survey` |
+| site_visit_assigned / site_survey_assigned | `/properties/<propertyId>` | `more/site-activity/job/<propertyId>/visit` or `/survey` |
 | service_ticket_assigned | `/service/<ticketId>` | `more/service-tickets/<ticketId>` |
 | daily_summary | `/projects/my-tasks` | `my-day` |
 | admin_daily_summary | `/late-work` | `my-day/notifications` |
