@@ -12,6 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { DOCUMENT_ENTITY_TYPE_LABELS, DOCUMENT_ENTITY_TYPE_ORDER } from '@tejas96/shared/constants';
+import { REPORT_DEFINITIONS } from '@tejas96/shared/reports';
 import { DocumentEntityType } from '@tejas96/shared/types';
 import React, { useMemo, useState } from 'react';
 
@@ -23,6 +24,23 @@ import { isPrintableFile } from './utils';
 
 import { useDocumentsByProperty } from '@/components/features/documents/hooks';
 import type { DocumentRecord } from '@/lib/api/documents';
+
+/** A filed report's place in the Reports tab order; every other file ranks after them all. */
+const REPORT_RANK = new Map<string, number>(
+  REPORT_DEFINITIONS.map((definition, index) => [definition.documentTag, index]),
+);
+const rankOf = (doc: DocumentRecord): number =>
+  REPORT_RANK.get(doc.tag) ?? REPORT_DEFINITIONS.length;
+
+/**
+ * Filed reports first, in the Reports tab order, then everything else as the
+ * server sent it (newest first; the sort is stable). The list arrives newest
+ * first, so without this a Generate all run shows — and prints — its reports
+ * backwards, and filing one report again moves it to the top of the set.
+ */
+function inPrintOrder(docs: DocumentRecord[]): DocumentRecord[] {
+  return [...docs].sort((a, b) => rankOf(a) - rankOf(b));
+}
 
 interface PropertyDocumentHubProps {
   propertyId: string;
@@ -66,6 +84,9 @@ export function PropertyDocumentHub({
         groups[doc.entityType] = [];
       }
       groups[doc.entityType]!.push(doc);
+    }
+    for (const [type, docs] of Object.entries(groups)) {
+      groups[type as DocumentEntityType] = inPrintOrder(docs);
     }
 
     return groups;
