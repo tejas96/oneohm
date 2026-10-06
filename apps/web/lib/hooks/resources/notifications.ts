@@ -1,6 +1,7 @@
 'use client';
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { NotificationItem } from '@tejas96/shared/types';
 
 import { defineResource } from '../core';
 
@@ -11,16 +12,11 @@ import { apiClient } from '@/lib/api/client';
 // ============================================================================
 
 /** One row of `GET /notifications`. Unread is `readAt === null`; there is no `isRead`. */
-export interface Notification {
-  id: string;
-  userId?: string;
-  type: string;
-  severity: string;
-  title: string;
-  body?: string | null;
-  link?: string | null;
-  readAt?: string | null;
-  createdAt: string;
+export type Notification = NotificationItem;
+
+export interface NotificationPage {
+  data: Notification[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
 }
 
 // ============================================================================
@@ -77,6 +73,21 @@ export function useRecentNotifications(enabled: boolean) {
     },
     enabled,
     // Always refetch on open: the badge polls, so a stale list would disagree with it.
+    staleTime: 0,
+  });
+}
+
+/** The full list page: 20 a page, optionally unread only. */
+export function useNotificationsPage(page: number, unreadOnly: boolean) {
+  return useQuery<NotificationPage>({
+    queryKey: ['notifications', 'page', page, unreadOnly],
+    queryFn: async () => {
+      const { data } = await apiClient.get<NotificationPage>('/notifications', {
+        params: { page, limit: 20, unreadOnly },
+      });
+      return data;
+    },
+    placeholderData: keepPreviousData,
     staleTime: 0,
   });
 }
