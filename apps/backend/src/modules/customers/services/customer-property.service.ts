@@ -586,7 +586,7 @@ export class CustomerPropertyService {
       );
     }
 
-    const { updated, taskRuleSync } = await this.dataSource.transaction(async (manager) => {
+    const { updated, taskRuleSync, before } = await this.dataSource.transaction(async (manager) => {
       const locked = await this.propertyRepository.findByIdForUpdate(id, manager);
       if (!locked) {
         throw new NotFoundException(`Property with ID '${id}' not found`);
@@ -641,7 +641,11 @@ export class CustomerPropertyService {
         sync = (results.find(Boolean) as TaskRuleSyncResult | undefined) ?? null;
       }
 
-      return { updated: saved, taskRuleSync: sync };
+      return {
+        updated: saved,
+        taskRuleSync: sync,
+        before: { visit: locked.siteVisitAssignee, survey: locked.siteSurveyAssignee },
+      };
     });
 
     // After the commit, so a rolled-back save never tells a customer their
@@ -653,15 +657,16 @@ export class CustomerPropertyService {
       );
     }
 
-    // After the commit. `property` is the row before this save.
+    // After the commit. `before` is the locked row, so two concurrent saves
+    // cannot both see the old assignee and both notify.
     const actor = updatedBy ?? null;
-    if (updated.siteVisitAssignee && updated.siteVisitAssignee !== property.siteVisitAssignee) {
+    if (updated.siteVisitAssignee && updated.siteVisitAssignee !== before.visit) {
       this.eventEmitter.emit(
         STAFF_EVENTS.SITE_WORK_ASSIGNED,
         new SiteWorkAssignedEvent(id, 'visit', updated.siteVisitAssignee, actor),
       );
     }
-    if (updated.siteSurveyAssignee && updated.siteSurveyAssignee !== property.siteSurveyAssignee) {
+    if (updated.siteSurveyAssignee && updated.siteSurveyAssignee !== before.survey) {
       this.eventEmitter.emit(
         STAFF_EVENTS.SITE_WORK_ASSIGNED,
         new SiteWorkAssignedEvent(id, 'survey', updated.siteSurveyAssignee, actor),
