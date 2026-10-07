@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { EntityManager, IsNull, Repository } from 'typeorm';
 
 import { NotificationEntity } from '../entities/notification.entity';
 
@@ -11,9 +11,13 @@ export class NotificationRepository {
     private readonly repository: Repository<NotificationEntity>,
   ) {}
 
-  async create(data: Partial<NotificationEntity>): Promise<NotificationEntity> {
-    const notification = this.repository.create(data);
-    return this.repository.save(notification);
+  /** Pass `manager` to insert on a caller's transaction connection. */
+  async create(
+    data: Partial<NotificationEntity>,
+    manager?: EntityManager,
+  ): Promise<NotificationEntity> {
+    const repository = manager ? manager.getRepository(NotificationEntity) : this.repository;
+    return repository.save(repository.create(data));
   }
 
   async findById(id: string, userId: string): Promise<NotificationEntity | null> {

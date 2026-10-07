@@ -27,6 +27,7 @@ import {
   VerifyOtpDto,
   OtpRequestResponseDto,
 } from '../dto/login.dto';
+import { LogoutDto } from '../dto/logout.dto';
 import {
   ForgotPasswordDto,
   ForgotPasswordByPhoneDto,
@@ -125,8 +126,8 @@ export class AuthController {
     statusCode: HttpStatus.NO_CONTENT,
     successMessage: 'Logout successful',
   })
-  logout(@CurrentUser() user: CurrentUserType): void {
-    this.authService.logout(user.id);
+  async logout(@CurrentUser() user: CurrentUserType, @Body() dto: LogoutDto): Promise<void> {
+    await this.authService.logout(user.id, dto?.deviceToken);
   }
 
   @ResellerAllowed()

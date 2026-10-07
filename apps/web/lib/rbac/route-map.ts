@@ -22,6 +22,8 @@ const ROUTE_GATES: ReadonlyArray<{ pattern: RegExp; gate: Gate }> = [
   { pattern: /^\/profile(\/|$)/, gate: ALWAYS_OPEN },
   { pattern: /^\/help(\/|$)/, gate: ALWAYS_OPEN },
   { pattern: /^\/denied(\/|$)/, gate: ALWAYS_OPEN },
+  // Your own notifications, addressed to you alone.
+  { pattern: /^\/notifications(\/|$)/, gate: ALWAYS_OPEN },
   // Your own task list is your own work, not a view onto the projects module.
   { pattern: /^\/projects\/my-tasks(\/|$)/, gate: ALWAYS_OPEN },
 

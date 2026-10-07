@@ -4,10 +4,15 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TaskStatus } from '@tejas96/shared/types';
 
 import { ResellerContextService } from '../../../common/reseller';
 import { hasAdminBypassRole } from '../../iam/constants';
+import {
+  ProjectTeamAddedEvent,
+  STAFF_EVENTS,
+} from '../../notifications/events/staff-notification.events';
 import { type AddTeamMemberDto, type UpdateTeamMemberDto } from '../dto/project-team';
 import { type ProjectTeamMemberEntity } from '../entities';
 import { ProjectTeamRepository } from '../repositories/project-team.repository';
@@ -18,6 +23,7 @@ import { ProjectRepository } from '../repositories/project.repository';
  */
 interface AddTeamMemberInput extends AddTeamMemberDto {
   projectId: string;
+  actorUserId?: string;
 }
 
 /**
@@ -30,6 +36,7 @@ export class ProjectTeamService {
     private readonly teamRepository: ProjectTeamRepository,
     private readonly projectRepository: ProjectRepository,
     private readonly resellerContext: ResellerContextService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -64,6 +71,10 @@ export class ProjectTeamService {
       isProjectManager: dto.isProjectManager ?? false,
     });
 
+    this.eventEmitter.emit(
+      STAFF_EVENTS.PROJECT_TEAM_ADDED,
+      new ProjectTeamAddedEvent(dto.projectId, dto.userId, dto.actorUserId ?? null),
+    );
     return member;
   }
 

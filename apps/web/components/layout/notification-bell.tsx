@@ -5,29 +5,15 @@ import { Badge, Box, ButtonBase, IconButton, Popover, Tooltip } from '@mui/mater
 import { useRouter } from 'next/navigation';
 import { type JSX, useEffect, useRef, useState } from 'react';
 
+import { NotificationRow, useOpenNotification } from './notification-row';
+
 import {
-  type Notification,
   useNotificationActions,
   useNotificationUnreadCount,
   useRecentNotifications,
 } from '@/lib/hooks/resources/notifications';
 import { useRefreshMoneyViews } from '@/lib/hooks/resources/payment-approvals';
 import { color, crm, radius } from '@/lib/theme/tokens';
-import { formatTimeAgo } from '@/lib/utils';
-
-/**
- * A link this web app can open. Customer notifications carry `/consumer/...`
- * links for the customer app — a few staff are customers too, and pushing
- * them to a route the web does not have would land on "not found".
- */
-function isWebLink(link: string | null | undefined): link is string {
-  return (
-    Boolean(link) &&
-    link!.startsWith('/') &&
-    !link!.startsWith('//') &&
-    !link!.startsWith('/consumer/')
-  );
-}
 
 /**
  * The header bell and the list behind it.
@@ -43,7 +29,7 @@ export function NotificationBell(): JSX.Element {
   const { data: unreadData } = useNotificationUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
   const recent = useRecentNotifications(open);
-  const { markRead, markAllRead } = useNotificationActions();
+  const { markAllRead } = useNotificationActions();
   const refreshMoney = useRefreshMoneyViews();
 
   // A new notice means something changed somewhere else — a payment waiting,
@@ -56,14 +42,7 @@ export function NotificationBell(): JSX.Element {
     lastCount.current = unreadData.count;
   }, [unreadData, refreshMoney]);
 
-  const openItem = (item: Notification): void => {
-    if (!item.readAt) markRead.mutate(item.id);
-    // The page this opens must show what the notice describes, even when the
-    // notice arrived before the badge's last poll noticed it.
-    if (item.type.startsWith('payment_')) refreshMoney();
-    setAnchor(null);
-    if (isWebLink(item.link)) router.push(item.link);
-  };
+  const openItem = useOpenNotification(() => setAnchor(null));
 
   const items = recent.data ?? [];
 
@@ -145,69 +124,26 @@ export function NotificationBell(): JSX.Element {
           ) : items.length === 0 ? (
             <EmptyLine text="Nothing here yet." />
           ) : (
-            items.map((item) => (
-              <Box component="li" key={item.id} sx={{ borderBottom: `1px solid ${color.divider}` }}>
-                <ButtonBase
-                  onClick={() => openItem(item)}
-                  sx={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 1.25,
-                    px: 2,
-                    py: 1.25,
-                    textAlign: 'left',
-                  }}
-                >
-                  <Box
-                    aria-hidden
-                    sx={{
-                      mt: '6px',
-                      width: 8,
-                      height: 8,
-                      flexShrink: 0,
-                      borderRadius: '50%',
-                      backgroundColor: item.readAt ? 'transparent' : color.accent,
-                    }}
-                  />
-                  <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Box
-                      sx={{
-                        fontSize: crm['text-row-title'],
-                        fontWeight: item.readAt ? 500 : 700,
-                        color:
-                          item.severity === 'warning' && !item.readAt ? color.danger : undefined,
-                      }}
-                    >
-                      {item.readAt ? null : <span className="sr-only">Unread: </span>}
-                      {item.title}
-                    </Box>
-                    {item.body ? (
-                      <Box
-                        sx={{
-                          mt: 0.25,
-                          fontSize: crm['text-row-sm'],
-                          color: color['text-secondary'],
-                          display: '-webkit-box',
-                          WebkitLineClamp: 3,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        {item.body}
-                      </Box>
-                    ) : null}
-                    <Box
-                      sx={{ mt: 0.5, fontSize: crm['text-row-sm'], color: color['text-tertiary'] }}
-                    >
-                      {formatTimeAgo(item.createdAt)}
-                    </Box>
-                  </Box>
-                </ButtonBase>
-              </Box>
-            ))
+            items.map((item) => <NotificationRow key={item.id} item={item} onOpen={openItem} />)
           )}
         </Box>
+
+        <ButtonBase
+          onClick={() => {
+            setAnchor(null);
+            router.push('/notifications');
+          }}
+          sx={{
+            width: '100%',
+            py: 1,
+            fontSize: crm['text-row-sm'],
+            fontWeight: 600,
+            color: color.accent,
+            borderTop: `1px solid ${color.divider}`,
+          }}
+        >
+          See all
+        </ButtonBase>
       </Popover>
     </>
   );

@@ -4,9 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationController } from './controllers/notification.controller';
 import { NotificationEntity } from './entities/notification.entity';
 import { ConsumerNotificationListener } from './listeners/consumer-notification.listener';
+import { StaffNotificationListener } from './listeners/staff-notification.listener';
 import { WhatsappStatusListener } from './listeners/whatsapp-status.listener';
 import { NotificationRepository } from './repositories/notification.repository';
 import { FcmService } from './services/fcm.service';
+import { NotificationCleanupService } from './services/notification-cleanup.service';
 import { NotificationService } from './services/notification.service';
 import { TaskWhatsappService } from './services/task-whatsapp.service';
 import { IntegrationsModule } from '../integrations/integrations.module';
@@ -24,8 +26,10 @@ import { UsersModule } from '../users/users.module';
   providers: [
     NotificationService,
     NotificationRepository,
+    NotificationCleanupService,
     FcmService,
     ConsumerNotificationListener,
+    StaffNotificationListener,
     TaskWhatsappService,
     WhatsappStatusListener,
   ],

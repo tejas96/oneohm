@@ -8,6 +8,7 @@
  */
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test } from '@nestjs/testing';
 import { FollowupOutcome, FollowupStatus } from '@tejas96/shared/types';
 
@@ -71,6 +72,7 @@ async function makeService(overrides: { roles?: unknown[] } = {}): Promise<Harne
   const moduleRef = await Test.createTestingModule({
     providers: [
       FollowupService,
+      { provide: EventEmitter2, useValue: { emit: anyFn() } },
       { provide: FollowupRepository, useValue: followupRepo },
       { provide: CustomerProfileRepository, useValue: customerRepo },
       { provide: CustomerPropertyRepository, useValue: propertyRepo },

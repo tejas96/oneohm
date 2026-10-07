@@ -3,6 +3,7 @@ export * from './customer.interface';
 export * from './dashboard.interface';
 export * from './integration.interface';
 export * from './inventory.interface';
+export * from './notification.interface';
 export * from './payment-term.interface';
 export * from './product.interface';
 export * from './project-expense.interface';

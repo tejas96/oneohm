@@ -65,15 +65,15 @@ export class NotificationController {
     data: NotificationResponseDto[];
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
+    const pageNum = Math.max(Number(page) || 1, 1);
+    const limitNum = Math.min(Math.max(Number(limit) || 20, 1), 50);
     const { notifications, total } = await this.notificationService.list(
       currentUser.id,
-      page,
-      limit,
-      unreadOnly,
+      pageNum,
+      limitNum,
+      String(unreadOnly) === 'true',
     );
 
-    const pageNum = page ?? 1;
-    const limitNum = limit ?? 20;
     return {
       data: plainToInstance(NotificationResponseDto, notifications, {
         excludeExtraneousValues: true,

@@ -34,6 +34,10 @@ import {
   ProjectCompletedEvent,
   PropertyCreatedEvent,
 } from '../../notifications/events/consumer-notification.events';
+import {
+  SiteWorkAssignedEvent,
+  STAFF_EVENTS,
+} from '../../notifications/events/staff-notification.events';
 import { SITE_EVENTS, SiteLoanChangedEvent } from '../../projects/events/site-loan-changed.event';
 import { QuoteRepository } from '../../quotes/repositories/quote.repository';
 import { StorageService } from '../../storage/services/storage.service';
@@ -582,7 +586,7 @@ export class CustomerPropertyService {
       );
     }
 
-    const { updated, taskRuleSync } = await this.dataSource.transaction(async (manager) => {
+    const { updated, taskRuleSync, before } = await this.dataSource.transaction(async (manager) => {
       const locked = await this.propertyRepository.findByIdForUpdate(id, manager);
       if (!locked) {
         throw new NotFoundException(`Property with ID '${id}' not found`);
@@ -637,7 +641,11 @@ export class CustomerPropertyService {
         sync = (results.find(Boolean) as TaskRuleSyncResult | undefined) ?? null;
       }
 
-      return { updated: saved, taskRuleSync: sync };
+      return {
+        updated: saved,
+        taskRuleSync: sync,
+        before: { visit: locked.siteVisitAssignee, survey: locked.siteSurveyAssignee },
+      };
     });
 
     // After the commit, so a rolled-back save never tells a customer their
@@ -646,6 +654,22 @@ export class CustomerPropertyService {
       this.eventEmitter.emit(
         CONSUMER_EVENTS.PROJECT_COMPLETED,
         new ProjectCompletedEvent(taskRuleSync.projectId, id, taskRuleSync.projectName),
+      );
+    }
+
+    // After the commit. `before` is the locked row, so two concurrent saves
+    // cannot both see the old assignee and both notify.
+    const actor = updatedBy ?? null;
+    if (updated.siteVisitAssignee && updated.siteVisitAssignee !== before.visit) {
+      this.eventEmitter.emit(
+        STAFF_EVENTS.SITE_WORK_ASSIGNED,
+        new SiteWorkAssignedEvent(id, 'visit', updated.siteVisitAssignee, actor),
+      );
+    }
+    if (updated.siteSurveyAssignee && updated.siteSurveyAssignee !== before.survey) {
+      this.eventEmitter.emit(
+        STAFF_EVENTS.SITE_WORK_ASSIGNED,
+        new SiteWorkAssignedEvent(id, 'survey', updated.siteSurveyAssignee, actor),
       );
     }
 

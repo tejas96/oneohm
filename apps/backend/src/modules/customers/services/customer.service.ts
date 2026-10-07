@@ -8,6 +8,7 @@ import {
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { COMPANY } from '@tejas96/shared/constants';
 import {
   AuditAction,
@@ -29,6 +30,10 @@ import type { CurrentUserType } from '../../auth/types';
 import { DocumentEntity } from '../../documents/entities/document.entity';
 import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
 import { hasAdminBypassRole } from '../../iam/constants';
+import {
+  LeadAssignedEvent,
+  STAFF_EVENTS,
+} from '../../notifications/events/staff-notification.events';
 import { QuoteEntity } from '../../quotes/entities/quote.entity';
 import { StorageService } from '../../storage/services/storage.service';
 import { UserRepository } from '../../users/repositories/user.repository';
@@ -114,6 +119,7 @@ export class CustomerService {
     private readonly followupRepository: FollowupRepository,
     private readonly auditLogService: AuditLogService,
     private readonly resellerContext: ResellerContextService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -770,7 +776,7 @@ export class CustomerService {
   ): Promise<CustomerProfileEntity> {
     this.logger.log(`Assigning customer ${id} to user ${assigneeId ?? 'null (unassign)'}`);
 
-    await this.findById(id);
+    const before = await this.findById(id);
     await this.resellerContext.assertAssignableUser(assigneeId, id);
 
     if (assigneeId !== null) {
@@ -804,6 +810,12 @@ export class CustomerService {
     }
 
     this.logger.log(`Customer ${id} assigned to ${assigneeId ?? 'null'} successfully`);
+    if (assigneeId && assigneeId !== before.assigneeId) {
+      this.eventEmitter.emit(
+        STAFF_EVENTS.LEAD_ASSIGNED,
+        new LeadAssignedEvent(id, assigneeId, updatedBy ?? null),
+      );
+    }
     return updated;
   }
 

@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   FollowupOutcome,
   FollowupPriority,
@@ -9,6 +10,11 @@ import {
 
 import { LeadClosureService } from './lead-closure.service';
 import { ResellerContextService } from '../../../common/reseller';
+import {
+  FollowupAssignedEvent,
+  FollowupsReassignedEvent,
+  STAFF_EVENTS,
+} from '../../notifications/events/staff-notification.events';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { CompleteFollowupDto } from '../dto/complete-followup.dto';
 import { CreateFollowupDto } from '../dto/create-followup.dto';
@@ -33,6 +39,7 @@ export class FollowupService {
     private readonly userRoleRepository: UserRoleRepository,
     private readonly leadClosureService: LeadClosureService,
     private readonly resellerContext: ResellerContextService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -79,6 +86,7 @@ export class FollowupService {
     });
 
     this.logger.log(`Followup created: ${followup.id}`);
+    this.emitAssigned(followup.id, followup.assignedToUserId, createdBy);
     return followup;
   }
 
@@ -246,6 +254,12 @@ export class FollowupService {
     }
 
     this.logger.log(`Followup updated: ${id}`);
+    if (
+      updateDto.assignedToUserId &&
+      updateDto.assignedToUserId !== existingFollowup.assignedToUserId
+    ) {
+      this.emitAssigned(id, updateDto.assignedToUserId, updatedBy);
+    }
     return updatedFollowup;
   }
 
@@ -295,7 +309,9 @@ export class FollowupService {
       }
     }
 
-    return this.followupRepository.repository.manager.transaction(async (manager) => {
+    // Set inside the transaction, announced only once it has committed.
+    let nextFollowup = null as FollowupEntity | null;
+    const result = await this.followupRepository.repository.manager.transaction(async (manager) => {
       const completed = await this.followupRepository.update(
         id,
         {
@@ -346,7 +362,7 @@ export class FollowupService {
       }
 
       if (dto.next) {
-        await this.followupRepository.create(
+        nextFollowup = await this.followupRepository.create(
           {
             customerId: followup.customerId,
             propertyId: propertyId ?? undefined,
@@ -365,6 +381,10 @@ export class FollowupService {
 
       return completed;
     });
+    if (nextFollowup) {
+      this.emitAssigned(nextFollowup.id, nextFollowup.assignedToUserId, userId);
+    }
+    return result;
   }
 
   /**
@@ -386,6 +406,9 @@ export class FollowupService {
     if (!updated) {
       throw new NotFoundException('Followup not found');
     }
+    if (followup.assignedToUserId !== assignedToUserId) {
+      this.emitAssigned(id, assignedToUserId, userId);
+    }
     return updated;
   }
 
@@ -399,10 +422,12 @@ export class FollowupService {
 
     // Validate every affected follow-up before writing any of them — fail the
     // whole batch on the first violation rather than leaving it half-applied.
+    const moved: string[] = [];
     for (const id of ids) {
       const followup = await this.followupRepository.findById(id);
       if (followup) {
         await this.resellerContext.assertAssignableUser(assignedToUserId, followup.customerId);
+        if (followup.assignedToUserId !== assignedToUserId) moved.push(id);
       }
     }
 
@@ -416,6 +441,12 @@ export class FollowupService {
     }
 
     this.logger.log(`Reassigned ${updated} followup(s) to ${assignedToUserId}`);
+    if (moved.length > 0) {
+      this.eventEmitter.emit(
+        STAFF_EVENTS.FOLLOWUPS_REASSIGNED,
+        new FollowupsReassignedEvent(moved, assignedToUserId, userId),
+      );
+    }
     return { updated };
   }
 
@@ -558,5 +589,13 @@ export class FollowupService {
     }
 
     this.logger.log(`Followup deleted: ${id}`);
+  }
+
+  /** Tell the new owner. Call only after the write has committed. */
+  private emitAssigned(followupId: string, assigneeUserId: string, actorUserId: string): void {
+    this.eventEmitter.emit(
+      STAFF_EVENTS.FOLLOWUP_ASSIGNED,
+      new FollowupAssignedEvent(followupId, assigneeUserId, actorUserId),
+    );
   }
 }
