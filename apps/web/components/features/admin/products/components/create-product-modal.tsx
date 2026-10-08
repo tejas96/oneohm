@@ -1,14 +1,13 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { ProductStatus, UnitOfMeasure } from '@tejas96/shared/types';
 import { deriveStructureTypes } from '@tejas96/shared/utils';
 import { Loader2 } from 'lucide-react';
-import { type JSX, useCallback, useEffect, useMemo } from 'react';
+import { type JSX, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { ProductSpecificationsFields } from './product-specifications-fields';
-import { productSchema, type ProductFormData } from '../schemas/product.schema';
+import { createProductResolver, type ProductFormData } from '../schemas/product.schema';
 import {
   resolveProductSpecificationsForSubmit,
   STRUCTURE_TYPE_FIELD,
@@ -60,8 +59,9 @@ export function CreateProductModal({ open, onOpenChange }: CreateProductModalPro
     defaultFilters: { isActive: true },
   });
 
+  const attributesRef = useRef<ProductTypeAttribute[]>([]);
   const form = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
+    resolver: createProductResolver(() => attributesRef.current),
     mode: 'onChange',
     defaultValues: {
       name: '',
@@ -90,6 +90,7 @@ export function CreateProductModal({ open, onOpenChange }: CreateProductModalPro
     () => resolvedProductType?.attributes ?? [],
     [resolvedProductType?.attributes],
   );
+  attributesRef.current = specificationAttributes;
   const isSpecificationsLoading = productTypeDetail.isLoading && !!selectedProductTypeId;
   const mountingStructures = useAllMountingStructureProductsForAdmin();
   const structureTypeOptions = useMemo(
@@ -194,7 +195,7 @@ export function CreateProductModal({ open, onOpenChange }: CreateProductModalPro
         <MUIDialogTitle>Create Product</MUIDialogTitle>
         <MUIDialogDescription>Define a product model and its specifications.</MUIDialogDescription>
       </MUIDialogHeader>
-      <form onSubmit={(event) => void handleSubmit(event)}>
+      <form noValidate onSubmit={(event) => void handleSubmit(event)}>
         <MUIDialogBody sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           {Boolean(productMutations.create.error) && (
             <Alert variant="error" appearance="minimal">
