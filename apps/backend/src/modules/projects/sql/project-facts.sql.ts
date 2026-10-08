@@ -2,11 +2,7 @@ import {
   MILESTONE_LIFECYCLE_ALIASES,
   MILESTONE_LIFECYCLE_SEQUENCE,
 } from '@tejas96/shared/constants';
-import type {
-  ProjectAttention,
-  ProjectProgress,
-  StageGroupKey,
-} from '@tejas96/shared/types';
+import type { ProjectAttention, ProjectProgress, StageGroupKey } from '@tejas96/shared/types';
 import {
   NET_METER_PHASE,
   SIDE_TRACK_PHASES,
@@ -40,7 +36,10 @@ const normalizedSql = (column: string): string =>
 
 const PHASE_NAME_ROWS = ((): string => {
   const rows = new Map<string, number>();
-  for (const name of [...MILESTONE_LIFECYCLE_SEQUENCE, ...Object.keys(MILESTONE_LIFECYCLE_ALIASES)]) {
+  for (const name of [
+    ...MILESTONE_LIFECYCLE_SEQUENCE,
+    ...Object.keys(MILESTONE_LIFECYCLE_ALIASES),
+  ]) {
     const canonical = canonicalMilestoneName(name);
     if (!canonical) continue;
     rows.set(normalizeMilestoneName(name), MILESTONE_LIFECYCLE_SEQUENCE.indexOf(canonical) + 1);
@@ -53,7 +52,8 @@ const PHASE_ROWS = MILESTONE_LIFECYCLE_SEQUENCE.map((phase, i) => {
   return `(${i + 1}, ${lit(phase)}, ${group ? lit(group) : 'NULL::text'})`;
 }).join(',\n    ');
 
-export const PROJECT_FACTS_CTE = `
+export function projectFactsCte(opts: { includeCancelled?: boolean } = {}): string {
+  return `
   pf_phase_name(norm_name, idx) AS (
     VALUES
     ${PHASE_NAME_ROWS}
@@ -66,7 +66,7 @@ export const PROJECT_FACTS_CTE = `
     SELECT
       t.project_id,
       t.id AS task_id,
-      (t.status = 'done') AS done,
+      COALESCE(t.status = 'done', false) AS done,
       t.end_date,
       t.assigned_to_user_id,
       ws.default_department AS department,
@@ -82,7 +82,7 @@ export const PROJECT_FACTS_CTE = `
       ) AS side_track
     FROM project_tasks t
     LEFT JOIN workflow_steps ws ON ws.id = t.workflow_step_id
-    LEFT JOIN pf_phase_name pn ON pn.norm_name = ${normalizedSql('t.milestone_name')}
+    LEFT JOIN pf_phase_name pn ON pn.norm_name = ${normalizedSql('COALESCE(t.milestone_name, ws.default_milestone_name)')}
     LEFT JOIN pf_phase ph ON ph.idx = pn.idx
     WHERE t.deleted_at IS NULL
   ),
@@ -140,9 +140,12 @@ export const PROJECT_FACTS_CTE = `
       ELSE COALESCE(a.next_open_idx, a.furthest_idx)
     END
     WHERE p.deleted_at IS NULL
-      AND p.status <> 'cancelled'
+      ${opts.includeCancelled ? '' : "AND p.status <> 'cancelled'"}
   )
 `;
+}
+
+export const PROJECT_FACTS_CTE = projectFactsCte();
 
 /**
  * Every "which projects" rule the dashboard counts with and the list filters by.

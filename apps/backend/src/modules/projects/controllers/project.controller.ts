@@ -55,7 +55,10 @@ function oneOf<T extends string>(value: unknown, allowed: readonly T[]): T | und
 }
 
 function isoDay(value: unknown): string | undefined {
-  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined;
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
+  // Round-trip so 2026-02-31 (valid shape, not a real day) means "no filter", not a Postgres 500.
+  const d = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value ? value : undefined;
 }
 
 function parseFactsFilters(q: Record<string, unknown>): ProjectFactsFilters {

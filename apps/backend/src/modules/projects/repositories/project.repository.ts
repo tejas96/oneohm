@@ -12,7 +12,11 @@ import { type EntityManager, IsNull, Not, Repository } from 'typeorm';
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { systemSizeKwSql } from '../../../common/utils/transform.util';
 import { ProjectEntity } from '../entities/project.entity';
-import { PROJECT_FACTS_CTE, buildProjectFactsFilter, type ProjectFactsFilters } from '../sql/project-facts.sql';
+import {
+  buildProjectFactsFilter,
+  projectFactsCte,
+  type ProjectFactsFilters,
+} from '../sql/project-facts.sql';
 
 /**
  * A project's money position, in rupees, read from `v_project_balance`.
@@ -585,7 +589,8 @@ export class ProjectRepository {
     if (projectIds.length === 0) return new Map();
     const rows: Array<{ projectId: string; currentPhase: string | null }> =
       await this.repository.query(
-        `WITH ${PROJECT_FACTS_CTE}
+        // Cancelled projects are included so the list shows the same phase the detail page does.
+        `WITH ${projectFactsCte({ includeCancelled: true })}
          SELECT pf.project_id AS "projectId", pf.current_phase AS "currentPhase"
          FROM project_facts pf
          WHERE pf.project_id = ANY($1::uuid[])`,

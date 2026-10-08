@@ -205,31 +205,29 @@ export class ProjectService {
       }
     }
 
-    const enriched = await Promise.all(
-      projects.map(async (project) => {
-        const currentPhase = phaseMap.get(project.id) ?? null;
-        const healthStatus = this.computeHealthStatus(project);
-        const paymentSummary = paymentMap.get(project.id) ?? {
-          totalExpected: 0,
-          totalPaid: 0,
-          contractValue: 0,
-          outstanding: 0,
-        };
-        const taskCounts = taskCountMap.get(project.id) ?? { completedTasks: 0, totalTasks: 0 };
+    const enriched = projects.map((project) => {
+      const currentPhase = phaseMap.get(project.id) ?? null;
+      const healthStatus = this.computeHealthStatus(project);
+      const paymentSummary = paymentMap.get(project.id) ?? {
+        totalExpected: 0,
+        totalPaid: 0,
+        contractValue: 0,
+        outstanding: 0,
+      };
+      const taskCounts = taskCountMap.get(project.id) ?? { completedTasks: 0, totalTasks: 0 };
 
-        const nextTask = nextTaskMap.get(project.id) ?? null;
-        const userOverdueTasks = overdueTaskCountMap.get(project.id) ?? 0;
+      const nextTask = nextTaskMap.get(project.id) ?? null;
+      const userOverdueTasks = overdueTaskCountMap.get(project.id) ?? 0;
 
-        return Object.assign(project, {
-          currentPhase,
-          healthStatus,
-          paymentSummary,
-          nextTask,
-          userOverdueTasks,
-          ...taskCounts,
-        });
-      }),
-    );
+      return Object.assign(project, {
+        currentPhase,
+        healthStatus,
+        paymentSummary,
+        nextTask,
+        userOverdueTasks,
+        ...taskCounts,
+      });
+    });
 
     return { projects: enriched, total, page, limit };
   }
