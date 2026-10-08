@@ -4,13 +4,19 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  ParseEnumPipe,
   ParseUUIDPipe,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { FollowupStatus, type PaginatedResponse } from '@tejas96/shared/types';
+import {
+  FollowupStatus,
+  FollowupType,
+  LeadTemperature,
+  type PaginatedResponse,
+} from '@tejas96/shared/types';
 
 import {
   ApiAction,
@@ -86,6 +92,14 @@ export class FollowupController {
   @ApiQuery({ name: 'customerId', required: false, type: String })
   @ApiQuery({ name: 'propertyId', required: false, type: String })
   @ApiQuery({ name: 'priority', required: false, type: String })
+  @ApiQuery({ name: 'type', required: false, enum: FollowupType })
+  @ApiQuery({ name: 'leadTemperature', required: false, enum: LeadTemperature })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Customer name, property name or phone',
+  })
   @ApiQuery({ name: 'from', required: false, type: String, description: 'Start date (ISO 8601)' })
   @ApiQuery({ name: 'to', required: false, type: String, description: 'End date (ISO 8601)' })
   @ApiQuery({
@@ -102,6 +116,10 @@ export class FollowupController {
     @Query('customerId', new ParseUUIDPipe({ optional: true })) customerId?: string,
     @Query('propertyId', new ParseUUIDPipe({ optional: true })) propertyId?: string,
     @Query('priority') priority?: string,
+    @Query('type', new ParseEnumPipe(FollowupType, { optional: true })) type?: FollowupType,
+    @Query('leadTemperature', new ParseEnumPipe(LeadTemperature, { optional: true }))
+    leadTemperature?: LeadTemperature,
+    @Query('search') search?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('resellerId', new ParseUUIDPipe({ optional: true })) resellerIdParam?: string,
@@ -117,13 +135,28 @@ export class FollowupController {
       customerId ||
       propertyId ||
       priority ||
+      type ||
+      leadTemperature ||
+      search ||
       from ||
       to ||
       resellerId;
 
     if (hasFilters) {
       const result = await this.followupService.findWithFilters(
-        { status, assignedToUserId, customerId, propertyId, priority, from, to, resellerId },
+        {
+          status,
+          assignedToUserId,
+          customerId,
+          propertyId,
+          priority,
+          type,
+          leadTemperature,
+          search,
+          from,
+          to,
+          resellerId,
+        },
         page,
         limit,
       );
@@ -163,13 +196,21 @@ export class FollowupController {
     type: Boolean,
     description: 'Defaults to true. Pass false for everyone’s followups.',
   })
+  @ApiQuery({
+    name: 'assignedToUserId',
+    required: false,
+    type: String,
+    description: 'Counts for one owner. Wins over `mine`.',
+  })
   @ApiOkResponse({ type: FollowupSummaryResponseDto })
   async summary(
     @CurrentUser() currentUser: CurrentUserType,
     @Query('mine') mine?: string,
+    @Query('assignedToUserId', new ParseUUIDPipe({ optional: true })) assignedToUserId?: string,
     @ResellerScope() resellerId?: string,
   ): Promise<FollowupSummaryResponseDto> {
-    return this.followupService.summary(mine === 'false' ? null : currentUser.id, resellerId);
+    const userId = assignedToUserId ?? (mine === 'false' ? null : currentUser.id);
+    return this.followupService.summary(userId, resellerId);
   }
 
   /**

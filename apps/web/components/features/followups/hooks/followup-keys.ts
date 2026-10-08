@@ -13,6 +13,6 @@ export const followupKeys = {
   byProperty: (propertyId: string) => [...followupKeys.all, 'property', propertyId] as const,
   byCustomer: (customerId: string) => [...followupKeys.all, 'customer', customerId] as const,
   gaps: () => [...followupKeys.all, 'gaps'] as const,
-  summary: (mine: boolean) => [...followupKeys.all, 'summary', mine] as const,
+  summary: (scope: boolean | string) => [...followupKeys.all, 'summary', scope] as const,
   detail: (id: string) => [...followupKeys.all, 'detail', id] as const,
 };

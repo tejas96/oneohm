@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FollowupOutcome, FollowupStatus, FollowupType } from '@tejas96/shared/types';
-import { type EntityManager, IsNull, Not, Repository } from 'typeorm';
+import {
+  FollowupOutcome,
+  FollowupStatus,
+  FollowupType,
+  type LeadTemperature,
+} from '@tejas96/shared/types';
+import { Brackets, type EntityManager, IsNull, Not, Repository } from 'typeorm';
 
 import { CUSTOMER_LEAD_NEEDS_FOLLOWUP, PROPERTY_NEEDS_FOLLOWUP } from './followup-predicates';
 import { FollowupEntity } from '../entities/followup.entity';
@@ -137,6 +142,9 @@ export class FollowupRepository {
       customerId?: string;
       propertyId?: string;
       priority?: string;
+      type?: FollowupType;
+      leadTemperature?: LeadTemperature;
+      search?: string;
       from?: Date;
       to?: Date;
       resellerId?: string;
@@ -171,6 +179,34 @@ export class FollowupRepository {
     if (filters.priority) {
       qb.andWhere('followup.priority = :priority', { priority: filters.priority });
     }
+    if (filters.type) {
+      qb.andWhere('followup.type = :type', { type: filters.type });
+    }
+    // Temperature lives on the site, so this filter can only ever match
+    // property-level followups — the UI says so next to the control.
+    if (filters.leadTemperature) {
+      qb.andWhere('property.leadTemperature = :leadTemperature', {
+        leadTemperature: filters.leadTemperature,
+      });
+    }
+    const search = filters.search?.trim();
+    if (search) {
+      // Phones are stored as +91XXXXXXXXXX; people type them with spaces or a
+      // leading 91. Matching on bare digits covers every way it gets typed.
+      let digits = search.replace(/\D/g, '');
+      if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+      const term = `%${search.replace(/[\\%_]/g, '\\$&')}%`;
+      qb.andWhere(
+        new Brackets((where) => {
+          where
+            .where(`CONCAT_WS(' ', customer.firstName, customer.lastName) ILIKE :term`, { term })
+            .orWhere('property.propertyName ILIKE :term', { term });
+          if (digits.length >= 4) {
+            where.orWhere('customer.phone LIKE :digits', { digits: `%${digits}%` });
+          }
+        }),
+      );
+    }
     if (filters.from && filters.to) {
       // Exclusive end on `to` matches `/followups/today` (`< startOfTomorrow`).
       qb.andWhere('followup.scheduledAt >= :from AND followup.scheduledAt < :to', {
@@ -189,8 +225,12 @@ export class FollowupRepository {
       );
     }
 
+    // Open work reads oldest-first (what is due next); finished work reads
+    // newest-first (what happened last).
+    const direction = !filters.status || filters.status === FollowupStatus.PENDING ? 'ASC' : 'DESC';
+
     return qb
-      .orderBy('followup.scheduledAt', 'ASC')
+      .orderBy('followup.scheduledAt', direction)
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();

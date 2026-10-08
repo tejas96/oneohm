@@ -22,12 +22,17 @@ export interface FollowupSummary {
  * call" and is wired to no endpoint, so borrowing it would render an invented
  * count next to real data.
  */
-export function useFollowupSummary(mine = true): UseQueryResult<FollowupSummary, AxiosError> {
+export function useFollowupSummary(
+  mine = true,
+  /** Counts for one owner. Wins over `mine`. */
+  assignedToUserId?: string,
+): UseQueryResult<FollowupSummary, AxiosError> {
   return useQuery({
-    queryKey: followupKeys.summary(mine),
+    queryKey: followupKeys.summary(assignedToUserId ?? mine),
     staleTime: 60_000,
     queryFn: async () => {
-      const { data } = await apiClient.get<FollowupSummary>(`/followups/summary?mine=${mine}`);
+      const query = assignedToUserId ? `assignedToUserId=${assignedToUserId}` : `mine=${mine}`;
+      const { data } = await apiClient.get<FollowupSummary>(`/followups/summary?${query}`);
       return data;
     },
   });
