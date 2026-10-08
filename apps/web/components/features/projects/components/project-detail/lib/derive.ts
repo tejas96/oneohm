@@ -179,6 +179,8 @@ export function currentPhaseIndex(
   sorted: MilestoneAggregateItem[],
   currentPhase?: string | null,
 ): number {
+  // Every phase done: the project is closed, so nothing is "now".
+  if (sorted.length > 0 && sorted.every((m) => m.status === 'completed')) return -1;
   if (currentPhase) {
     const target = canonicalMilestoneName(currentPhase) ?? currentPhase;
     const i = sorted.findIndex((m) => (canonicalMilestoneName(m.name) ?? m.name) === target);

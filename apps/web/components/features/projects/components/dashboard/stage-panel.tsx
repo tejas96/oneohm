@@ -148,15 +148,13 @@ export function StagePanel({
           </div>
 
           <footer className="flex items-center justify-between gap-3 border-t border-border p-5 text-xs">
-            <span className="text-foreground-tertiary">
-              {total > 10 ? `Showing 10 of ${total}` : plural(total, 'project')}
-            </span>
+            {total > 10 ? <span className="text-foreground-tertiary">Showing first 10</span> : null}
             {query.isError ? null : (
               <Link
                 href={dashboardLinks.stage(stage.key, financing, phase)}
-                className="font-medium text-primary-dark hover:underline"
+                className="ml-auto font-medium text-primary-dark hover:underline"
               >
-                {total === 1 ? 'Open in list →' : `Open all ${total} in list →`}
+                Open in list →
               </Link>
             )}
           </footer>

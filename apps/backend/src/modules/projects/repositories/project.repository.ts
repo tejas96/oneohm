@@ -590,7 +590,7 @@ export class ProjectRepository {
     const rows: Array<{ projectId: string; currentPhase: string | null }> =
       await this.repository.query(
         // Cancelled projects are included so the list shows the same phase the detail page does.
-        `WITH ${projectFactsCte({ includeCancelled: true })}
+        `WITH ${projectFactsCte({ includeCancelled: true, projectIdsParam: '$1' })}
          SELECT pf.project_id AS "projectId", pf.current_phase AS "currentPhase"
          FROM project_facts pf
          WHERE pf.project_id = ANY($1::uuid[])`,

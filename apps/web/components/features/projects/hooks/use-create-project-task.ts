@@ -40,6 +40,11 @@ export function useCreateProjectTask(
       void queryClient.invalidateQueries({
         queryKey: projectDetailKeys.taskStats(projectId),
       });
+      // A new open task can move the project's current phase.
+      void queryClient.invalidateQueries({
+        queryKey: projectDetailKeys.detail(projectId),
+        exact: true,
+      });
     },
     onError: (error) => {
       showToast.error(getErrorMessage(error));

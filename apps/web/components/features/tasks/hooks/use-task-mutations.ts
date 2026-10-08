@@ -37,7 +37,7 @@ export function useUpdateTask() {
       const { data } = await apiClient.patch<MyTask>(`/tasks/${taskId}`, payload, {});
       return data;
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
       if (!variables.silent) {
         if (variables.status) {
           showToast.success('Task status updated');
@@ -58,6 +58,13 @@ export function useUpdateTask() {
         }
       }
       void queryClient.invalidateQueries({ queryKey: myTaskKeys.all() });
+      // The project page's "now" phase comes from the project detail, and a status change moves it.
+      if (data.projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: projectDetailKeys.detail(data.projectId),
+          exact: true,
+        });
+      }
       // Every cached task detail, not just this one: `hasDependencyBlockers`
       // is computed server-side from OTHER tasks' status, so completing this
       // task can unlock a task the drawer has never fetched this change for.
@@ -120,6 +127,11 @@ export function useDeleteTask(projectId: string): UseMutationResult<void, unknow
       void queryClient.invalidateQueries({ queryKey: PROJECT_TASKS_QUERY_KEY() });
       void queryClient.invalidateQueries({ queryKey: PROJECT_MILESTONE_AGG_QUERY_KEY(projectId) });
       void queryClient.invalidateQueries({ queryKey: projectDetailKeys.taskStats(projectId) });
+      // A delete can move the project's current phase.
+      void queryClient.invalidateQueries({
+        queryKey: projectDetailKeys.detail(projectId),
+        exact: true,
+      });
       void queryClient.invalidateQueries({ queryKey: myTaskKeys.all() });
     },
     onError: (error) => {

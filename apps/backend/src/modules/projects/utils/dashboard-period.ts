@@ -100,6 +100,14 @@ export function resolveDashboardRange(
       if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
         throw new BadRequestException('from and to must be YYYY-MM-DD dates');
       }
+      if (
+        fmt(from) !== customFrom ||
+        fmt(to) !== customTo ||
+        from.getUTCFullYear() < 2000 ||
+        to.getUTCFullYear() < 2000
+      ) {
+        throw new BadRequestException('from and to must be real calendar dates');
+      }
       if (to < from) throw new BadRequestException('to cannot be before from');
       if (days(from, to) + 1 > MAX_CUSTOM_DAYS) {
         throw new BadRequestException('A custom period can be at most 3 years');

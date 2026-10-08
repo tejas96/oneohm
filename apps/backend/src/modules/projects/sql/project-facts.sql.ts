@@ -52,7 +52,13 @@ const PHASE_ROWS = MILESTONE_LIFECYCLE_SEQUENCE.map((phase, i) => {
   return `(${i + 1}, ${lit(phase)}, ${group ? lit(group) : 'NULL::text'})`;
 }).join(',\n    ');
 
-export function projectFactsCte(opts: { includeCancelled?: boolean } = {}): string {
+/**
+ * `projectIdsParam` (e.g. `$1`) narrows the CTE to a uuid[] of projects, so a page of
+ * ids does not aggregate every task in the database. Omit it for the whole population.
+ */
+export function projectFactsCte(
+  opts: { includeCancelled?: boolean; projectIdsParam?: string } = {},
+): string {
   return `
   pf_phase_name(norm_name, idx) AS (
     VALUES
@@ -85,6 +91,7 @@ export function projectFactsCte(opts: { includeCancelled?: boolean } = {}): stri
     LEFT JOIN pf_phase_name pn ON pn.norm_name = ${normalizedSql('COALESCE(t.milestone_name, ws.default_milestone_name)')}
     LEFT JOIN pf_phase ph ON ph.idx = pn.idx
     WHERE t.deleted_at IS NULL
+      ${opts.projectIdsParam ? `AND t.project_id = ANY(${opts.projectIdsParam}::uuid[])` : ''}
   ),
   pf_task_ranked AS (
     SELECT
@@ -141,6 +148,7 @@ export function projectFactsCte(opts: { includeCancelled?: boolean } = {}): stri
     END
     WHERE p.deleted_at IS NULL
       ${opts.includeCancelled ? '' : "AND p.status <> 'cancelled'"}
+      ${opts.projectIdsParam ? `AND p.id = ANY(${opts.projectIdsParam}::uuid[])` : ''}
   )
 `;
 }

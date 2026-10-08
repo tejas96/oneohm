@@ -15,12 +15,20 @@ const PERIODS: readonly DashboardPeriod[] = [
 ];
 const FINANCING: readonly DashboardFinancing[] = ['all', 'cash', 'loan'];
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+/** Same cap as the API (3 years, inclusive), so a range it would reject never reaches it. */
+const MAX_CUSTOM_DAYS = 1096;
+const DAY_MS = 86_400_000;
 
 /** Format AND calendar check: `2026-13-45` matches the regex but is not a day. */
 function isIsoDay(v: string): boolean {
   if (!ISO_DAY.test(v)) return false;
   const d = new Date(`${v}T00:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
+}
+
+/** Inclusive number of days between two valid ISO days. */
+function spanDays(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS) + 1;
 }
 
 export const DEFAULT_DASHBOARD_FILTERS: DashboardFilters = {
@@ -42,7 +50,7 @@ export function readDashboardFilters(params: URLSearchParams): DashboardFilters 
 
   const from = params.get('from') ?? '';
   const to = params.get('to') ?? '';
-  if (!isIsoDay(from) || !isIsoDay(to) || from > to) {
+  if (!isIsoDay(from) || !isIsoDay(to) || from > to || spanDays(from, to) > MAX_CUSTOM_DAYS) {
     return { ...DEFAULT_DASHBOARD_FILTERS, financing };
   }
   return { period, from, to, financing };

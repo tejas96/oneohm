@@ -21,6 +21,7 @@ import {
   type TaskViewMode,
 } from '../../../constants';
 import {
+  projectDetailKeys,
   type TeamMemberSummary,
   useProjectMilestones,
   useProjectTaskList,
@@ -106,6 +107,11 @@ export const ProjectTasksTab = React.memo(
     const invalidateProjectTasks = useCallback(() => {
       void queryClient.invalidateQueries({ queryKey: PROJECT_TASKS_QUERY_KEY() });
       void queryClient.invalidateQueries({ queryKey: PROJECT_MILESTONE_AGG_QUERY_KEY(projectId) });
+      // The rail and Journey "now" read currentPhase from the project detail.
+      void queryClient.invalidateQueries({
+        queryKey: projectDetailKeys.detail(projectId),
+        exact: true,
+      });
     }, [queryClient, projectId]);
 
     const avatarMembers: TeamMemberSummary[] = useMemo(() => {
