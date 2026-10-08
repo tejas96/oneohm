@@ -2,11 +2,11 @@
 
 import { normalizeStructureTypeCode } from '@tejas96/shared/utils';
 import { type JSX, useMemo } from 'react';
-import { Controller, type Control } from 'react-hook-form';
+import { Controller, useFormState, type Control } from 'react-hook-form';
 
 import type { ProductFormData } from '../schemas/product.schema';
 
-import { CreatableCombobox, FieldLabel, type ComboboxOption } from '@/components/shared';
+import { Alert, CreatableCombobox, FieldLabel, type ComboboxOption } from '@/components/shared';
 import { MUIInput, MUISelect, MUISwitch, Typography } from '@/components/ui';
 import type { ProductTypeAttribute } from '@/lib/hooks/resources';
 
@@ -74,10 +74,23 @@ export function ProductSpecificationsFields({
     return Array.from(groups.entries());
   }, [attributes]);
 
+  const { errors } = useFormState({ control, name: 'specifications' });
+  const problems = attributes.flatMap((attr) => {
+    const message = (errors.specifications as Record<string, { message?: string }> | undefined)?.[
+      attr.attributeKey
+    ]?.message;
+    return message ? [message] : [];
+  });
+
   if (attributes.length === 0) return null;
 
   return (
     <div className="space-y-6">
+      {problems.length > 0 && (
+        <Alert variant="error" appearance="minimal">
+          Fix before saving: {problems.join(' · ')}
+        </Alert>
+      )}
       {groupedAttributes.map(([groupName, groupAttrs]) => (
         <div key={groupName} className="space-y-3">
           <Typography variant="body" className="text-xs font-semibold uppercase tracking-wide">
@@ -185,10 +198,11 @@ export function ProductSpecificationsFields({
                     <Controller
                       name={fieldName}
                       control={control}
-                      render={({ field }) => (
+                      render={({ field, fieldState }) => (
                         <MUISelect
                           fieldLabel={attr.label}
                           required={attr.isRequired}
+                          error={fieldState.error?.message}
                           tooltip={attr.helpText || 'Select a value from the allowed options.'}
                           placeholder={`Select ${attr.label.toLowerCase()}`}
                           value={
@@ -216,10 +230,11 @@ export function ProductSpecificationsFields({
                   <Controller
                     name={fieldName}
                     control={control}
-                    render={({ field }) => (
+                    render={({ field, fieldState }) => (
                       <MUIInput
                         fieldLabel={attr.label}
                         required={attr.isRequired}
+                        error={fieldState.error?.message}
                         tooltip={
                           attr.helpText ||
                           (isNumeric
@@ -231,7 +246,7 @@ export function ProductSpecificationsFields({
                             : 'Enter a value for this specification.')
                         }
                         type={isNumeric ? 'number' : 'text'}
-                        step={attr.dataType === 'integer' ? '1' : isNumeric ? '0.01' : undefined}
+                        step={attr.dataType === 'integer' ? '1' : isNumeric ? 'any' : undefined}
                         min={min}
                         max={max}
                         placeholder={

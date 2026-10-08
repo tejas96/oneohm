@@ -1,6 +1,5 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { ProductStatus, UnitOfMeasure } from '@tejas96/shared/types';
 import { deriveStructureTypes } from '@tejas96/shared/utils';
 import { Loader2 } from 'lucide-react';
@@ -8,7 +7,7 @@ import { type JSX, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { ProductSpecificationsFields } from './product-specifications-fields';
-import { productSchema, type ProductFormData } from '../schemas/product.schema';
+import { createProductResolver, type ProductFormData } from '../schemas/product.schema';
 import {
   resolveProductSpecificationsForSubmit,
   STRUCTURE_TYPE_FIELD,
@@ -65,8 +64,9 @@ export function EditProductModal({
     defaultFilters: { isActive: true },
   });
 
+  const attributesRef = useRef<ProductTypeAttribute[]>([]);
   const form = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
+    resolver: createProductResolver(() => attributesRef.current),
     mode: 'onChange',
     defaultValues: {
       name: '',
@@ -114,6 +114,12 @@ export function EditProductModal({
     () => resolvedProductType?.attributes ?? [],
     [resolvedProductType?.attributes],
   );
+  attributesRef.current = specificationAttributes;
+
+  // The rules come from the product type, so check the values again once they load.
+  useEffect(() => {
+    void form.trigger();
+  }, [form, specificationAttributes]);
   const isSpecificationsLoading = productTypeDetail.isLoading && !!selectedProductTypeId;
   const mountingStructures = useAllMountingStructureProductsForAdmin();
   const structureTypeOptions = useMemo(
@@ -243,7 +249,7 @@ export function EditProductModal({
         <MUIDialogTitle>Edit Product</MUIDialogTitle>
         <MUIDialogDescription>Update model details and specifications.</MUIDialogDescription>
       </MUIDialogHeader>
-      <form onSubmit={(event) => void handleSubmit(event)}>
+      <form noValidate onSubmit={(event) => void handleSubmit(event)}>
         <MUIDialogBody sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           {Boolean(productMutations.update.error) && (
             <Alert variant="error" appearance="minimal">
