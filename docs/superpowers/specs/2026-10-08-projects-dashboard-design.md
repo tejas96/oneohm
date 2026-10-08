@@ -74,7 +74,7 @@ done = `status = 'done'`, open = anything else.
 | `handover` | Handover | Handover, Customer Training, Documentation, AMC / Warranty Registration |
 
 The `Payment 1…5` labels and any name not in the sequence (including an empty
-`milestone_name`) map to `other`. Name matching uses the existing normaliser and
+`milestone_name`) have no group ("steps without a stage"). Name matching uses the existing normaliser and
 `MILESTONE_LIFECYCLE_ALIASES`.
 
 **Side tracks.** A step is a side track when any of these is true:
@@ -102,11 +102,14 @@ Side-track steps never decide the stage and are never "old steps".
 **Late project.** Live project with ≥ 1 late step (side tracks included —
 a late loan step is still late work).
 
-**Meter installed.** `v_project_commissioning.meter_completed_at IS NOT NULL`
-(same view Finance uses). Its date = `meter_completed_at`, bucketed in IST.
+**Meter installed.** The project has a row in `v_project_commissioning` (any done
+step in `Net Meter Installation`; same view Finance and Recovery use). Its date =
+`meter_completed_at`, bucketed in IST. A row with no date (`meter_dated = false`,
+1 project locally) counts as installed for the stage, but never in a period — the
+same rule as the Finance KPI.
 
-**Meter due.** The project's open step(s) in `Net Meter Installation`;
-due date = the earliest `end_date` among them. Shown as "planned".
+**Meter due.** Only for projects whose meter is not installed: the earliest
+`end_date` of their open `Net Meter Installation` steps. Shown as "planned".
 
 **kW.** `quote_versions.total_wattage_wp / 1000` of `projects.contract_quote_version_id`.
 If null, fall back to nothing: the project counts, its kW is unknown, and the UI
@@ -115,10 +118,12 @@ says "N without kW". Never 0. (Local data today: 0 of 231 missing.)
 **Onboarded date.** `projects.created_at` in IST. There is no import marker on
 projects, so imported projects show on their import date. No guessing.
 
-**To collect.** Sum of `v_milestone_balance.balance_paise` for active milestones
-of counted projects (not `waived_paise` — it double-counts).
-**Meter in, still owed.** The same sum, limited to meter-installed projects
-(same rows as `/finance/receivables?scope=recovery`).
+**To collect.** Exactly the receivables page headline:
+`FinanceReportingService.getReceivables({ funding })` → `buckets.totalOutstandingPaise`
+(active milestones with a balance; waived excluded).
+**Meter in, still owed.** The same call with `scope: 'recovery'`. Both follow the
+Cash/Loan switch through `funding`. Reusing the finance service is what makes the
+card equal the page it opens.
 
 **Department of a step.** `workflow_steps.default_department` via
 `project_tasks.workflow_step_id` (the same source `/analytics/workload` groups by,
@@ -126,7 +131,9 @@ so the `/workload?department=` link lands on the same name). Missing → `Other`
 
 **Who sees which projects.** Exactly `resolveProjectListMemberId`
 (`iam/constants/admin-roles.ts`): admins / `projects.view` see all; others see
-projects they are a team member of.
+projects they are a team member of. In practice the web route `/projects` already
+needs `projects.view` (`lib/rbac/route-map.ts`), so everyone who reaches the page
+sees all projects; the backend still applies the rule.
 
 **Money visibility.** Money fields are sent only when the caller has `finance.view`
 (or an admin role). Without it the "To collect" card is not rendered.
@@ -157,7 +164,7 @@ link, "New project" button (gated by `projects.create`, existing `useGatedAction
 |---|---|---|---|
 | Onboarded | projects created in period | kW · "11 cash · 7 loan" (split hidden when the switch is not All) | Yes |
 | Live now | live projects | "31 not started" / "183 in progress" (each line clickable) | No |
-| Meter installed | meter installed in period | kW · change vs previous period of the same length ("+3", "−2", "same") | Yes |
+| Meter installed | meter installed in period | kW · change vs the previous period ("+3", "−2", "same"). When the period includes today, both sides are cut to the same number of days ("vs 1–8 Sep"), so a half-done month is never compared with a full one | Yes |
 | Running late | late projects | "% of live" | No |
 | To collect | ₹ open (L / Cr) | "₹42 L meter in" | No |
 
@@ -170,17 +177,21 @@ Each bar shows the live-project count; the red part at the base is the late
 projects in that group. Under each bar: the label and kW.
 
 Under the chart, small links only when non-zero:
-"No steps: N" · "Other stage: N" · "Old steps left open: N".
+"No stage yet: N" (no main-line steps) · "Steps without a stage: N" · "Old steps left open: N".
 
-Clicking a bar opens a **side panel** (existing drawer pattern) with:
-- the group's phases and their counts (each clickable → list filtered by phase);
+Clicking a bar opens a **right-side panel** (MUI `Drawer`, same shell as the house
+`DrillDownDrawer`, which has no slot for the phase chips), fed by
+`GET /projects/dashboard/stage-projects`, with:
+- the group's phases and their counts as chips (a chip narrows the panel rows and the
+  "Open in list" link to that phase);
 - the first 10 projects in that group, most late first (row → project page);
 - "Open all N in list" → project list filtered by stage group.
 
 ### Band 3 — What needs action now
 
 Left (60%): **Needs action.** Up to 8 late projects, most days late first. Each row:
-project name · kW, the oldest late step name, its department, its assignee
+customer name (project number when there is none — the project name already
+carries the kW, so it is not repeated), the oldest late step name, its department, its assignee
 ("Unassigned" in red when empty), and "14 d late". Row → that project's Tasks
 tab with the step highlighted. Footer "See all N" → project list, Late steps filter.
 
@@ -210,15 +221,15 @@ Every target either works today or is added in this work.
 | Onboarded | `/projects/list` onboarded between + type | No (`fromDate`/`toDate` filter `start_date`/`end_date`) | `onboardedFrom/To`, `financing` |
 | Live now / Not started / In progress | `/projects/list` | No | `progress=live|not_started|in_progress` |
 | Meter installed | `/projects/list` meter between | No | `meterInstalledFrom/To` |
-| Running late | `/projects/list` | No (`health:delayed` uses project `end_date`) | `lateSteps=true` |
-| To collect | `/finance/receivables` | Yes | pass `funding` when the switch is Cash/Loan |
-| Meter in, still owed | `/finance/receivables?scope=recovery-…` | Cash or Loan only | web scope `recovery` (all) |
+| Running late | `/projects/list` | No (`health:delayed` uses project `end_date`) | `attention=late_steps` |
+| To collect | `/finance/receivables?funding=…` | Page has no `funding` param (API does) | page reads `funding` from the URL |
+| Meter in, still owed | `/finance/receivables?scope=recovery…` | Cash or Loan only | web scope `recovery` (all) |
 | Stage bar | side panel | No | panel + `stage=<group>` on list |
 | Phase in panel | `/projects/list` | Partly (`pendingWorkflowStepId` is per step) | `phase=<name>` |
-| Old steps / No steps / Other | `/projects/list` | No | `oldStepsOpen=true`, `stage=none`, `stage=other` |
-| Needs action row | `/projects/[id]?tab=tasks` | Yes | `t_highlight=<taskId>` scrolls to and flashes the step |
-| See all late | `/projects/list?…lateSteps` | No | (above) |
-| Team row | `/workload?department=…` | Yes | — |
+| Old steps / No steps / Steps without a stage | `/projects/list` | No | `attention=old_steps`, `stage=none`, `attention=unstaged_steps` |
+| Needs action row | `/projects/[id]?tab=tasks&t_task=<taskId>` | Tab yes, task no | `t_task` opens that task's drawer on load (works on any page of the task list) |
+| See all late | `/projects/list` | No | `attention=late_steps` |
+| Team row | `/workload?department=…` | Yes | — (that page lists all the team's open steps; the late ones are among them) |
 | Month bar | `/projects/list` | No | uses onboarded / meter filters |
 | Coming up | `/projects/list` | No | `meterDueFrom/To` |
 
@@ -243,10 +254,12 @@ dialog, not a dead link.
 One CTE builder, `projectFactsCte({ memberId?, financing? })`, producing one row
 per counted, visible project:
 
-`project_id, wants_loan, kw (nullable), created_at, has_steps, done_steps,
-open_steps, current_phase, stage_group, old_open_steps, late_steps,
-oldest_late_task_id, oldest_late_days, meter_completed_at, meter_due_date,
-is_live`.
+`project_id, wants_loan, kw (nullable), created_at, step_count, done_steps,
+open_steps, current_phase, stage_group, old_open_steps, unstaged_open_steps,
+late_steps, meter_installed, meter_completed_at, meter_due_date, is_live`.
+Exported as `PROJECT_FACTS_CTE` (CTE text, no `WITH`) and used by raw SQL and by
+TypeORM `IN (WITH … SELECT …)` subqueries alike. It takes no parameters; callers
+filter the `project_facts` rows.
 
 The stage rule is written once in SQL here, mirroring `deriveProjectStage`.
 Phase order comes from a `VALUES` list generated from `MILESTONE_LIFECYCLE_SEQUENCE`
@@ -258,42 +271,35 @@ Query: `period` (`this_month|last_month|this_quarter|this_fy|custom`),
 `from`, `to` (ISO dates, required for custom), `financing` (`all|cash|loan`).
 Validated with class-validator; bad input → 400.
 
-Response (all money in paise, kW as numbers with 2 decimals, dates ISO):
-
-```
-{
-  period: { from, to, previousFrom, previousTo, label },
-  strip: {
-    onboarded: { count, kw, kwUnknown, cash, loan },
-    live: { count, kw, kwUnknown, notStarted, inProgress },
-    meterInstalled: { count, kw, kwUnknown, previousCount },
-    late: { count, percentOfLive },
-    money: { toCollectPaise, meterInStillOwedPaise } | null   // null without finance.view
-  },
-  stages: [{ key, label, count, lateCount, kw, phases: [{ name, count }] }],
-  stageNotes: { noSteps, other, oldStepsOpen },
-  needsAction: { total, rows: [{ projectId, projectNumber, name, kw, taskId,
-                 stepName, department, assigneeName | null, daysLate }] },  // top 8
-  teams: [{ department, lateSteps }],
-  trend: [{ month: 'YYYY-MM', onboarded, onboardedKw, meterInstalled, meterKw }], // 12
-  comingUp: { count, kw, thisWeek, nextWeek }
-}
-```
+Response: the `ProjectsDashboard` type in `libs/shared/src/types/projects-dashboard.ts`
+(all money in paise, kW as numbers, dates `YYYY-MM-DD` IST). It carries the period
+(with the comparison window and labels), the strip, the 6 stages with their phases,
+stage notes, the top 8 late projects with their total, late steps per department,
+12 trend months, and the coming-up counts with the exact date bounds the links use.
 
 - One request per page load. Every section reads the same facts CTE.
 - Scope: `resolveProjectListMemberId` with the caller's roles/permissions.
 - Weeks are Monday–Sunday IST.
 
+### Stage panel — `GET /projects/dashboard/stage-projects`
+
+Query: `stage` (group key or `none`), optional `phase`, `financing`. Returns
+`{ total, rows: [{ projectId, projectNumber, name, kw, currentPhase, daysLate | null }] }`,
+top 10, most days late first, then newest. Same scope and facts as the dashboard.
+
 ### Project list — new filters (`GET /projects`)
 
-`financing`, `progress`, `stage`, `phase`, `lateSteps`, `oldStepsOpen`,
-`onboardedFrom/To`, `meterInstalledFrom/To`, `meterDueFrom/To`. All join the
+`financing` (`cash|loan`), `progress` (`live|not_started|in_progress`), `stage`,
+`phase`, `attention` (`late_steps|old_steps|unstaged_steps`),
+`onboardedFrom/To`, `meterInstalledFrom/To`, `meterDueFrom/To` (YYYY-MM-DD, IST). All join the
 same facts CTE, so counts match the dashboard. Existing filters are unchanged.
 
 `currentPhase` on list items switches to the facts CTE value. This also removes
 the extra per-row query that `computeCurrentPhaseFromTasks` runs today.
-`computeCurrentPhaseFromTasks` switches to `deriveProjectStage`, so the project
-detail header, Journey card and `/dashboard/my-work` agree with the dashboard.
+`computeCurrentPhaseFromTasks` switches to `deriveProjectStage`, and
+`GET /projects/:id` now returns `currentPhase`. The project page header rail and
+the Journey card mark that phase as "now" instead of "first unfinished phase",
+so they agree with the dashboard.
 
 ## Web
 
@@ -306,11 +312,13 @@ detail header, Journey card and `/dashboard/my-work` agree with the dashboard.
   `needs-action.tsx`, `stuck-by-team.tsx`, `trend-chart.tsx`, `coming-up.tsx`,
   `links.ts` (one builder per click target — the only place URLs are made),
   `use-count-up.ts`.
-- Hook `useProjectsDashboard(params)` in `lib/hooks/resources/projects.ts`.
-- `useProjectListResource`: stop silently dropping filters (forward all params).
-- Project list page: read and show the new filters as chips.
-- Project tasks tab: support `t_highlight`.
-- Receivables page: add the `recovery` (all) scope.
+- Hooks `useProjectsDashboard` and `useStageProjects` in
+  `lib/hooks/resources/projects-dashboard.ts`.
+- Project list page: the new filters in its filter panel (date ranges use
+  `MUIDateRangePicker`), sent through `useProjects`.
+- Project tasks tab: `t_task` opens the task drawer.
+- Project header rail + Journey card: use `project.currentPhase`.
+- Receivables page: read `funding` from the URL; add the `recovery` (all) scope.
 
 ### States
 
@@ -339,17 +347,19 @@ No new library. CSS transitions + Recharts' built-in animation + a small
 | Case | Handling |
 |---|---|
 | Cancelled project | Not counted anywhere; its open steps ignored. |
-| Project with no steps | Live + Not started; stage `none`; "No steps: N" note. |
+| Project with no steps (or only loan/subsidy steps) | Live; stage `none`; "No stage yet: N" note. |
 | All steps done | Closed; not live; not in stage chart. |
 | Meter in but old steps open | Stage = furthest reached; counted in "Old steps left open". |
 | Open loan / subsidy step after install | Side track; does not move the stage; still counts as late if past due. |
-| Empty or unknown phase name | Group `other`; "Other stage: N" note. |
+| Empty or unknown phase name | Never decides the stage; "Steps without a stage: N" note. |
 | Step with no due date | Never late. |
 | Late step with no assignee | Shown as "Unassigned" in red. |
 | Step with no department | Team row "Other". `/workload` drops these steps, so this row links to the project list with `lateSteps=true` instead. |
 | No signed quote | Counted; kW unknown; "N without kW" shown; never 0. |
 | Imported projects | Shown on `created_at`; no import marker exists. |
 | Month / week edges | IST (DB session time zone). |
+| Meter done but undated | Installed for the stage; in no period. |
+| Meter step open but another meter step done | Installed (view rule); not in Coming up. |
 | Previous period | Same length directly before; "same" when equal; no % on a zero base. |
 | Custom range invalid | Picker blocks it; API returns 400 if forced via URL; page falls back to default. |
 | Money | Paise integers; ₹ L / Cr formatting; refunds already net in the balance view. |
@@ -357,7 +367,7 @@ No new library. CSS transitions + Recharts' built-in animation + a small
 | Blocked destination | `GatedLink` opens the access dialog. |
 | Non-admin | Sees only own projects; dashboard and list match for that user. |
 | Zero results | "No projects match" + "Clear filters". |
-| API rate limit (100/min) | One request per load; filter changes debounce 300 ms. |
+| API rate limit (100/min) | One request per load and per filter change; a custom range is applied only when both dates are set. |
 | Slow / failed request | Band-level retry; filters stay usable. |
 | Reduced motion | No animation. |
 | Narrow screen | One column; chart keeps its labels. |
@@ -374,8 +384,8 @@ No new library. CSS transitions + Recharts' built-in animation + a small
    month, to collect, and the 6 stage counts.
 4. The project page header and Journey card show the same stage as the dashboard
    for 5 sample projects, including one of the 14 "meter in, old steps open".
-5. Repeat step 2 for a non-admin user (minted JWT) and for a user without
-   `finance.view`.
+5. Repeat step 2 for a user without `finance.view` (minted JWT): the To collect
+   card is gone and the strip has 4 cards.
 6. Light and dark theme; 375 px and 1440 px widths; reduced motion on.
 
 ## Out of scope
