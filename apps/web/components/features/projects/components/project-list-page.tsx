@@ -64,8 +64,10 @@ import { useAllActiveWorkflowSteps } from '@/lib/hooks/resources';
 import { useGatedAction } from '@/lib/rbac';
 import { color, crm } from '@/lib/theme/tokens';
 import {
+  formatBusinessDate,
   formatCurrency,
   formatDate,
+  formatLocalDate,
   formatRelativeDate,
   getErrorMessage,
   toTitleLabel,
@@ -179,6 +181,11 @@ function withDefaultStatus(filters: TableUrlFilterRecord): TableUrlFilterRecord 
   return { ...filters, status: DEFAULT_STATUS_FILTER };
 }
 
+/** The phases the dashboard drills into: every main-line phase, no side tracks. One list for the Phase filter's options and the URL allowlist. */
+const MAIN_LINE_PHASES: readonly string[] = STAGE_GROUPS.flatMap((g) => g.phases).filter(
+  (p) => !SIDE_TRACK_PHASES.includes(p),
+);
+
 function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters> {
   const raw = filters as Record<string, unknown>;
   const result: Partial<ProjectFilters> = {};
@@ -287,7 +294,7 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
   result.financing = pick(raw.financing, ['cash', 'loan'] as const);
   result.progress = pick(raw.progress, ['live', 'not_started', 'in_progress'] as const);
   result.stage = pick(raw.stage, [...STAGE_GROUP_KEYS, 'none'] as const);
-  if (typeof raw.phase === 'string' && raw.phase) result.phase = raw.phase;
+  result.phase = pick(raw.phase, MAIN_LINE_PHASES);
   result.attention = pick(raw.attention, ['late_steps', 'old_steps', 'unstaged_steps'] as const);
 
   const day = (value: unknown): string | undefined =>
@@ -774,6 +781,15 @@ const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
   },
 ];
 
+/** Chip text for a { from, to } day range: "1 Sep 2026 – 30 Sep 2026", "From …" or "Until …". */
+function formatDayRange(value: unknown): string {
+  const { from, to } = (value ?? {}) as { from?: string; to?: string };
+  if (from && to) return `${formatBusinessDate(from)} – ${formatBusinessDate(to)}`;
+  if (from) return `From ${formatBusinessDate(from)}`;
+  if (to) return `Until ${formatBusinessDate(to)}`;
+  return '';
+}
+
 const FILTER_COLUMNS: ColumnConfig<ProjectRow>[] = [
   {
     field: 'priority',
@@ -849,9 +865,7 @@ const FILTER_COLUMNS: ColumnConfig<ProjectRow>[] = [
     headerName: 'Phase',
     filterable: true,
     filterType: 'select',
-    filterOptions: STAGE_GROUPS.flatMap((g) => g.phases)
-      .filter((p) => !SIDE_TRACK_PHASES.includes(p))
-      .map((p) => ({ label: p, value: p })),
+    filterOptions: MAIN_LINE_PHASES.map((p) => ({ label: p, value: p })),
   },
   {
     field: 'attention',
@@ -864,9 +878,24 @@ const FILTER_COLUMNS: ColumnConfig<ProjectRow>[] = [
       { label: 'Steps without a stage', value: 'unstaged_steps' },
     ],
   },
-  { field: 'onboarded', headerName: 'Onboarded between', filterable: true },
-  { field: 'meterInstalled', headerName: 'Meter installed between', filterable: true },
-  { field: 'meterDue', headerName: 'Meter due between', filterable: true },
+  {
+    field: 'onboarded',
+    headerName: 'Onboarded between',
+    filterable: true,
+    formatFilterValue: formatDayRange,
+  },
+  {
+    field: 'meterInstalled',
+    headerName: 'Meter installed between',
+    filterable: true,
+    formatFilterValue: formatDayRange,
+  },
+  {
+    field: 'meterDue',
+    headerName: 'Meter due between',
+    filterable: true,
+    formatFilterValue: formatDayRange,
+  },
 ];
 
 function DateRangeFilter({
@@ -877,17 +906,12 @@ function DateRangeFilter({
   onChange: (value: unknown) => void;
 }): JSX.Element {
   const range = (value ?? {}) as { from?: string; to?: string };
-  const toDay = (d: Date | null): string | undefined => {
-    if (!d) return undefined;
-    const pad = (n: number): string => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  };
   return (
     <MUIDateRangePicker
       fromDate={range.from ?? null}
       toDate={range.to ?? null}
-      onFromChange={(d) => onChange({ ...range, from: toDay(d) })}
-      onToChange={(d) => onChange({ ...range, to: toDay(d) })}
+      onFromChange={(d) => onChange({ ...range, from: formatLocalDate(d) || undefined })}
+      onToChange={(d) => onChange({ ...range, to: formatLocalDate(d) || undefined })}
     />
   );
 }

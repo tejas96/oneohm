@@ -58,6 +58,13 @@ export interface ColumnConfig<TRow = Record<string, unknown>> {
   /** Format raw value to display string */
   valueFormatter?: (value: unknown) => string;
 
+  /**
+   * Label for this column's active-filter chip. Receives the filter value as
+   * stored (not a cell value) and returns the text shown after the header name.
+   * Without it the chip falls back to the built-in per-type label.
+   */
+  formatFilterValue?: (value: unknown) => string;
+
   /** Hide from column visibility toggle list */
   hideable?: boolean;
 
