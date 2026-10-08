@@ -19,6 +19,7 @@ import {
   Typography,
 } from '@mui/material';
 import { ProjectPriority, ProjectStatus } from '@tejas96/shared/types';
+import { SIDE_TRACK_PHASES, STAGE_GROUP_KEYS, STAGE_GROUPS } from '@tejas96/shared/utils';
 import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, type MouseEvent, useCallback, useMemo, useState } from 'react';
@@ -52,6 +53,7 @@ import {
   type CrmQuickFilter,
   type CrmTone,
 } from '@/components/shared/crm-table';
+import { MUIDateRangePicker } from '@/components/ui';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
@@ -276,6 +278,33 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
   if (createdBy && typeof createdBy === 'string' && createdBy !== 'all') {
     result.createdBy = createdBy;
   }
+
+  // Dashboard drill-downs. Unknown values are dropped, like every filter above.
+  const pick = <T extends string>(value: unknown, allowed: readonly T[]): T | undefined =>
+    typeof value === 'string' && (allowed as readonly string[]).includes(value)
+      ? (value as T)
+      : undefined;
+  result.financing = pick(raw.financing, ['cash', 'loan'] as const);
+  result.progress = pick(raw.progress, ['live', 'not_started', 'in_progress'] as const);
+  result.stage = pick(raw.stage, [...STAGE_GROUP_KEYS, 'none'] as const);
+  if (typeof raw.phase === 'string' && raw.phase) result.phase = raw.phase;
+  result.attention = pick(raw.attention, ['late_steps', 'old_steps', 'unstaged_steps'] as const);
+
+  const day = (value: unknown): string | undefined =>
+    typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined;
+  const range = (value: unknown): { from?: string; to?: string } => {
+    const r = (value ?? {}) as { from?: unknown; to?: unknown };
+    return { from: day(r.from), to: day(r.to) };
+  };
+  const onboarded = range(raw.onboarded);
+  result.onboardedFrom = onboarded.from;
+  result.onboardedTo = onboarded.to;
+  const meterInstalled = range(raw.meterInstalled);
+  result.meterInstalledFrom = meterInstalled.from;
+  result.meterInstalledTo = meterInstalled.to;
+  const meterDue = range(raw.meterDue);
+  result.meterDueFrom = meterDue.from;
+  result.meterDueTo = meterDue.to;
 
   return result;
 }
@@ -784,7 +813,84 @@ const FILTER_COLUMNS: ColumnConfig<ProjectRow>[] = [
     filterPlaceholder: 'Pincode / city / address',
     filterDebounceMs: 800,
   },
+  {
+    field: 'financing',
+    headerName: 'Cash / loan',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      { label: 'Cash', value: 'cash' },
+      { label: 'Loan', value: 'loan' },
+    ],
+  },
+  {
+    field: 'progress',
+    headerName: 'Progress',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      { label: 'Live (open work)', value: 'live' },
+      { label: 'Not started', value: 'not_started' },
+      { label: 'In progress', value: 'in_progress' },
+    ],
+  },
+  {
+    field: 'stage',
+    headerName: 'Stage',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      ...STAGE_GROUPS.map((g) => ({ label: g.label, value: g.key })),
+      { label: 'No stage yet', value: 'none' },
+    ],
+  },
+  {
+    field: 'phase',
+    headerName: 'Phase',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: STAGE_GROUPS.flatMap((g) => g.phases)
+      .filter((p) => !SIDE_TRACK_PHASES.includes(p))
+      .map((p) => ({ label: p, value: p })),
+  },
+  {
+    field: 'attention',
+    headerName: 'Needs attention',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      { label: 'Late steps', value: 'late_steps' },
+      { label: 'Old steps left open', value: 'old_steps' },
+      { label: 'Steps without a stage', value: 'unstaged_steps' },
+    ],
+  },
+  { field: 'onboarded', headerName: 'Onboarded between', filterable: true },
+  { field: 'meterInstalled', headerName: 'Meter installed between', filterable: true },
+  { field: 'meterDue', headerName: 'Meter due between', filterable: true },
 ];
+
+function DateRangeFilter({
+  value,
+  onChange,
+}: {
+  value: unknown;
+  onChange: (value: unknown) => void;
+}): JSX.Element {
+  const range = (value ?? {}) as { from?: string; to?: string };
+  const toDay = (d: Date | null): string | undefined => {
+    if (!d) return undefined;
+    const pad = (n: number): string => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+  return (
+    <MUIDateRangePicker
+      fromDate={range.from ?? null}
+      toDate={range.to ?? null}
+      onFromChange={(d) => onChange({ ...range, from: toDay(d) })}
+      onToChange={(d) => onChange({ ...range, to: toDay(d) })}
+    />
+  );
+}
 
 // ============================================================================
 // Page component
@@ -985,6 +1091,14 @@ export function ProjectListPage(): JSX.Element {
               onChange={onChange}
               placeholder="Search workflow step…"
             />
+          ),
+        };
+      }
+      if (col.field === 'onboarded' || col.field === 'meterInstalled' || col.field === 'meterDue') {
+        return {
+          ...col,
+          renderFilter: ({ value, onChange }) => (
+            <DateRangeFilter value={value} onChange={onChange} />
           ),
         };
       }
