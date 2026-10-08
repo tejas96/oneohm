@@ -8,6 +8,7 @@ import Link from 'next/link';
 import * as React from 'react';
 
 import { BandError } from './band-state';
+import { plural } from './format';
 import { dashboardLinks } from './links';
 
 import { useStageProjects } from '@/lib/hooks/resources';
@@ -30,26 +31,43 @@ export function StagePanel({
   onClose: () => void;
 }): React.JSX.Element {
   const [phase, setPhase] = React.useState<string | undefined>(undefined);
-  React.useEffect(() => setPhase(undefined), [stageKey]);
+  // The stage last shown: the drawer keeps its content while it slides out.
+  const [shownKey, setShownKey] = React.useState<StageGroupKey | null>(stageKey);
+  const [prevKey, setPrevKey] = React.useState<StageGroupKey | null>(stageKey);
+  const titleId = React.useId();
+  // Adjusted during render so a new stage never fires one request with the old phase.
+  if (stageKey !== prevKey) {
+    setPrevKey(stageKey);
+    if (stageKey) {
+      setShownKey(stageKey);
+      setPhase(undefined);
+    }
+  }
 
-  const stage = data.stages.find((s) => s.key === stageKey);
-  const query = useStageProjects(stageKey ? { stage: stageKey, phase, financing } : null);
-  const total = query.data?.total ?? 0;
+  const stage = data.stages.find((s) => s.key === shownKey);
+  const query = useStageProjects(shownKey ? { stage: shownKey, phase, financing } : null);
+  // Until the rows arrive, the bar's own numbers stand in (phase chip count when one is chosen).
+  const total =
+    query.data?.total ?? stage?.phases.find((p) => p.name === phase)?.count ?? stage?.count ?? 0;
 
   return (
     <Drawer
       anchor="right"
       open={stageKey !== null}
       onClose={onClose}
-      PaperProps={{ sx: { width: { xs: '100%', sm: 440 } } }}
+      aria-labelledby={titleId}
+      slotProps={{ paper: { sx: { width: { xs: '100%', sm: 440 } } } }}
     >
       {stage ? (
         <div className="flex h-full flex-col">
           <header className="flex items-start justify-between gap-3 border-b border-border p-5">
             <div>
-              <h2 className="text-base font-semibold text-foreground">{stage.label}</h2>
+              <h2 id={titleId} className="text-base font-semibold text-foreground">
+                {stage.label}
+              </h2>
               <p className="text-xs text-foreground-secondary">
-                {stage.count} projects{stage.lateCount > 0 ? ` · ${stage.lateCount} late` : ''}
+                {plural(stage.count, 'project')}
+                {stage.lateCount > 0 ? ` · ${stage.lateCount} late` : ''}
               </p>
             </div>
             <button
@@ -103,7 +121,10 @@ export function StagePanel({
                       className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-surface-alt"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate text-sm text-foreground" title={row.customerName ?? row.projectNumber}>
+                        <span
+                          className="block truncate text-sm text-foreground"
+                          title={row.customerName ?? row.projectNumber}
+                        >
                           {row.customerName ?? row.projectNumber}
                         </span>
                         <span className="block truncate text-xs text-foreground-tertiary">
@@ -128,14 +149,16 @@ export function StagePanel({
 
           <footer className="flex items-center justify-between gap-3 border-t border-border p-5 text-xs">
             <span className="text-foreground-tertiary">
-              {total > 10 ? `Showing 10 of ${total}` : `${total} projects`}
+              {total > 10 ? `Showing 10 of ${total}` : plural(total, 'project')}
             </span>
-            <Link
-              href={dashboardLinks.stage(stage.key, financing, phase)}
-              className="font-medium text-primary-dark hover:underline"
-            >
-              Open all {total} in list →
-            </Link>
+            {query.isError ? null : (
+              <Link
+                href={dashboardLinks.stage(stage.key, financing, phase)}
+                className="font-medium text-primary-dark hover:underline"
+              >
+                {total === 1 ? 'Open in list →' : `Open all ${total} in list →`}
+              </Link>
+            )}
           </footer>
         </div>
       ) : null}

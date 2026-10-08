@@ -69,7 +69,11 @@ export function ProjectDashboardPage(): React.JSX.Element {
           {isDefault ? 'No projects yet.' : 'No projects match these filters.'}
         </p>
         {!isDefault ? (
-          <button type="button" onClick={reset} className="mt-3 text-sm font-medium text-primary-dark hover:underline">
+          <button
+            type="button"
+            onClick={reset}
+            className="mt-3 text-sm font-medium text-primary-dark hover:underline"
+          >
             Clear filters
           </button>
         ) : null}

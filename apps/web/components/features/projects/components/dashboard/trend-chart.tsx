@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import * as React from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-import { formatKw, monthLabel } from './format';
+import { formatKw, monthLabel, plural } from './format';
 import { dashboardLinks } from './links';
 import { ENTER, enterDelay, usePrefersReducedMotion } from './motion';
 
@@ -53,9 +53,17 @@ export function TrendChart({
         <div>
           <h2 className="text-sm font-semibold text-foreground">Last 12 months</h2>
           <p className="text-2xs text-foreground-tertiary">
-            <span aria-hidden="true" className="mr-1 inline-block size-2 rounded-sm align-middle" style={{ background: COLORS.onboarded }} />
+            <span
+              aria-hidden="true"
+              className="mr-1 inline-block size-2 rounded-sm align-middle"
+              style={{ background: COLORS.onboarded }}
+            />
             onboarded
-            <span aria-hidden="true" className="ml-3 mr-1 inline-block size-2 rounded-sm align-middle" style={{ background: COLORS.meter }} />
+            <span
+              aria-hidden="true"
+              className="ml-3 mr-1 inline-block size-2 rounded-sm align-middle"
+              style={{ background: COLORS.meter }}
+            />
             meter installed · select a bar to see its projects
           </p>
         </div>
@@ -74,24 +82,65 @@ export function TrendChart({
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} barGap={2} margin={{ top: 8, right: 0, left: -16, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke={COLORS.grid} />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: COLORS.axis }} />
-            <YAxis allowDecimals={unit === 'kw'} tickLine={false} axisLine={false} width={44} tick={{ fontSize: 11, fill: COLORS.axis }} />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fontSize: 11, fill: COLORS.axis }}
+            />
+            <YAxis
+              allowDecimals={unit === 'kw'}
+              tickLine={false}
+              axisLine={false}
+              width={44}
+              tick={{ fontSize: 11, fill: COLORS.axis }}
+            />
             <Tooltip
               cursor={{ fill: 'var(--ds-canvas-sunken)' }}
               formatter={(value, name) => [fmt(Number(value ?? 0)), String(name ?? '')]}
             />
-            <Bar dataKey="onboarded" name="Onboarded" fill={COLORS.onboarded} radius={[3, 3, 0, 0]} isAnimationActive={!reduced} animationDuration={700} cursor="pointer" onClick={open('onboarded')} />
-            <Bar dataKey="meter" name="Meter installed" fill={COLORS.meter} radius={[3, 3, 0, 0]} isAnimationActive={!reduced} animationDuration={700} animationBegin={150} cursor="pointer" onClick={open('meterInstalled')} />
+            <Bar
+              dataKey="onboarded"
+              name="Onboarded"
+              fill={COLORS.onboarded}
+              radius={[3, 3, 0, 0]}
+              isAnimationActive={!reduced}
+              animationDuration={700}
+              cursor="pointer"
+              onClick={open('onboarded')}
+            />
+            <Bar
+              dataKey="meter"
+              name="Meter installed"
+              fill={COLORS.meter}
+              radius={[3, 3, 0, 0]}
+              isAnimationActive={!reduced}
+              animationDuration={700}
+              animationBegin={150}
+              cursor="pointer"
+              onClick={open('meterInstalled')}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
-      {/* Keyboard and screen-reader route to the same lists the bars open. */}
-      <ul className="sr-only">
+      {/* Keyboard and screen-reader route to the same lists the bars open. Hidden until a link gets focus. */}
+      <ul className="sr-only focus-within:not-sr-only focus-within:mt-3 focus-within:grid focus-within:grid-cols-2 focus-within:gap-x-6 focus-within:gap-y-1 focus-within:text-xs focus-within:text-foreground-secondary sm:focus-within:grid-cols-4">
         {data.trend.map((t) => (
           <li key={t.month}>
             {monthLabel(t.month)}:{' '}
-            <Link href={dashboardLinks.month('onboarded', t.month, financing)}>{t.onboarded} onboarded</Link>,{' '}
-            <Link href={dashboardLinks.month('meterInstalled', t.month, financing)}>{t.meterInstalled} meters installed</Link>
+            <Link
+              className="hover:text-primary-dark hover:underline"
+              href={dashboardLinks.month('onboarded', t.month, financing)}
+            >
+              {t.onboarded} onboarded
+            </Link>
+            ,{' '}
+            <Link
+              className="hover:text-primary-dark hover:underline"
+              href={dashboardLinks.month('meterInstalled', t.month, financing)}
+            >
+              {plural(t.meterInstalled, 'meter installed', 'meters installed')}
+            </Link>
           </li>
         ))}
       </ul>

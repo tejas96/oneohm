@@ -34,7 +34,10 @@ export function NeedsAction({
                 className="-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-2.5 hover:bg-surface-alt"
               >
                 <span className="min-w-0">
-                  <span className="block truncate text-sm text-foreground" title={row.customerName ?? row.projectNumber}>
+                  <span
+                    className="block truncate text-sm text-foreground"
+                    title={row.customerName ?? row.projectNumber}
+                  >
                     {row.customerName ?? row.projectNumber}
                   </span>
                   <span className="block truncate text-xs text-foreground-tertiary">

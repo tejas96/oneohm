@@ -5,7 +5,7 @@ import Link from 'next/link';
 import * as React from 'react';
 
 import { AnimatedNumber } from './animated-number';
-import { formatKw } from './format';
+import { formatKw, plural } from './format';
 import { dashboardLinks } from './links';
 import { ENTER, enterDelay } from './motion';
 
@@ -26,9 +26,15 @@ export function StagePipeline({
   onOpenStage: (key: StageGroupKey) => void;
 }): React.JSX.Element {
   const [grown, setGrown] = React.useState(false);
+  // The stagger belongs to the first grow only; later resizes move together.
+  const [settled, setSettled] = React.useState(false);
   React.useEffect(() => {
     const id = requestAnimationFrame(() => setGrown(true));
-    return () => cancelAnimationFrame(id);
+    const settle = window.setTimeout(() => setSettled(true), 1200);
+    return () => {
+      cancelAnimationFrame(id);
+      window.clearTimeout(settle);
+    };
   }, []);
 
   const max = Math.max(1, ...data.stages.map((s) => s.count));
@@ -69,7 +75,8 @@ export function StagePipeline({
       ) : (
         <ol className="grid grid-cols-3 gap-3 sm:grid-cols-6">
           {data.stages.map((s, i) => {
-            const height = grown ? (s.count / max) * 100 : 0;
+            // A non-empty stage never shrinks to a hairline.
+            const height = grown && s.count > 0 ? Math.max(4, (s.count / max) * 100) : 0;
             const latePct = s.count > 0 ? (s.lateCount / s.count) * 100 : 0;
             return (
               <li key={s.key}>
@@ -77,7 +84,7 @@ export function StagePipeline({
                   type="button"
                   onClick={() => onOpenStage(s.key)}
                   disabled={s.count === 0}
-                  aria-label={`${s.label}: ${s.count} projects, ${s.lateCount} late. Show projects.`}
+                  aria-label={`${s.label}: ${plural(s.count, 'project')}, ${s.lateCount} late. Show projects.`}
                   className="group flex w-full flex-col gap-2 rounded-lg p-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-default"
                 >
                   <span className="text-center text-sm font-semibold tabular-nums text-foreground">
@@ -86,7 +93,10 @@ export function StagePipeline({
                   <span className="flex h-32 flex-col justify-end overflow-hidden rounded-md bg-surface-alt">
                     <span
                       className="flex w-full flex-col justify-end overflow-hidden rounded-md bg-primary-light transition-[height] duration-700 ease-out group-hover:brightness-95 motion-reduce:transition-none"
-                      style={{ height: `${height}%`, transitionDelay: grown ? `${i * 60}ms` : '0ms' }}
+                      style={{
+                        height: `${height}%`,
+                        transitionDelay: grown && !settled ? `${i * 60}ms` : '0ms',
+                      }}
                     >
                       <span className="w-full bg-error" style={{ height: `${latePct}%` }} />
                     </span>

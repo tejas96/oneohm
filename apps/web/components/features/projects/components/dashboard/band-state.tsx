@@ -4,7 +4,13 @@ import Skeleton from '@mui/material/Skeleton';
 import { RotateCw } from 'lucide-react';
 import * as React from 'react';
 
-export function BandError({ what, onRetry }: { what: string; onRetry: () => void }): React.JSX.Element {
+export function BandError({
+  what,
+  onRetry,
+}: {
+  what: string;
+  onRetry: () => void;
+}): React.JSX.Element {
   return (
     <section className="rounded-xl bg-surface p-5 shadow-e2">
       <p className="text-sm text-foreground-secondary">Could not load {what}.</p>
@@ -24,7 +30,8 @@ export function BandError({ what, onRetry }: { what: string; onRetry: () => void
 export function DashboardSkeleton(): React.JSX.Element {
   const card = 'rounded-xl bg-surface p-5 shadow-e2';
   return (
-    <div className="flex flex-col gap-5" aria-busy="true" aria-label="Loading dashboard">
+    <div className="flex flex-col gap-5" role="status" aria-busy="true">
+      <span className="sr-only">Loading dashboard</span>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {Array.from({ length: 5 }, (_, i) => (
           <div key={i} className={card}>
@@ -37,11 +44,19 @@ export function DashboardSkeleton(): React.JSX.Element {
       <div className={card}>
         <Skeleton variant="rounded" height={190} />
       </div>
-      <div className="grid gap-5 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
         <div className={`${card} lg:col-span-3`}>
           <Skeleton variant="rounded" height={260} />
         </div>
         <div className={`${card} lg:col-span-2`}>
+          <Skeleton variant="rounded" height={260} />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className={`${card} lg:col-span-2`}>
+          <Skeleton variant="rounded" height={260} />
+        </div>
+        <div className={card}>
           <Skeleton variant="rounded" height={260} />
         </div>
       </div>

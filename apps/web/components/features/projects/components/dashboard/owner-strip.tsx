@@ -75,17 +75,11 @@ export function OwnerStrip({
         </span>
         {financing === 'all' ? (
           <span className="text-xs text-foreground-tertiary">
-            <Link
-              className={SMALL}
-              href={dashboardLinks.onboarded(period.from, period.to, 'cash')}
-            >
+            <Link className={SMALL} href={dashboardLinks.onboarded(period.from, period.to, 'cash')}>
               {strip.onboarded.cash} cash
             </Link>
             {' · '}
-            <Link
-              className={SMALL}
-              href={dashboardLinks.onboarded(period.from, period.to, 'loan')}
-            >
+            <Link className={SMALL} href={dashboardLinks.onboarded(period.from, period.to, 'loan')}>
               {strip.onboarded.loan} loan
             </Link>
           </span>
@@ -116,11 +110,7 @@ export function OwnerStrip({
         </Link>
         <span className="text-xs text-foreground-tertiary">
           <span
-            className={cn(
-              'font-medium',
-              delta > 0 && 'text-success',
-              delta < 0 && 'text-error',
-            )}
+            className={cn('font-medium', delta > 0 && 'text-success', delta < 0 && 'text-error')}
           >
             {delta > 0 ? `+${delta}` : delta < 0 ? `−${Math.abs(delta)}` : 'Same'}
           </span>{' '}

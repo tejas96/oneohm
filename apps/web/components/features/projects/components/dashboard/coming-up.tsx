@@ -32,16 +32,24 @@ export function ComingUp({
       >
         <AnimatedNumber value={c.count} />
       </Link>
-      <p className="text-xs text-foreground-tertiary">meters due · {formatKw(c.kw)}</p>
+      <p className="text-xs text-foreground-tertiary">
+        {c.count === 1 ? 'meter' : 'meters'} due · {formatKw(c.kw)}
+      </p>
       <ul className="mt-3 divide-y divide-border text-sm">
         <li>
-          <Link href={dashboardLinks.meterDue(c.from, c.thisWeekTo, financing)} className="flex justify-between py-2 hover:text-primary-dark">
+          <Link
+            href={dashboardLinks.meterDue(c.from, c.thisWeekTo, financing)}
+            className="flex justify-between py-2 hover:text-primary-dark"
+          >
             <span className="text-foreground-secondary">This week</span>
             <span className="tabular-nums">{c.thisWeek}</span>
           </Link>
         </li>
         <li>
-          <Link href={dashboardLinks.meterDue(c.nextWeekFrom, c.nextWeekTo, financing)} className="flex justify-between py-2 hover:text-primary-dark">
+          <Link
+            href={dashboardLinks.meterDue(c.nextWeekFrom, c.nextWeekTo, financing)}
+            className="flex justify-between py-2 hover:text-primary-dark"
+          >
             <span className="text-foreground-secondary">Next week</span>
             <span className="tabular-nums">{c.nextWeek}</span>
           </Link>

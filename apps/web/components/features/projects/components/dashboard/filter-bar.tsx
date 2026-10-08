@@ -23,6 +23,13 @@ function toIsoDay(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/** The date fields hand over an Invalid Date while a value is half-typed. */
+function dayOf(d: Date | null): string | undefined {
+  return d && !Number.isNaN(d.getTime()) ? toIsoDay(d) : undefined;
+}
+
+const isRealDay = (v: string | undefined): v is string => !!v && !Number.isNaN(Date.parse(v));
+
 /**
  * One period picker and one Cash/Loan switch for the whole page (spec D2).
  * A custom range is applied only once both dates are set and valid, so half a
@@ -35,16 +42,26 @@ export function FilterBar({
   filters: DashboardFilters;
   onChange: (patch: Partial<DashboardFilters>) => void;
 }): React.JSX.Element {
-  const [customOpen, setCustomOpen] = React.useState(filters.period === 'custom');
+  // "Custom dates" picked, but no complete range applied yet.
+  const [pickingCustom, setPickingCustom] = React.useState(false);
   const [draft, setDraft] = React.useState<{ from?: string; to?: string }>({
     from: filters.from,
     to: filters.to,
   });
   const [error, setError] = React.useState<string | null>(null);
+  const customOpen = filters.period === 'custom' || pickingCustom;
+
+  // The URL is the source of truth: Clear filters, Back/Forward or a pasted link
+  // must reset what the bar shows.
+  React.useEffect(() => {
+    setPickingCustom(false);
+    setDraft({ from: filters.from, to: filters.to });
+    setError(null);
+  }, [filters.period, filters.from, filters.to]);
 
   const applyDraft = (next: { from?: string; to?: string }): void => {
     setDraft(next);
-    if (!next.from || !next.to) return setError(null);
+    if (!isRealDay(next.from) || !isRealDay(next.to)) return setError(null);
     if (next.from > next.to) return setError('"To" is before "From".');
     const span = (Date.parse(next.to) - Date.parse(next.from)) / 86_400_000 + 1;
     if (span > MAX_DAYS) return setError('Pick 3 years or less.');
@@ -62,10 +79,10 @@ export function FilterBar({
         onChange={(e) => {
           const value = e.target.value as DashboardPeriod;
           if (value === 'custom') {
-            setCustomOpen(true);
+            setPickingCustom(true);
             return;
           }
-          setCustomOpen(false);
+          setPickingCustom(false);
           setError(null);
           onChange({ period: value });
         }}
@@ -76,8 +93,8 @@ export function FilterBar({
           <MUIDateRangePicker
             fromDate={draft.from ?? null}
             toDate={draft.to ?? null}
-            onFromChange={(d) => applyDraft({ ...draft, from: d ? toIsoDay(d) : undefined })}
-            onToChange={(d) => applyDraft({ ...draft, to: d ? toIsoDay(d) : undefined })}
+            onFromChange={(d) => applyDraft({ ...draft, from: dayOf(d) })}
+            onToChange={(d) => applyDraft({ ...draft, to: dayOf(d) })}
           />
           {error ? (
             <p role="alert" className="mt-1 text-xs text-error">
