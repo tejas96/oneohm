@@ -505,6 +505,14 @@ export const REPORT_FACTS = [
     help: `${FROM_QUOTE} Worked out as capacity × quantity of each inverter.`,
   },
   {
+    key: 'project_onboarded_date',
+    label: 'Project onboarded date',
+    type: 'date',
+    group: 'system',
+    source: 'project',
+    help: 'The day the project was created, when the quote was converted. The Model Agreement prints it as the date the agreement is executed.',
+  },
+  {
     key: 'system_cost',
     label: 'Cost of the system',
     type: 'money',

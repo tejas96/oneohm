@@ -173,13 +173,15 @@ export const MODEL_AGREEMENT_REPORT: ReportDefinition = {
   documentTag: DocumentTag.MODEL_AGREEMENT,
   // 2: the vendor signs with the company stamp, under the company name.
   // 3: page margins; headings stay with their text; inverter brand once.
-  templateVersion: 3,
+  // 4: "executed on" prints the project onboarded date.
+  templateVersion: 4,
   facts: [
     req('consumer_name'),
     req('consumer_number'),
     req('site_address'),
     req('vendor_name'),
     req('vendor_address'),
+    opt('project_onboarded_date'),
     req('module_total_kw'),
     req('module_make'),
     opt('module_model_number'),
