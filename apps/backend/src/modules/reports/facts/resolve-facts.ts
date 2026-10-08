@@ -135,6 +135,10 @@ export function resolveSourceFacts({
     contractValue != null && contractValue > 0 ? str(Math.round(contractValue)) : '';
 
   facts.installed_capacity_kw = str(kw);
+  // The day the quote became a project, in IST so an evening conversion keeps its date.
+  facts.project_onboarded_date = project.createdAt
+    ? project.createdAt.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+    : '';
 
   // A mixed panel set is joined, never truncated to its first entry: this is
   // filed with the utility, and the first entry understated module count and
