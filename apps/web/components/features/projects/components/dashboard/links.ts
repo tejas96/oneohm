@@ -1,8 +1,4 @@
-import type {
-  DashboardFinancing,
-  ProjectAttention,
-  StageGroupKey,
-} from '@tejas96/shared/types';
+import type { DashboardFinancing, ProjectAttention, StageGroupKey } from '@tejas96/shared/types';
 
 import { ROUTES } from '@/lib/config/routes';
 

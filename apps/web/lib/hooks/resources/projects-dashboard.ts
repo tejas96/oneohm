@@ -35,9 +35,7 @@ export const projectsDashboardKeys = {
  * `keepPreviousData`: a filter change keeps the old numbers on screen and
  * tweens them to the new ones, instead of flashing back to skeletons.
  */
-export function useProjectsDashboard(
-  filters: DashboardFilters,
-): UseQueryResult<ProjectsDashboard> {
+export function useProjectsDashboard(filters: DashboardFilters): UseQueryResult<ProjectsDashboard> {
   return useQuery({
     queryKey: projectsDashboardKeys.summary(filters),
     queryFn: async ({ signal }) => {

@@ -29,7 +29,8 @@ const SCOPED = `
            OR ($2::text = 'cash' AND ${FACTS.cash}))
   )`;
 
-const inPeriod = (column: 'created_at' | 'meter_completed_at'): string => factsBetween(column, '$3', '$4');
+const inPeriod = (column: 'created_at' | 'meter_completed_at'): string =>
+  factsBetween(column, '$3', '$4');
 
 /** $3 from, $4 to, $5 previousFrom, $6 previousTo, $7 comingFrom, $8 comingTo, $9 thisWeekTo, $10 nextWeekFrom, $11 nextWeekTo */
 const STRIP_SQL = `${SCOPED}
@@ -275,7 +276,10 @@ export class ProjectDashboardService {
           }),
         ),
       },
-      teams: teamRows.map((r) => ({ department: String(r.department), lateSteps: num(r.lateSteps) })),
+      teams: teamRows.map((r) => ({
+        department: String(r.department),
+        lateSteps: num(r.lateSteps),
+      })),
       trend: trendRows.map((r) => ({
         month: String(r.month),
         onboarded: num(r.onboarded),
