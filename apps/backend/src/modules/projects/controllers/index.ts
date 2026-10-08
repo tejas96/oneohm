@@ -6,3 +6,4 @@ export * from './project-task.controller';
 export * from './project-team.controller';
 export * from './project-chat.controller';
 export * from './tasks.controller';
+export * from './project-dashboard.controller';

@@ -1,0 +1,53 @@
+import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
+import type { DashboardFinancing, DashboardPeriod } from '@tejas96/shared/types';
+import { STAGE_GROUP_KEYS } from '@tejas96/shared/utils';
+import { IsIn, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+
+export const DASHBOARD_PERIODS: readonly DashboardPeriod[] = [
+  'this_month',
+  'last_month',
+  'this_quarter',
+  'this_fy',
+  'custom',
+];
+export const DASHBOARD_FINANCING: readonly DashboardFinancing[] = ['all', 'cash', 'loan'];
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+export class ProjectsDashboardQueryDto {
+  @ApiPropertyOptional({ enum: DASHBOARD_PERIODS, default: 'this_month' })
+  @IsOptional()
+  @IsIn(DASHBOARD_PERIODS)
+  period?: DashboardPeriod;
+
+  @ApiPropertyOptional({ example: '2026-09-01', description: 'Required when period=custom' })
+  @IsOptional()
+  @Matches(ISO_DAY)
+  from?: string;
+
+  @ApiPropertyOptional({ example: '2026-09-30', description: 'Required when period=custom' })
+  @IsOptional()
+  @Matches(ISO_DAY)
+  to?: string;
+
+  @ApiPropertyOptional({ enum: DASHBOARD_FINANCING, default: 'all' })
+  @IsOptional()
+  @IsIn(DASHBOARD_FINANCING)
+  financing?: DashboardFinancing;
+}
+
+export class StageProjectsQueryDto {
+  @ApiProperty({ enum: [...STAGE_GROUP_KEYS, 'none'] })
+  @IsIn([...STAGE_GROUP_KEYS, 'none'])
+  stage!: string;
+
+  @ApiPropertyOptional({ example: 'Equipment Delivery' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  phase?: string;
+
+  @ApiPropertyOptional({ enum: DASHBOARD_FINANCING, default: 'all' })
+  @IsOptional()
+  @IsIn(DASHBOARD_FINANCING)
+  financing?: DashboardFinancing;
+}

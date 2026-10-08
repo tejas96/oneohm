@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import {
   ProjectAttentionController,
+  ProjectDashboardController,
   ProjectAnalyticsController,
   ProjectController,
   ProjectTaskController,
@@ -31,6 +32,7 @@ import {
   ProjectAttentionService,
   ProjectAnalyticsService,
   ProjectCancellationService,
+  ProjectDashboardService,
   ProjectService,
   ProjectTaskService,
   TaskScheduleService,
@@ -43,6 +45,7 @@ import {
 } from './services';
 import { BomModule } from '../bom/bom.module';
 import { CustomersModule } from '../customers/customers.module';
+import { FinanceModule } from '../finance/finance.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { LedgerModule } from '../ledger/ledger.module';
 import { QuotesModule } from '../quotes/quotes.module';
@@ -59,6 +62,7 @@ import { UsersModule } from '../users/users.module';
     ]),
     QuotesModule,
     CustomersModule,
+    FinanceModule,
     UsersModule,
     // Cancelling a project releases the stock it reserved and raises a return
     // request for anything already at site — StockAllocationService and
@@ -73,6 +77,7 @@ import { UsersModule } from '../users/users.module';
   controllers: [
     ProjectAnalyticsController, // registered before ProjectController — static 'analytics' segments resolve first
     ProjectAttentionController, // static ':id/attention' should resolve before generic ':id' routes
+    ProjectDashboardController, // static 'dashboard' segments must resolve before ':id'
     ProjectController,
     WorkflowStepController,
     ProjectTaskController,
@@ -91,6 +96,7 @@ import { UsersModule } from '../users/users.module';
     ProjectService,
     ProjectAttentionService,
     ProjectCancellationService,
+    ProjectDashboardService,
     WorkflowStepService,
     WorkflowEngineService,
     ProjectTaskService,
