@@ -12,6 +12,7 @@ import { type EntityManager, IsNull, Not, Repository } from 'typeorm';
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { systemSizeKwSql } from '../../../common/utils/transform.util';
 import { ProjectEntity } from '../entities/project.entity';
+import { PROJECT_FACTS_CTE, buildProjectFactsFilter, type ProjectFactsFilters } from '../sql/project-facts.sql';
 
 /**
  * A project's money position, in rupees, read from `v_project_balance`.
@@ -186,7 +187,7 @@ export class ProjectRepository {
       sortOrder?: 'ASC' | 'DESC';
       /** employee_profiles.id, server-set for a reseller caller; scopes to his customers. */
       resellerId?: string;
-    },
+    } & ProjectFactsFilters,
   ): Promise<{ projects: ProjectEntity[]; total: number }> {
     const query = this.repository
       .createQueryBuilder('project')
@@ -387,6 +388,13 @@ export class ProjectRepository {
       );
     }
 
+    // Dashboard drill-downs (and the matching list filters). Same SQL rules the
+    // dashboard counts with, so the number on a card is the number of rows here.
+    const factsFilter = buildProjectFactsFilter(filters);
+    if (factsFilter) {
+      query.andWhere(factsFilter.sql, factsFilter.params);
+    }
+
     const isSmartSort = filters?.sortBy === 'smartSort';
     const sortingUserId = filters?.memberId || filters?.currentUserId;
     const hasSortingUser = !!sortingUserId;
@@ -567,6 +575,23 @@ export class ProjectRepository {
       });
     }
     return map;
+  }
+
+  /**
+   * Current phase for a page of projects in ONE query — the furthest-reached
+   * rule from PROJECT_FACTS_CTE. Replaces a per-row task fetch.
+   */
+  async getCurrentPhases(projectIds: string[]): Promise<Map<string, string | null>> {
+    if (projectIds.length === 0) return new Map();
+    const rows: Array<{ projectId: string; currentPhase: string | null }> =
+      await this.repository.query(
+        `WITH ${PROJECT_FACTS_CTE}
+         SELECT pf.project_id AS "projectId", pf.current_phase AS "currentPhase"
+         FROM project_facts pf
+         WHERE pf.project_id = ANY($1::uuid[])`,
+        [projectIds],
+      );
+    return new Map(rows.map((r) => [r.projectId, r.currentPhase]));
   }
 
   /**

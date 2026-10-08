@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { type PaginatedResponse, ProjectPriority, ProjectStatus } from '@tejas96/shared/types';
+import { STAGE_GROUP_KEYS } from '@tejas96/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -43,7 +44,35 @@ import { ProjectRepository } from '../repositories';
 import { ProjectCancellationService } from '../services/project-cancellation.service';
 import { ProjectTeamService } from '../services/project-team.service';
 import { ProjectService } from '../services/project.service';
+import type { ProjectFactsFilters } from '../sql/project-facts.sql';
 import type { OnboardingBlocker } from '../utils/onboarding-checks';
+
+/** A stale bookmarked value means "no filter", never a 400 — same as healthStatus. */
+function oneOf<T extends string>(value: unknown, allowed: readonly T[]): T | undefined {
+  return typeof value === 'string' && (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : undefined;
+}
+
+function isoDay(value: unknown): string | undefined {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined;
+}
+
+function parseFactsFilters(q: Record<string, unknown>): ProjectFactsFilters {
+  return {
+    financing: oneOf(q.financing, ['cash', 'loan'] as const),
+    progress: oneOf(q.progress, ['live', 'not_started', 'in_progress'] as const),
+    stage: oneOf(q.stage, [...STAGE_GROUP_KEYS, 'none'] as const),
+    phase: typeof q.phase === 'string' && q.phase.length <= 100 ? q.phase : undefined,
+    attention: oneOf(q.attention, ['late_steps', 'old_steps', 'unstaged_steps'] as const),
+    onboardedFrom: isoDay(q.onboardedFrom),
+    onboardedTo: isoDay(q.onboardedTo),
+    meterInstalledFrom: isoDay(q.meterInstalledFrom),
+    meterInstalledTo: isoDay(q.meterInstalledTo),
+    meterDueFrom: isoDay(q.meterDueFrom),
+    meterDueTo: isoDay(q.meterDueTo),
+  };
+}
 
 /**
  * Project Controller
@@ -229,6 +258,72 @@ export class ProjectController {
     description:
       'Filter by reseller (employee_profiles.id). Ignored and overwritten for a reseller caller.',
   })
+  @ApiQuery({
+    name: 'financing',
+    required: false,
+    type: String,
+    description: 'Financing: cash or loan',
+  })
+  @ApiQuery({
+    name: 'progress',
+    required: false,
+    type: String,
+    description: 'Progress: live, not_started or in_progress (live = still has open steps)',
+  })
+  @ApiQuery({
+    name: 'stage',
+    required: false,
+    type: String,
+    description: 'Stage group: design, approvals, material, installation, meter, handover, or none',
+  })
+  @ApiQuery({
+    name: 'phase',
+    required: false,
+    type: String,
+    description: 'Exact current phase name (live projects only)',
+  })
+  @ApiQuery({
+    name: 'attention',
+    required: false,
+    type: String,
+    description: 'Needs attention: late_steps, old_steps or unstaged_steps',
+  })
+  @ApiQuery({
+    name: 'onboardedFrom',
+    required: false,
+    type: String,
+    description: 'Onboarded on or after this date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'onboardedTo',
+    required: false,
+    type: String,
+    description: 'Onboarded on or before this date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'meterInstalledFrom',
+    required: false,
+    type: String,
+    description: 'Net meter installed on or after this date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'meterInstalledTo',
+    required: false,
+    type: String,
+    description: 'Net meter installed on or before this date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'meterDueFrom',
+    required: false,
+    type: String,
+    description: 'Open net-meter step due on or after this date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'meterDueTo',
+    required: false,
+    type: String,
+    description: 'Open net-meter step due on or before this date (YYYY-MM-DD)',
+  })
   async findAll(
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page?: string,
@@ -257,6 +352,7 @@ export class ProjectController {
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
     @Query('resellerId', new ParseUUIDPipe({ optional: true })) resellerIdQuery?: string,
     @ResellerScope() resellerId?: string,
+    @Query() rawQuery: Record<string, unknown> = {},
   ): Promise<PaginatedResponse<ProjectListItemDto>> {
     const pageNum = Math.max(1, page ? parseInt(page, 10) || 1 : 1);
     const limitNum = Math.min(100, Math.max(1, limit ? parseInt(limit, 10) || 20 : 20));
@@ -344,6 +440,7 @@ export class ProjectController {
       systemSizeMax,
       sortBy,
       sortOrder,
+      ...parseFactsFilters(rawQuery),
     });
 
     return {
@@ -457,7 +554,8 @@ export class ProjectController {
     if (resellerId) await this.ownership.assertOwns('project', id, resellerId);
     const project = await this.projectService.findById(id);
 
-    return plainToInstance(ProjectResponseDto, project, {
+    const currentPhase = await this.projectService.computeCurrentPhaseFromTasks(id);
+    return plainToInstance(ProjectResponseDto, Object.assign(project, { currentPhase }), {
       excludeExtraneousValues: true,
     });
   }
