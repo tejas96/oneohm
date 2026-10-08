@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Link, Stack, Typography } from '@mui/material';
-import { followupIstDayDiff, type LeadTemperature } from '@tejas96/shared/types';
+import { FollowupStatus, followupIstDayDiff, type LeadTemperature } from '@tejas96/shared/types';
 import { useRouter } from 'next/navigation';
 import { useMemo, type JSX } from 'react';
 
@@ -11,6 +11,7 @@ import { type FollowupResponse } from '../hooks/use-followups';
 import { crmToneFromDue, followupDueTone } from '../lib/due';
 import { followupRecordHref } from '../lib/followup-href';
 
+import type { ColumnConfig, FilterState } from '@/components/shared/advanced-table';
 import {
   CrmStatusPill,
   CrmTable,
@@ -40,13 +41,23 @@ function dueLabel(scheduledAt: string, now = new Date()): { text: string; tone: 
   return { text: formatFollowupWhen(scheduledAt, now), tone };
 }
 
-const leadName = (followup: FollowupResponse): string => {
-  if (followup.property) {
-    return followup.property.propertyName?.trim() || followup.property.city?.trim() || 'Property';
-  }
+/** Line 1 of the Customer / Site cell. Soft-deleted customers come back null. */
+const customerName = (followup: FollowupResponse): string => {
+  if (!followup.customer) return 'Deleted customer';
   return (
-    [followup.customer?.firstName, followup.customer?.lastName].filter(Boolean).join(' ').trim() ||
-    'Customer lead'
+    [followup.customer.firstName, followup.customer.lastName].filter(Boolean).join(' ').trim() ||
+    'Unnamed customer'
+  );
+};
+
+/** Line 2: which site, or that it is a customer-level lead. */
+const siteLine = (followup: FollowupResponse): string => {
+  if (!followup.propertyId) return 'Customer lead';
+  if (!followup.property) return 'Deleted site';
+  return (
+    [followup.property.propertyName?.trim(), followup.property.city?.trim()]
+      .filter(Boolean)
+      .join(' · ') || 'Unnamed site'
   );
 };
 
@@ -69,6 +80,13 @@ export interface FollowupListProps {
   onReassign: (followups: FollowupResponse[]) => void;
   onCancel: (followup: FollowupResponse) => void;
   emptyMessage?: string;
+  /** Turns on the table's search box. The table debounces it. */
+  onSearchChange?: (search: string) => void;
+  initialSearch?: string;
+  /** Turns on the shared filter panel. */
+  filterColumns?: ColumnConfig<FollowupResponse>[];
+  filterModel?: FilterState;
+  onFilterChange?: (filters: FilterState) => void;
 }
 
 /**
@@ -91,6 +109,11 @@ export function FollowupList({
   onReassign,
   onCancel,
   emptyMessage,
+  onSearchChange,
+  initialSearch,
+  filterColumns,
+  filterModel,
+  onFilterChange,
 }: FollowupListProps): JSX.Element {
   const router = useRouter();
 
@@ -102,13 +125,22 @@ export function FollowupList({
         track: FOLLOWUP_GRID_TRACKS.due,
         cellSx: CELL_GUTTER,
         renderCell: (row) => {
-          const due = dueLabel(row.scheduledAt);
+          // Finished work is never "late" — show when it happened, not a countdown.
+          const due =
+            row.status === FollowupStatus.PENDING
+              ? dueLabel(row.scheduledAt)
+              : {
+                  text: formatFollowupWhen(row.scheduledAt),
+                  tone: (row.status === FollowupStatus.COMPLETED
+                    ? 'success'
+                    : 'neutral') as CrmTone,
+                };
           return <CrmStatusPill label={due.text} tone={due.tone} size="sm" />;
         },
       },
       {
         field: 'lead',
-        header: 'Lead',
+        header: 'Customer / Site',
         track: FOLLOWUP_GRID_TRACKS.lead,
         stopPropagation: true,
         cellSx: CELL_GUTTER,
@@ -116,7 +148,7 @@ export function FollowupList({
           const href = followupRecordHref(row);
           const name = (
             <Typography variant="body2" fontWeight={600} noWrap>
-              {leadName(row)}
+              {customerName(row)}
             </Typography>
           );
           return (
@@ -134,7 +166,7 @@ export function FollowupList({
                 name
               )}
               <Typography variant="caption" color="text.secondary" noWrap>
-                {row.propertyId ? (row.property?.city ?? 'Site') : 'Customer lead'}
+                {siteLine(row)}
               </Typography>
             </Stack>
           );
@@ -229,6 +261,12 @@ export function FollowupList({
         totalRowCount={totalRowCount}
         onPageChange={onPageChange}
         itemLabel="follow-ups"
+        onSearchChange={onSearchChange}
+        initialSearch={initialSearch}
+        searchPlaceholder="Search name, site, phone"
+        filterColumns={filterColumns}
+        filterModel={filterModel}
+        onFilterChange={onFilterChange}
         gridMinWidth={crm['grid-min-width-followup']}
         emptyMessage={emptyMessage ?? 'Nothing here.'}
         onRowClick={(row) => {

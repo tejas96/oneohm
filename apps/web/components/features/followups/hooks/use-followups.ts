@@ -6,6 +6,7 @@ import {
   type FollowupPriority,
   type FollowupStatus,
   type FollowupType,
+  type LeadTemperature,
   type PaginationMeta,
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
@@ -55,6 +56,10 @@ export interface FollowupFilters {
   assignedToUserId?: string;
   customerId?: string;
   propertyId?: string;
+  type?: FollowupType;
+  leadTemperature?: LeadTemperature;
+  /** Customer name, site name or phone. */
+  search?: string;
   from?: string;
   to?: string;
   page?: number;

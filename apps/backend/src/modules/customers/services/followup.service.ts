@@ -5,6 +5,7 @@ import {
   FollowupPriority,
   FollowupStatus,
   FollowupType,
+  type LeadTemperature,
   LossReason,
 } from '@tejas96/shared/types';
 
@@ -108,6 +109,9 @@ export class FollowupService {
       customerId?: string;
       propertyId?: string;
       priority?: string;
+      type?: FollowupType;
+      leadTemperature?: LeadTemperature;
+      search?: string;
       from?: string;
       to?: string;
       resellerId?: string;
