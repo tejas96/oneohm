@@ -9,10 +9,17 @@ export function enterDelay(index: number, stepMs = 60): CSSProperties {
   return { animationDelay: `${index * stepMs}ms`, animationFillMode: 'both' };
 }
 
+const REDUCED_QUERY = '(prefers-reduced-motion: reduce)';
+
+/** Guarded: the server has no `window`, so it reads as "motion allowed". */
+function readPrefersReducedMotion(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia(REDUCED_QUERY).matches;
+}
+
 export function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
+  const [reduced, setReduced] = useState(readPrefersReducedMotion);
   useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const mq = window.matchMedia(REDUCED_QUERY);
     const update = (): void => setReduced(mq.matches);
     update();
     mq.addEventListener('change', update);
@@ -34,6 +41,10 @@ export function useCountUp(target: number, durationMs = 600): number {
   useEffect(() => {
     if (reduced) {
       shown.current = target;
+      setValue(target);
+      return undefined;
+    }
+    if (shown.current === target) {
       setValue(target);
       return undefined;
     }

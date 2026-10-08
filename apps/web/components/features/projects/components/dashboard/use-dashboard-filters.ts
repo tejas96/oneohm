@@ -16,6 +16,13 @@ const PERIODS: readonly DashboardPeriod[] = [
 const FINANCING: readonly DashboardFinancing[] = ['all', 'cash', 'loan'];
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
+/** Format AND calendar check: `2026-13-45` matches the regex but is not a day. */
+function isIsoDay(v: string): boolean {
+  if (!ISO_DAY.test(v)) return false;
+  const d = new Date(`${v}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
+}
+
 export const DEFAULT_DASHBOARD_FILTERS: DashboardFilters = {
   period: 'this_month',
   financing: 'all',
@@ -35,7 +42,7 @@ export function readDashboardFilters(params: URLSearchParams): DashboardFilters 
 
   const from = params.get('from') ?? '';
   const to = params.get('to') ?? '';
-  if (!ISO_DAY.test(from) || !ISO_DAY.test(to) || from > to) {
+  if (!isIsoDay(from) || !isIsoDay(to) || from > to) {
     return { ...DEFAULT_DASHBOARD_FILTERS, financing };
   }
   return { period, from, to, financing };
@@ -71,6 +78,11 @@ export function useDashboardFilters(): {
     [pathname, router],
   );
 
+  /**
+   * Contract: to enter a custom range, call `setFilters({ period: 'custom', from, to })`
+   * in ONE call with both dates. A custom period without both dates is read back
+   * as the default (`this_month`), so a split call (period first, dates later) loses the range.
+   */
   const setFilters = useCallback(
     (patch: Partial<DashboardFilters>) => {
       const next = { ...filters, ...patch };

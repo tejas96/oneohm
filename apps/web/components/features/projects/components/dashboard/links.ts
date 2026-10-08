@@ -29,30 +29,31 @@ function monthBounds(month: string): { from: string; to: string } {
 }
 
 export const dashboardLinks = {
-  onboarded: (from: string, to: string, f: DashboardFinancing) =>
+  onboarded: (from: string, to: string, f: DashboardFinancing): string =>
     projectListHref({ ...fin(f), onboarded: { from, to } }),
-  live: (f: DashboardFinancing) => projectListHref({ ...fin(f), progress: 'live' }),
-  notStarted: (f: DashboardFinancing) => projectListHref({ ...fin(f), progress: 'not_started' }),
-  inProgress: (f: DashboardFinancing) => projectListHref({ ...fin(f), progress: 'in_progress' }),
-  meterInstalled: (from: string, to: string, f: DashboardFinancing) =>
+  live: (f: DashboardFinancing): string => projectListHref({ ...fin(f), progress: 'live' }),
+  notStarted: (f: DashboardFinancing): string =>
+    projectListHref({ ...fin(f), progress: 'not_started' }),
+  inProgress: (f: DashboardFinancing): string =>
+    projectListHref({ ...fin(f), progress: 'in_progress' }),
+  meterInstalled: (from: string, to: string, f: DashboardFinancing): string =>
     projectListHref({ ...fin(f), meterInstalled: { from, to } }),
-  attention: (a: ProjectAttention, f: DashboardFinancing) =>
+  attention: (a: ProjectAttention, f: DashboardFinancing): string =>
     projectListHref({ ...fin(f), attention: a }),
-  stage: (stage: StageGroupKey | 'none', f: DashboardFinancing, phase?: string) =>
+  stage: (stage: StageGroupKey | 'none', f: DashboardFinancing, phase?: string): string =>
     projectListHref({ ...fin(f), ...(phase ? { phase } : { stage }) }),
-  meterDue: (from: string, to: string, f: DashboardFinancing) =>
+  meterDue: (from: string, to: string, f: DashboardFinancing): string =>
     projectListHref({ ...fin(f), meterDue: { from, to } }),
-  month: (kind: 'onboarded' | 'meterInstalled', month: string, f: DashboardFinancing) => {
+  month: (kind: 'onboarded' | 'meterInstalled', month: string, f: DashboardFinancing): string => {
     const { from, to } = monthBounds(month);
     return projectListHref({ ...fin(f), [kind]: { from, to } });
   },
-  project: (projectId: string) => `/projects/${projectId}`,
-  task: (projectId: string, taskId: string) =>
+  project: (projectId: string): string => `/projects/${projectId}`,
+  task: (projectId: string, taskId: string): string =>
     `/projects/${projectId}?${new URLSearchParams({ tab: 'tasks', t_task: taskId })}`,
-  workload: (department: string) =>
-    `/workload?${new URLSearchParams({ department })}`,
-  receivables: (f: DashboardFinancing) =>
+  workload: (department: string): string => `/workload?${new URLSearchParams({ department })}`,
+  receivables: (f: DashboardFinancing): string =>
     f === 'all' ? ROUTES.FINANCE.RECEIVABLES : `${ROUTES.FINANCE.RECEIVABLES}?funding=${f}`,
-  recovery: (f: DashboardFinancing) =>
+  recovery: (f: DashboardFinancing): string =>
     `${ROUTES.FINANCE.RECEIVABLES}?scope=${f === 'all' ? 'recovery' : `recovery-${f}`}`,
 };

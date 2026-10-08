@@ -74,7 +74,7 @@ export function useStageProjects(
       return data;
     },
     enabled: params !== null,
-    placeholderData: keepPreviousData,
+    // No keepPreviousData: a stage switch would show the old stage's projects under the new title.
     staleTime: 60_000,
   });
 }
