@@ -18,3 +18,4 @@ export * from './workflow-step-selection';
 export * from './customer-update-text';
 export * from './maintenance';
 export * from './commission';
+export * from './project-stage';
