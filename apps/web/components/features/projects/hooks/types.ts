@@ -66,6 +66,8 @@ export interface ProjectDetail {
   id: string;
   projectNumber: string;
   name: string;
+  /** The stage the project is in (furthest reached), as the dashboard shows it. */
+  currentPhase?: string | null;
   description?: string;
   quoteId?: string;
   quoteNumber?: string;

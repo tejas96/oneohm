@@ -8,7 +8,7 @@ import {
 } from '@tejas96/shared/constants';
 import { TaskStatus, type TaskPriority } from '@tejas96/shared/types';
 import { Plus } from 'lucide-react';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   PROJECT_MILESTONE_AGG_QUERY_KEY,
@@ -181,7 +181,18 @@ export const ProjectTasksTab = React.memo(
       setDrawerOpen(true);
     }, []);
 
-    const handleCloseDrawer = useCallback(() => setDrawerOpen(false), []);
+    // Deep link from the projects dashboard (`?t_task=<id>`): open that step's
+    // drawer, whatever page of the list it sits on.
+    useEffect(() => {
+      if (!isActive || !filters.t_task) return;
+      setOpenTaskId(filters.t_task);
+      setDrawerOpen(true);
+    }, [isActive, filters.t_task]);
+
+    const handleCloseDrawer = useCallback(() => {
+      setDrawerOpen(false);
+      if (filters.t_task) setFilter('t_task', '');
+    }, [filters.t_task, setFilter]);
 
     const handleStatusChange = useCallback(
       (taskId: string, newStatus: string, _currentStatus: string, currentCompletionPct: number) => {

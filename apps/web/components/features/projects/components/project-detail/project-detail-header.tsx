@@ -303,12 +303,14 @@ function StatusBand({ tiles }: { tiles: BandTile[] }): React.JSX.Element {
 function PhaseRail({
   data,
   projectPath,
+  currentPhase,
 }: {
   data: ProjectDetailData['milestones'];
   projectPath: string;
+  currentPhase?: string | null;
 }): React.JSX.Element {
   const phases = useMemo(() => sortPhases(data.data), [data.data]);
-  const nowIndex = currentPhaseIndex(phases);
+  const nowIndex = currentPhaseIndex(phases, currentPhase);
   const doneCount = phases.filter((m) => m.status === 'completed').length;
   const now = nowIndex >= 0 ? phases[nowIndex] : undefined;
 
@@ -851,7 +853,13 @@ export const ProjectDetailHeader = React.memo(
 
             <StatusBand tiles={tiles} />
 
-            {showPhaseRail ? <PhaseRail data={data.milestones} projectPath={projectPath} /> : null}
+            {showPhaseRail ? (
+              <PhaseRail
+                data={data.milestones}
+                projectPath={projectPath}
+                currentPhase={project.currentPhase}
+              />
+            ) : null}
           </div>
         </header>
       </div>
