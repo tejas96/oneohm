@@ -16,23 +16,27 @@ import {
   MenuItem,
   Stack,
 } from '@mui/material';
-import { QuoteStatus } from '@tejas96/shared/types';
-import { FileText } from 'lucide-react';
+import { type DealStage, QuoteStatus } from '@tejas96/shared/types';
+import {
+  DEAL_ATTENTION_LABELS,
+  DEAL_ATTENTIONS,
+  DEAL_STAGE_FILTERS,
+  DEAL_STAGE_LABELS,
+  leadSourceLabel,
+} from '@tejas96/shared/utils';
 import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { type JSX, type MouseEvent, useCallback, useMemo, useState } from 'react';
+import { type JSX, type MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { QUOTE_STATUS_LABELS } from '../constants';
-import { useQuoteStatusCounts, useDeleteQuote, type QuoteListItem } from '../hooks';
+import { useDeleteQuote, type QuoteListItem } from '../hooks';
 import { QuoteStatusDropdown } from './quote-status-dropdown';
 import { VoidQuoteDialog } from './void-quote-dialog';
 
-import { StatsCard } from '@/components/shared';
-import {
-  AdvancedTable,
-  type BulkAction,
-  type ColumnConfig,
-} from '@/components/shared/advanced-table';
+import { useEmployees } from '@/components/features/projects/hooks/use-employees';
+import { FilterAutocomplete, type ColumnConfig } from '@/components/shared/advanced-table';
+import { CrmTable, type CrmColumn } from '@/components/shared/crm-table';
+import { MUIDateRangePicker } from '@/components/ui';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
@@ -42,9 +46,10 @@ import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useTableUrlState, type TableUrlFilterRecord } from '@/lib/hooks';
 import { useQuoteListResource, type QuoteListFilters } from '@/lib/hooks/resources';
 import { useGatedAction } from '@/lib/rbac';
-import { formatCurrency, getErrorMessage } from '@/lib/utils';
+import { crm } from '@/lib/theme/tokens';
+import { formatBusinessDate, formatCurrency, formatLocalDate, getErrorMessage } from '@/lib/utils';
 
-// AdvancedTable requires TRow extends Record<string, unknown>.
+// The filter panel's ColumnConfig requires TRow extends Record<string, unknown>.
 // QuoteListItem has explicit typed fields, so we widen it here for table usage only.
 type QuoteRow = QuoteListItem & Record<string, unknown>;
 
@@ -55,11 +60,16 @@ const STATUS_OPTIONS = Object.values(QuoteStatus).map((value) => ({
   label: QUOTE_STATUS_LABELS[value],
 }));
 
+/** The grid has no column gap: text cells keep a right gutter so neighbours never touch. */
+const CELL_GUTTER = { pr: 2 } as const;
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // ============================================================================
 // Adapter functions — pure, module-level, no React deps
 // ============================================================================
 
-// Maps AdvancedTable column field names → backend QuoteSortField enum values.
+// Maps column field names → backend QuoteSortField enum values.
 // Required when the column field name differs from the backend enum value string.
 const COLUMN_TO_SORT_FIELD: Record<string, string> = {
   finalPrice: 'finalPrice',
@@ -107,8 +117,16 @@ function localDateToUtcDayRange(localDate: string): { fromIso: string; toIso: st
   };
 }
 
+/** A real calendar day as `YYYY-MM-DD` — `2026-02-31` has the shape but is not one. */
+function isRealDay(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [y = 0, m = 0, d = 0] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
+}
+
 function toQuoteFilters(filters: TableUrlFilterRecord): Partial<QuoteListFilters> {
-  // The AdvancedTable date picker emits YYYY-MM-DD (local date, no time component).
+  // The date picker emits YYYY-MM-DD (local date, no time component).
   // We expand it to a full UTC day range so the backend's quoteDate range filter
   // covers the entire selected day in the user's local timezone (IST / UTC+5:30).
   const createdAtRaw =
@@ -117,6 +135,21 @@ function toQuoteFilters(filters: TableUrlFilterRecord): Partial<QuoteListFilters
       : undefined;
   const createdAtRange = createdAtRaw ? localDateToUtcDayRange(createdAtRaw) : undefined;
 
+  // Dashboard drill-downs. Unknown values are dropped, so the API never sees them.
+  const pick = <T extends string>(value: unknown, allowed: readonly T[]): T | undefined =>
+    typeof value === 'string' && (allowed as readonly string[]).includes(value)
+      ? (value as T)
+      : undefined;
+  const text = (value: unknown): string | undefined =>
+    typeof value === 'string' && value.trim() ? value.trim() : undefined;
+  const range = (value: unknown): { from?: string; to?: string } => {
+    const r = (value ?? {}) as { from?: unknown; to?: unknown };
+    return { from: isRealDay(r.from) ? r.from : undefined, to: isRealDay(r.to) ? r.to : undefined };
+  };
+  const newDate = range(filters.newDate);
+  const wonDate = range(filters.wonDate);
+  const lostDate = range(filters.lostDate);
+
   return {
     status:
       typeof filters.status === 'string' && filters.status
@@ -124,6 +157,19 @@ function toQuoteFilters(filters: TableUrlFilterRecord): Partial<QuoteListFilters
         : undefined,
     fromDate: createdAtRange?.fromIso,
     toDate: (typeof filters.toDate === 'string' && filters.toDate) || createdAtRange?.toIso,
+    stage: pick(filters.stage, DEAL_STAGE_FILTERS),
+    attention: pick(filters.attention, DEAL_ATTENTIONS),
+    person:
+      typeof filters.person === 'string' && UUID.test(filters.person) ? filters.person : undefined,
+    financing: pick(filters.financing, ['cash', 'loan'] as const),
+    leadSource: text(filters.leadSource),
+    leadSourceNotIn: text(filters.leadSourceNotIn),
+    newFrom: newDate.from,
+    newTo: newDate.to,
+    wonFrom: wonDate.from,
+    wonTo: wonDate.to,
+    lostFrom: lostDate.from,
+    lostTo: lostDate.to,
   };
 }
 
@@ -241,52 +287,74 @@ function RowActionsMenu({ quote }: { quote: QuoteRow }): JSX.Element {
 }
 
 // ============================================================================
-// Bulk actions (module-level — never recreated on render)
+// Stage cell — a calm dot + label, the same colors as the dashboard's stage blocks
 // ============================================================================
 
-const BULK_ACTIONS: BulkAction<QuoteRow>[] = [
-  {
-    label: 'Export Selected',
-    onClick: (_rows) => {
-      // placeholder — export API pending
-    },
-  },
-];
+const STAGE_TONE: Record<DealStage, string> = {
+  drafting: 'var(--ds-neutral-300)',
+  waiting: 'var(--ds-primary-light)',
+  quiet: 'var(--ds-danger)',
+  won: 'var(--ds-primary)',
+  lost: 'var(--ds-neutral-300)',
+};
+
+function StageCell({ stage }: { stage: DealStage | null | undefined }): JSX.Element {
+  if (!stage) return <MUITypography variant="placeholder">-</MUITypography>;
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-foreground-secondary">
+      <span
+        aria-hidden="true"
+        className="inline-block size-2 rounded-full"
+        style={{ background: STAGE_TONE[stage] }}
+      />
+      {DEAL_STAGE_LABELS[stage]}
+    </span>
+  );
+}
+
+function formatShortDate(ts: string): string {
+  return new Date(ts).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
 
 // ============================================================================
 // Column definitions (module-level — never recreated on render)
 // ============================================================================
 
-const COLUMNS: ColumnConfig<QuoteRow>[] = [
+const CRM_COLUMNS: CrmColumn<QuoteRow>[] = [
   {
     field: 'quoteNumber',
-    headerName: 'Quote #',
-    sortable: true,
-    flex: 1.5,
-    renderCell: ({ row }) => (
-      <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75 }}>
-        <MuiLink
-          component={NextLink}
-          href={buildRoute(ROUTES.QUOTES.DETAIL, { id: row.id })}
-          prefetch={false}
-          underline="hover"
-          onClick={(e) => e.stopPropagation()}
-          sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}
-        >
-          {row.quoteNumber}
-        </MuiLink>
-      </Box>
+    header: 'Quote #',
+    track: crm['col-quote-number'],
+    // Not sortable: the API has no quote-number sort, so the arrow would do nothing.
+    // A little left padding (header moves with it) so the code is not flush with the card edge.
+    cellSx: { ...CELL_GUTTER, pl: 0.5 },
+    renderCell: (row) => (
+      <MuiLink
+        component={NextLink}
+        href={buildRoute(ROUTES.QUOTES.DETAIL, { id: row.id })}
+        prefetch={false}
+        underline="hover"
+        onClick={(e) => e.stopPropagation()}
+        sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}
+      >
+        {row.quoteNumber}
+      </MuiLink>
     ),
   },
   {
     field: 'customerName',
-    headerName: 'Customer',
+    header: 'Customer',
+    track: crm['col-customer'],
     sortable: true,
-    flex: 2,
-    renderCell: ({ row }) => {
-      const name = (row.customerName as string | undefined) ?? 'Unknown';
+    cellSx: CELL_GUTTER,
+    renderCell: (row) => {
+      const name = row.customerName ?? 'Unknown';
       return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
           <MUIAvatar name={name} size="sm" sx={{ flexShrink: 0 }} />
           <MUITypography variant="bodyPrimary" noWrap sx={{ fontWeight: 500 }}>
             {name}
@@ -297,91 +365,81 @@ const COLUMNS: ColumnConfig<QuoteRow>[] = [
   },
   {
     field: 'propertyName',
-    headerName: 'Property',
-    flex: 1.5,
-    renderCell: ({ row }) => (
-      <MUITypography variant="body">
-        {(row.propertyName as string | undefined) ?? '-'}
+    header: 'Property',
+    track: crm['col-quote-property'],
+    cellSx: CELL_GUTTER,
+    renderCell: (row) => (
+      <MUITypography variant="body" noWrap>
+        {row.propertyName ?? '-'}
       </MUITypography>
     ),
   },
   {
     field: 'systemSizeKw',
-    headerName: 'System',
+    header: 'System',
+    track: crm['col-quote-system'],
     sortable: true,
-    flex: 1,
-    renderCell: ({ row }) => <SystemSizeDisplay kw={row.systemSizeKw} layout="stacked" />,
+    renderCell: (row) => <SystemSizeDisplay kw={row.systemSizeKw} layout="stacked" />,
   },
   {
     field: 'finalPrice',
-    headerName: 'Value',
+    header: 'Value',
+    track: crm['col-quote-value'],
     sortable: true,
-    flex: 1.5,
-    renderCell: ({ row }) => {
-      const finalPrice = row.finalPrice as number | undefined;
-      return (
-        <Box>
-          <MUITypography variant="bodyPrimary" sx={{ fontWeight: 500 }}>
-            {finalPrice != null ? formatCurrency(finalPrice) : '-'}
-          </MUITypography>
-        </Box>
-      );
-    },
+    align: 'right',
+    cellSx: CELL_GUTTER,
+    renderCell: (row) => (
+      <MUITypography variant="bodyPrimary" sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}>
+        {row.finalPrice != null ? formatCurrency(row.finalPrice) : '-'}
+      </MUITypography>
+    ),
+  },
+  {
+    field: 'dealStage',
+    header: 'Stage',
+    track: crm['col-quote-stage'],
+    renderCell: (row) => <StageCell stage={row.dealStage} />,
   },
   {
     field: 'status',
-    headerName: 'Status',
-    filterable: true,
-    filterType: 'select',
-    filterOptions: STATUS_OPTIONS,
-    flex: 1.5,
-    renderCell: ({ row }) => (
+    header: 'Status',
+    track: crm['col-quote-status'],
+    stopPropagation: true,
+    renderCell: (row) => (
       <QuoteStatusDropdown
         quoteId={row.id}
-        status={row.status as QuoteStatus}
-        voidedAt={row.voidedAt as string | undefined}
-        voidReason={row.voidReason as string | undefined}
+        status={row.status}
+        voidedAt={row.voidedAt}
+        voidReason={row.voidReason}
         size="xs"
       />
     ),
   },
   {
     field: 'createdAt',
-    headerName: 'Created',
+    header: 'Created',
+    track: crm['col-quote-date'],
     sortable: true,
-    filterable: true,
-    filterType: 'date',
-    flex: 1.5,
-    renderCell: ({ row }) => {
-      const ts = row.createdAt as string | undefined;
-      if (!ts) return <MUITypography variant="placeholder">-</MUITypography>;
-      return (
-        <MUITypography variant="body">
-          {new Date(ts).toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-          })}
+    renderCell: (row) =>
+      row.createdAt ? (
+        <MUITypography variant="body" sx={{ whiteSpace: 'nowrap' }}>
+          {formatShortDate(row.createdAt)}
         </MUITypography>
-      );
-    },
+      ) : (
+        <MUITypography variant="placeholder">-</MUITypography>
+      ),
   },
   {
     field: 'validUntil',
-    headerName: 'Valid Until',
+    header: 'Valid until',
+    track: crm['col-quote-date'],
     sortable: true,
-    flex: 1.5,
-    renderCell: ({ row }) => {
-      const validUntil = row.validUntil as string | undefined;
-      if (!validUntil) return <MUITypography variant="placeholder">-</MUITypography>;
-      const isExpired = new Date(validUntil) < new Date();
+    renderCell: (row) => {
+      if (!row.validUntil) return <MUITypography variant="placeholder">-</MUITypography>;
+      const isExpired = new Date(row.validUntil) < new Date();
       return (
         <MUIStatusChip
-          label={new Date(validUntil).toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-          })}
+          label={formatShortDate(row.validUntil)}
           color={isExpired ? 'error' : 'default'}
         />
       );
@@ -389,12 +447,181 @@ const COLUMNS: ColumnConfig<QuoteRow>[] = [
   },
   {
     field: 'actions',
-    headerName: '',
+    header: '',
+    track: crm['col-actions'],
+    align: 'right',
     hideable: false,
-    width: 48,
-    actions: (row) => <RowActionsMenu quote={row} />,
+    stopPropagation: true,
+    renderCell: (row) => <RowActionsMenu quote={row} />,
   },
 ];
+
+// ============================================================================
+// Filter panel (filter-only fields — the dashboard's links land on these)
+// ============================================================================
+
+/** Chip text for a { from, to } day range: "1 Sep 2026 – 30 Sep 2026", "From …" or "Until …". */
+function formatDayRange(value: unknown): string {
+  const { from, to } = (value ?? {}) as { from?: string; to?: string };
+  if (from && to) return `${formatBusinessDate(from)} – ${formatBusinessDate(to)}`;
+  if (from) return `From ${formatBusinessDate(from)}`;
+  if (to) return `Until ${formatBusinessDate(to)}`;
+  return '';
+}
+
+const STAGE_FILTER_OPTIONS = DEAL_STAGE_FILTERS.map((s) => ({
+  label: DEAL_STAGE_LABELS[s],
+  value: s,
+}));
+const ATTENTION_OPTIONS = DEAL_ATTENTIONS.map((a) => ({
+  label: DEAL_ATTENTION_LABELS[a],
+  value: a,
+}));
+const DAY_RANGE_KEYS: readonly string[] = ['newDate', 'wonDate', 'lostDate'];
+
+const FILTER_COLUMNS: ColumnConfig<QuoteRow>[] = [
+  {
+    field: 'status',
+    headerName: 'Quote status',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: STATUS_OPTIONS,
+  },
+  {
+    field: 'stage',
+    headerName: 'Deal stage',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: STAGE_FILTER_OPTIONS,
+  },
+  {
+    field: 'attention',
+    headerName: 'Needs action',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: ATTENTION_OPTIONS,
+  },
+  // Options are the employees list, injected at render time.
+  {
+    field: 'person',
+    headerName: 'Made by',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [],
+  },
+  {
+    field: 'financing',
+    headerName: 'Cash / loan',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      { label: 'Cash', value: 'cash' },
+      { label: 'Loan', value: 'loan' },
+    ],
+  },
+  {
+    field: 'leadSource',
+    headerName: 'Lead source',
+    filterable: true,
+    filterType: 'text',
+    formatFilterValue: (v) => leadSourceLabel(String(v ?? '')),
+  },
+  {
+    field: 'leadSourceNotIn',
+    headerName: 'Lead source not',
+    filterable: true,
+    filterType: 'text',
+    formatFilterValue: (v) =>
+      String(v ?? '')
+        .split(',')
+        .map(leadSourceLabel)
+        .join(', '),
+  },
+  { field: 'createdAt', headerName: 'Created on', filterable: true, filterType: 'date' },
+  {
+    field: 'newDate',
+    headerName: 'New deal between',
+    filterable: true,
+    formatFilterValue: formatDayRange,
+  },
+  {
+    field: 'wonDate',
+    headerName: 'Won between',
+    filterable: true,
+    formatFilterValue: formatDayRange,
+  },
+  {
+    field: 'lostDate',
+    headerName: 'Lost between',
+    filterable: true,
+    formatFilterValue: formatDayRange,
+  },
+];
+
+/**
+ * The URL record with every value the list would ignore taken out, so a chip
+ * never claims a filter that is not applied (`quotes_filters={"stage":"bogus"}`
+ * must not show "Deal stage: bogus"). Select filters keep only values that are
+ * one of their options (`person` only a user id), day ranges keep only real
+ * days. Returns the same object when nothing was dropped.
+ */
+function sanitizeUrlFilters(filters: TableUrlFilterRecord): TableUrlFilterRecord {
+  const result: TableUrlFilterRecord = {};
+  let changed = false;
+  for (const [key, value] of Object.entries(filters)) {
+    if (key === 'person') {
+      if (typeof value === 'string' && UUID.test(value)) result[key] = value;
+      else changed = true;
+      continue;
+    }
+    if (DAY_RANGE_KEYS.includes(key)) {
+      const { from, to } = (typeof value === 'object' && value !== null ? value : {}) as {
+        from?: unknown;
+        to?: unknown;
+      };
+      const kept: { from?: string; to?: string } = {};
+      if (isRealDay(from)) kept.from = from;
+      if (isRealDay(to)) kept.to = to;
+      if (kept.from !== undefined || kept.to !== undefined) result[key] = kept;
+      // Anything but exactly the kept shape (a string, unknown keys, a bad end)
+      // is junk the list ignores, so the URL is rewritten without it.
+      if (JSON.stringify(kept) !== JSON.stringify(value)) changed = true;
+      continue;
+    }
+    const column = FILTER_COLUMNS.find((c) => c.field === key);
+    if (column?.filterType === 'select' && column.filterOptions) {
+      if (
+        typeof value === 'string' &&
+        column.filterOptions.some((o) => String(o.value) === value)
+      ) {
+        result[key] = value;
+      } else {
+        changed = true;
+      }
+      continue;
+    }
+    result[key] = value;
+  }
+  return changed ? result : filters;
+}
+
+function DateRangeFilter({
+  value,
+  onChange,
+}: {
+  value: unknown;
+  onChange: (value: unknown) => void;
+}): JSX.Element {
+  const range = (value ?? {}) as { from?: string; to?: string };
+  return (
+    <MUIDateRangePicker
+      fromDate={range.from ?? null}
+      toDate={range.to ?? null}
+      onFromChange={(d) => onChange({ ...range, from: formatLocalDate(d) || undefined })}
+      onToChange={(d) => onChange({ ...range, to: formatLocalDate(d) || undefined })}
+    />
+  );
+}
 
 // ============================================================================
 // Main component
@@ -430,15 +657,60 @@ export function QuoteListPage(): JSX.Element {
   // URL-synced table state — single source of truth for all pagination/sort/filter/search
   const urlState = useTableUrlState({ prefix: 'quotes', defaultPageSize: 10, initialFilters });
 
-  const { data: statusCounts } = useQuoteStatusCounts();
+  // A link can carry filter values the list ignores; show and send only what it
+  // applies, and rewrite the URL to match (replace, no new history entry —
+  // `setFilters` uses `replaceState`). Once rewritten the record is stable, so
+  // this runs once.
+  const { setFilters: replaceUrlFilters } = urlState;
+  const filters = useMemo(
+    () => sanitizeUrlFilters(urlState.state.filters),
+    [urlState.state.filters],
+  );
+  useEffect(() => {
+    if (filters !== urlState.state.filters) replaceUrlFilters(filters);
+  }, [filters, replaceUrlFilters, urlState.state.filters]);
 
-  // Derived stats
-  const pendingCount =
-    (statusCounts?.draft ?? 0) + (statusCounts?.sent ?? 0) + (statusCounts?.viewed ?? 0);
-  const conversionRate =
-    statusCounts && statusCounts.total > 0
-      ? Math.round((statusCounts.accepted / statusCounts.total) * 100)
-      : 0;
+  // "Made by" options — the same employees list the project list's team filter uses.
+  const { data: employeesData } = useEmployees({ limit: 100 });
+  const employeeOptions = useMemo(() => {
+    return (
+      employeesData?.items.map((emp) => ({
+        label:
+          `${emp.user?.firstName ?? ''} ${emp.user?.lastName ?? ''}`.trim() ||
+          emp.email ||
+          'Unknown',
+        value: emp.userId,
+      })) ?? []
+    );
+  }, [employeesData?.items]);
+
+  const filterColumns = useMemo<ColumnConfig<QuoteRow>[]>(() => {
+    return FILTER_COLUMNS.map((col) => {
+      if (col.field === 'person') {
+        return {
+          ...col,
+          filterOptions: employeeOptions,
+          renderFilter: ({ value, onChange }) => (
+            <FilterAutocomplete
+              options={employeeOptions}
+              value={value}
+              onChange={onChange}
+              placeholder="Search person…"
+            />
+          ),
+        };
+      }
+      if (DAY_RANGE_KEYS.includes(col.field)) {
+        return {
+          ...col,
+          renderFilter: ({ value, onChange }) => (
+            <DateRangeFilter value={value} onChange={onChange} />
+          ),
+        };
+      }
+      return col;
+    });
+  }, [employeeOptions]);
 
   // Server-side data fetch — driven entirely by URL state via FDAL resource hook
   const {
@@ -454,7 +726,7 @@ export function QuoteListPage(): JSX.Element {
     search: urlState.state.search || undefined,
     sortBy: toApiSortField(urlState.state.sortModel),
     sortOrder: toApiSortOrder(urlState.state.sortModel),
-    ...toQuoteFilters(urlState.state.filters),
+    ...toQuoteFilters(filters),
   });
 
   const tableRows = useMemo<QuoteRow[]>(
@@ -488,7 +760,7 @@ export function QuoteListPage(): JSX.Element {
           </Button>
         </Box>
       ),
-    [router, urlState.resetAll],
+    [createQuote.allowed, createQuote.onGatedClick, urlState.resetAll],
   );
 
   return (
@@ -529,30 +801,6 @@ export function QuoteListPage(): JSX.Element {
         </Stack>
       </Box>
 
-      {/* ── Stats Cards ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard
-          title="Total Quotes"
-          value={statusCounts?.total ?? 0}
-          icon={<FileText className="size-icon text-primary" />}
-        />
-        <StatsCard
-          title="Pending"
-          value={pendingCount}
-          icon={<FileText className="size-icon text-info" />}
-        />
-        <StatsCard
-          title="Accepted"
-          value={statusCounts?.accepted ?? 0}
-          icon={<FileText className="size-icon text-success" />}
-        />
-        <StatsCard
-          title="Conversion Rate"
-          value={`${conversionRate}%`}
-          icon={<FileText className="size-icon text-warning" />}
-        />
-      </div>
-
       {/* ── Error banner ── */}
       {isError && (
         <Box
@@ -581,35 +829,26 @@ export function QuoteListPage(): JSX.Element {
       )}
 
       {/* ── Table ── */}
-      <AdvancedTable<QuoteRow>
-        key="quotes-table"
-        columns={COLUMNS}
+      <CrmTable<QuoteRow>
+        columns={CRM_COLUMNS}
         rows={tableRows}
-        rowIdField="id"
-        paginationMode="server"
+        getRowId={(row) => row.id}
         loading={isLoading}
         refetching={isFetching && !isLoading}
+        initialSearch={urlState.state.search}
+        onSearchChange={urlState.setSearch}
+        searchPlaceholder="Search by quote #, customer, phone, property"
+        filterColumns={filterColumns}
+        filterModel={filters}
+        onFilterChange={urlState.setFilters}
+        sortModel={urlState.state.sortModel}
+        onSortChange={urlState.setSortModel}
         page={urlState.state.page}
         pageSize={urlState.state.pageSize}
         totalRowCount={quoteData?.meta.total ?? 0}
-        sortModel={urlState.state.sortModel}
-        filterModel={urlState.state.filters}
         onPageChange={urlState.setPage}
         onPageSizeChange={urlState.setPageSize}
-        onSortChange={urlState.setSortModel}
-        onFilterChange={urlState.setFilters}
-        initialSearch={urlState.state.search}
-        onSearchChange={urlState.setSearch}
-        onRowClick={(row) => {
-          void router.push(buildRoute(ROUTES.QUOTES.DETAIL, { id: row.id }));
-        }}
-        enableRowSelection
-        bulkActions={BULK_ACTIONS}
-        enableSearch
-        enableFilters
-        enablePagination
-        enableColumnVisibility
-        searchPlaceholder="Search by quote #, customer..."
+        onRowClick={(row) => void router.push(buildRoute(ROUTES.QUOTES.DETAIL, { id: row.id }))}
         itemLabel="quotes"
         renderEmptyState={renderEmptyState}
       />

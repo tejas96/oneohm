@@ -1,7 +1,7 @@
 'use client';
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { QuoteStatus } from '@tejas96/shared/types';
+import { type DealAttention, type DealStageFilter, QuoteStatus } from '@tejas96/shared/types';
 
 import {
   type BaseFilters,
@@ -29,6 +29,19 @@ export interface QuoteListFilters extends BaseFilters {
   resellerId?: string;
   fromDate?: string;
   toDate?: string;
+  // Deal filters (dashboard drill-downs) — see GET /quotes in the backend.
+  stage?: DealStageFilter;
+  attention?: DealAttention;
+  person?: string;
+  financing?: 'cash' | 'loan';
+  leadSource?: string;
+  leadSourceNotIn?: string;
+  newFrom?: string;
+  newTo?: string;
+  wonFrom?: string;
+  wonTo?: string;
+  lostFrom?: string;
+  lostTo?: string;
 }
 
 // ============================================================================

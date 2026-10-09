@@ -373,6 +373,15 @@ const root = {
     /** "Created by" — hidden by default, same width as owner. */
     'col-creator': 'minmax(122px,1fr)',
     'col-actions': '40px',
+    // Quote list grid. Quote numbers are `QT-ONEOHM_EPC-2026-1578` (23 chars,
+    // ~184px at 13px) plus the cell's left padding and right gutter.
+    'col-quote-number': '208px',
+    'col-quote-property': 'minmax(120px,1fr)',
+    'col-quote-system': '88px',
+    'col-quote-value': '112px',
+    'col-quote-stage': '112px',
+    'col-quote-status': '136px',
+    'col-quote-date': '108px',
     // Payment approval queue (design min-width 1180px)
     'col-approval-request': '152px',
     'col-approval-date': '96px',
