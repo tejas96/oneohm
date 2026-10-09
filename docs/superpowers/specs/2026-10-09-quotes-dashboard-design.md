@@ -35,7 +35,7 @@ showing exactly the rows behind the number.
 |---|---|
 | D1 | The page counts **deals**, not quote rows. One deal = one property with quotes. |
 | D2 | 5 deal stages: Drafting, Waiting, Gone quiet, Won, Lost. |
-| D3 | Every web user with `quotes.view` sees all deals. No per-user scope (resellers have no web login). The existing `@ResellerScope()` guard stays on the endpoint. |
+| D3 | Every web user with `quotes.view` sees all deals. No per-user scope. Resellers have no web login; the dashboard endpoint has no `@ResellerAllowed()`, so a reseller token gets 403 (house pattern). |
 | D4 | One filter bar: **Period**, **Person**, **Cash / Loan**. |
 | D5 | Needs action = 4 items: gone quiet with no follow-up; ends this week; draft not sent 7+ days; won with no project. |
 | D6 | Layout A ("deal flow first") in the `/projects` dashboard colors. |
@@ -117,7 +117,7 @@ Left: "Quotes". Right: Period picker, Person picker, ALL / CASH / LOAN switch,
 - **Period:** This month (default), Last month, This quarter, This FY (Apr–Mar),
   Custom. Same picker and rules as `/projects` (custom max 3 years; `to` ≥ `from`).
 - **Person:** Everyone (default), or one person. The options are everyone who
-  made a deal quote that is open, or won / lost / new in the last 12 months.
+  made a deal quote that is open, or whose deal was new in the last 12 months.
   They come in the dashboard response, sorted by name.
 - **Cash / Loan:** All (default) · Cash · Loan.
 - All three live in the URL: `/quotes?period=this_month&person=<userId>&type=all`.
@@ -228,8 +228,7 @@ the same text.
   Validated with class-validator; bad input → 400.
 - Declared before `GET /quotes/:id` in `quote.controller.ts` (or its own
   `quote-dashboard.controller.ts` registered first), so `dashboard` is not read as an id.
-- Permission: `quotes.view` (same as the list). `@ResellerScope()` narrows to
-  `reseller_id` when present.
+- Auth: `JwtAuthGuard`, the same as the list. No `@ResellerAllowed()`, so resellers get 403.
 - One request per page load. All sections read `DEAL_FACTS_CTE` in parallel queries.
 - Period logic: move `apps/backend/src/modules/projects/utils/dashboard-period.ts`
   to `apps/backend/src/common/utils/dashboard-period.ts` and import it from both modules.
@@ -267,9 +266,11 @@ chip, same colors as the stage blocks).
   `team.tsx`, `biggest-open.tsx`, `sources.tsx`, `trend-chart.tsx`, `links.ts`.
 - Rewrite `quote-dashboard-page.tsx` as a thin orchestrator.
 - Hook `useQuotesDashboard` in `lib/hooks/resources/quotes-dashboard.ts`.
-- Quote list page: the new filters in its filter panel (dates use
-  `MUIDateRangePicker`; person is a select fed by the dashboard's `people`
-  list or the users resource), sent through `useQuoteListResource`; the Stage column.
+- Quote list page: moves from `AdvancedTable` to `CrmTable` (the Customers /
+  Projects pattern), because only `CrmTable` takes filter-only fields
+  (`filterColumns`). Same visible columns plus a Stage column; the new filters in
+  its filter panel (dates use `MUIDateRangePicker`; "Made by" is fed by the
+  employees list, as on the project list), sent through `useQuoteListResource`.
 
 ### States
 
