@@ -15,8 +15,18 @@ import {
 import { systemSizeKwSqlRaw } from '../../../common/utils/transform.util';
 
 /**
- * One row per counted project (not deleted, not cancelled) with every fact the
- * projects dashboard and the project list filters need.
+ * One row per project that is not deleted, with every fact the projects dashboard
+ * and the project list filters need.
+ *
+ * Cancelled projects are rows too, flagged `is_counted = false`. The rule:
+ *  - They still count as ONBOARDED and as METER INSTALLED (the work happened, the
+ *    money is real), and the list's cash/loan, onboarded and meter-installed filters
+ *    keep them. Those predicates do not read `is_counted`.
+ *  - They are never LIVE, so they drop out of everything built on `is_live`: live,
+ *    not started, in progress, stages, phases, late, old/unstaged steps, no stage,
+ *    meter due / coming up, needs action, stuck by team and the stage panel.
+ *    Anything that must exclude them has to go through a FACTS predicate that
+ *    includes `is_live`.
  *
  * This is the SQL twin of `deriveProjectStage` (libs/shared/src/utils/project-stage.ts).
  * The phase table is generated from MILESTONE_LIFECYCLE_SEQUENCE at module load,
@@ -56,9 +66,7 @@ const PHASE_ROWS = MILESTONE_LIFECYCLE_SEQUENCE.map((phase, i) => {
  * `projectIdsParam` (e.g. `$1`) narrows the CTE to a uuid[] of projects, so a page of
  * ids does not aggregate every task in the database. Omit it for the whole population.
  */
-export function projectFactsCte(
-  opts: { includeCancelled?: boolean; projectIdsParam?: string } = {},
-): string {
+export function projectFactsCte(opts: { projectIdsParam?: string } = {}): string {
   return `
   pf_phase_name(norm_name, idx) AS (
     VALUES
@@ -127,7 +135,9 @@ export function projectFactsCte(
       COALESCE(a.step_count, 0)::int AS step_count,
       COALESCE(a.done_steps, 0)::int AS done_steps,
       COALESCE(a.open_steps, 0)::int AS open_steps,
-      (COALESCE(a.open_steps, 0) > 0 OR COALESCE(a.step_count, 0) = 0) AS is_live,
+      (p.status <> 'cancelled') AS is_counted,
+      (p.status <> 'cancelled'
+        AND (COALESCE(a.open_steps, 0) > 0 OR COALESCE(a.step_count, 0) = 0)) AS is_live,
       stage.phase AS current_phase,
       stage.stage_group,
       COALESCE(a.old_open_steps, 0)::int AS old_open_steps,
@@ -135,7 +145,7 @@ export function projectFactsCte(
       COALESCE(a.late_steps, 0)::int AS late_steps,
       (com.project_id IS NOT NULL) AS meter_installed,
       com.meter_completed_at,
-      CASE WHEN com.project_id IS NULL THEN a.meter_due_date END AS meter_due_date
+      CASE WHEN com.project_id IS NULL AND p.status <> 'cancelled' THEN a.meter_due_date END AS meter_due_date
     FROM projects p
     JOIN customer_properties prop ON prop.id = p.property_id
     LEFT JOIN quote_versions qv ON qv.id = p.contract_quote_version_id
@@ -147,7 +157,6 @@ export function projectFactsCte(
       ELSE COALESCE(a.next_open_idx, a.furthest_idx)
     END
     WHERE p.deleted_at IS NULL
-      ${opts.includeCancelled ? '' : "AND p.status <> 'cancelled'"}
       ${opts.projectIdsParam ? `AND p.id = ANY(${opts.projectIdsParam}::uuid[])` : ''}
   )
 `;

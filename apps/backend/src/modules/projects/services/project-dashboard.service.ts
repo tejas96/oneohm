@@ -15,15 +15,20 @@ import { addDaysIso } from '../utils/dashboard-period';
 
 /**
  * `$1` member pin (null = all projects), `$2` financing ('cash' | 'loan' | null).
- * Same member rule as the project list (`resolveProjectListMemberId`), same
- * financing rule as Finance (`customer_properties.wants_loan`).
+ * Same member rule as the project list (`resolveProjectListMemberId`; a removed
+ * team member no longer sees the project), same financing rule as Finance
+ * (`customer_properties.wants_loan`).
+ * `project_facts` also holds cancelled projects: the onboarded and meter-installed
+ * counts take them, and everything "live" goes through a FACTS predicate that
+ * does not (see project-facts.sql.ts).
  */
 const SCOPED = `
   WITH ${PROJECT_FACTS_CTE},
   scoped AS (
     SELECT pf.* FROM project_facts pf
     WHERE ($1::uuid IS NULL OR pf.project_id IN (
-            SELECT tm.project_id FROM project_team_members tm WHERE tm.user_id = $1::uuid))
+            SELECT tm.project_id FROM project_team_members tm
+            WHERE tm.user_id = $1::uuid AND tm.deleted_at IS NULL))
       AND ($2::text IS NULL
            OR ($2::text = 'loan' AND ${FACTS.loan})
            OR ($2::text = 'cash' AND ${FACTS.cash}))

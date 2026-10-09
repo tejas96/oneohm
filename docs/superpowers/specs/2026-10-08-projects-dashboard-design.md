@@ -48,13 +48,20 @@ All rules live in one place per layer: `libs/shared/src/utils/project-stage.ts`
 (stage rule, pure TS) and `apps/backend/src/modules/projects/sql/project-facts.sql.ts`
 (the same rule in SQL, used by both the dashboard endpoint and the list filters).
 
-**Counted project.** `projects.deleted_at IS NULL AND status <> 'cancelled'`.
-Open tasks on cancelled projects are ignored everywhere.
+**Counted project.** `projects.deleted_at IS NULL AND status <> 'cancelled'`
+(`is_counted` in the facts CTE). Cancelled projects are still rows in the facts CTE:
+they count as **onboarded** and as **meter installed** (the work was done and the
+money is real), and the list's `financing`, `onboarded*` and `meterInstalled*`
+filters keep them. They never count as live, so they drop out of everything
+"live" (live / not started / in progress, stages, phases, late, old and unstaged
+steps, no stage, meter due and coming up, needs action, stuck by team, the stage
+panel). Their open tasks are ignored there.
 
 **Open step / done step.** A `project_tasks` row with `deleted_at IS NULL`;
 done = `status = 'done'`, open = anything else.
 
-**Live project.** Counted, and has at least one open step, or has no steps at all.
+**Live project.** Counted (not cancelled), and has at least one open step, or has no
+steps at all.
 
 **Closed project.** Counted, has steps, and every step is done. Not live.
 
@@ -131,7 +138,8 @@ so the `/workload?department=` link lands on the same name). Missing → `Other`
 
 **Who sees which projects.** Exactly `resolveProjectListMemberId`
 (`iam/constants/admin-roles.ts`): admins / `projects.view` see all; others see
-projects they are a team member of. In practice the web route `/projects` already
+projects they are a current team member of (a soft-deleted membership gives no access,
+in the dashboard SQL as in the list). In practice the web route `/projects` already
 needs `projects.view` (`lib/rbac/route-map.ts`), so everyone who reaches the page
 sees all projects; the backend still applies the rule.
 
@@ -162,9 +170,9 @@ link, "New project" button (gated by `projects.create`, existing `useGatedAction
 
 | Card | Big number | Small line | Follows period? |
 |---|---|---|---|
-| Onboarded | projects created in period | kW · "11 cash · 7 loan" (split hidden when the switch is not All) | Yes |
+| Onboarded | projects created in period, cancelled ones included | kW · "11 cash · 7 loan" (split hidden when the switch is not All) | Yes |
 | Live now | live projects | "31 not started" / "183 in progress" (each line clickable) | No |
-| Meter installed | meter installed in period | kW · change vs the previous period ("+3", "−2", "same"). When the period includes today, both sides are cut to the same number of days ("vs 1–8 Sep"), so a half-done month is never compared with a full one | Yes |
+| Meter installed | meter installed in period, cancelled ones included | kW · change vs the previous period ("+3", "−2", "same"). When the period includes today, both sides are cut to the same number of days ("vs 1–8 Sep"), so a half-done month is never compared with a full one | Yes |
 | Running late | late projects | "% of live" | No |
 | To collect | ₹ open (L / Cr) | "₹42 L meter in" | No |
 
@@ -252,11 +260,12 @@ dialog, not a dead link.
 ### SQL facts — `apps/backend/src/modules/projects/sql/project-facts.sql.ts`
 
 One CTE builder, `projectFactsCte({ memberId?, financing? })`, producing one row
-per counted, visible project:
+per non-deleted project (cancelled ones included, flagged by `is_counted`):
 
 `project_id, wants_loan, kw (nullable), created_at, step_count, done_steps,
 open_steps, current_phase, stage_group, old_open_steps, unstaged_open_steps,
-late_steps, meter_installed, meter_completed_at, meter_due_date, is_live`.
+late_steps, meter_installed, meter_completed_at, meter_due_date, is_counted, is_live`
+(`is_live` is false for cancelled projects; `meter_due_date` is null for them).
 Exported as `PROJECT_FACTS_CTE` (CTE text, no `WITH`) and used by raw SQL and by
 TypeORM `IN (WITH … SELECT …)` subqueries alike. It takes no parameters; callers
 filter the `project_facts` rows.
@@ -346,7 +355,7 @@ No new library. CSS transitions + Recharts' built-in animation + a small
 
 | Case | Handling |
 |---|---|
-| Cancelled project | Not counted anywhere; its open steps ignored. |
+| Cancelled project | Counted as onboarded and as meter installed (strip, trend, cash/loan split, previous period) and kept by the list's cash/loan and date filters. Never live: absent from live, stages, late, meter due, needs action and every other "live" number. Its open steps are ignored. |
 | Project with no steps (or only loan/subsidy steps) | Live; stage `none`; "No stage yet: N" note. |
 | All steps done | Closed; not live; not in stage chart. |
 | Meter in but old steps open | Stage = furthest reached; counted in "Old steps left open". |

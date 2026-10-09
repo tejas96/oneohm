@@ -35,6 +35,7 @@ export function addDaysIso(iso: string, n: number): string {
 }
 
 function spanLabel(from: Date, to: Date): string {
+  if (from.getTime() === to.getTime()) return dayMonth(from);
   if (from.getUTCFullYear() !== to.getUTCFullYear()) {
     return `${dayMonth(from)} ${String(from.getUTCFullYear()).slice(2)} – ${dayMonth(to)} ${String(to.getUTCFullYear()).slice(2)}`;
   }

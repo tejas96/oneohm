@@ -349,6 +349,9 @@ export class ProjectRepository {
           .select('tm.project_id')
           .from('project_team_members', 'tm')
           .where('tm.user_id = :memberId')
+          // TypeORM adds this for the entity anyway; spelled out because the dashboard
+          // repeats the rule in raw SQL and both must keep agreeing.
+          .andWhere('tm.deleted_at IS NULL')
           .getQuery()}`,
         { memberId: filters.memberId },
       );
@@ -599,8 +602,7 @@ export class ProjectRepository {
     if (projectIds.length === 0) return new Map();
     const rows: Array<{ projectId: string; currentPhase: string | null }> =
       await this.repository.query(
-        // Cancelled projects are included so the list shows the same phase the detail page does.
-        `WITH ${projectFactsCte({ includeCancelled: true, projectIdsParam: '$1' })}
+        `WITH ${projectFactsCte({ projectIdsParam: '$1' })}
          SELECT pf.project_id AS "projectId", pf.current_phase AS "currentPhase"
          FROM project_facts pf
          WHERE pf.project_id = ANY($1::uuid[])`,

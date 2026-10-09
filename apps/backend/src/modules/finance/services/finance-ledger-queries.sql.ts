@@ -643,7 +643,9 @@ export const RECOVERY_BUCKETS_SQL = `
     COALESCE(SUM(undated_paise), 0)::BIGINT                            AS "noDueDatePaise",
     -- Defect 5, per project: a loan job with no lender milestone means the
     -- customer is being chased for the bank's share.
-    COUNT(*) FILTER (WHERE wants_loan AND NOT has_lender_milestone)::int AS "missingLenderProjects"
+    COUNT(*) FILTER (WHERE wants_loan AND NOT has_lender_milestone)::int AS "missingLenderProjects",
+    -- The banner's denominator: a cash job can never lack a bank share, so cash jobs are not in it.
+    COUNT(*) FILTER (WHERE wants_loan)::int                              AS "loanProjects"
   FROM recovery
 `;
 
