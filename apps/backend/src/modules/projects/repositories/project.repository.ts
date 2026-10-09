@@ -394,9 +394,19 @@ export class ProjectRepository {
 
     // Dashboard drill-downs (and the matching list filters). Same SQL rules the
     // dashboard counts with, so the number on a card is the number of rows here.
+    // The facts CTE runs once, here; TypeORM's paginated query would otherwise
+    // repeat it for the count, the id page and the row load.
     const factsFilter = buildProjectFactsFilter(filters);
     if (factsFilter) {
-      query.andWhere(factsFilter.sql, factsFilter.params);
+      const [factsSql, factsParams] =
+        this.repository.manager.connection.driver.escapeQueryWithParameters(
+          factsFilter.sql,
+          factsFilter.params,
+          {},
+        );
+      const factRows: { project_id: string }[] = await this.repository.query(factsSql, factsParams);
+      if (factRows.length === 0) return { projects: [], total: 0 };
+      query.andWhere('project.id IN (:...pfIds)', { pfIds: factRows.map((r) => r.project_id) });
     }
 
     const isSmartSort = filters?.sortBy === 'smartSort';

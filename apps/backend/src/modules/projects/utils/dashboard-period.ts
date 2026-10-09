@@ -119,15 +119,17 @@ export function resolveDashboardRange(
       prevLabel = spanLabel(prevFrom, prevTo);
       break;
     }
-    case 'this_month':
-    default: {
+    case 'this_month': {
       from = monthStart(y, m);
       to = monthEnd(y, m);
       prevFrom = monthStart(y, m - 1);
       prevTo = monthEnd(y, m - 1);
       label = MONTHS[m] ?? '';
       prevLabel = MONTHS[prevFrom.getUTCMonth()] ?? '';
+      break;
     }
+    default:
+      throw new BadRequestException('Unknown period');
   }
 
   // A half-done period is compared with the same number of days before it.

@@ -61,7 +61,7 @@ const STRIP_SQL = `${SCOPED}
 const STAGES_SQL = `${SCOPED}
   SELECT pf.stage_group AS "stageGroup", pf.current_phase AS "phase",
          COUNT(*)::int AS "count",
-         COUNT(*) FILTER (WHERE pf.late_steps > 0)::int AS "late",
+         COUNT(*) FILTER (WHERE ${FACTS.late})::int AS "late",
          COALESCE(SUM(pf.kw), 0)::float AS "kw"
   FROM scoped pf
   WHERE ${FACTS.live} AND pf.stage_group IS NOT NULL
@@ -102,23 +102,28 @@ const TEAMS_SQL = `${SCOPED}
   GROUP BY 1
   ORDER BY 2 DESC, 1`;
 
+/** $3 the IST `today`, so the twelve months end where every other number does. */
 const TREND_SQL = `${SCOPED},
   months AS (
     SELECT generate_series(
-      date_trunc('month', CURRENT_DATE) - interval '11 months',
-      date_trunc('month', CURRENT_DATE),
+      date_trunc('month', $3::date) - interval '11 months',
+      date_trunc('month', $3::date),
       interval '1 month'
     )::date AS m
+  ),
+  dated AS (
+    SELECT pf.project_id, pf.kw,
+      date_trunc('month', pf.created_at)::date AS onboard_month,
+      date_trunc('month', pf.meter_completed_at)::date AS meter_month
+    FROM scoped pf
   )
   SELECT to_char(mo.m, 'YYYY-MM') AS "month",
-    COUNT(pf.project_id) FILTER (WHERE date_trunc('month', pf.created_at)::date = mo.m)::int AS "onboarded",
-    COALESCE(SUM(pf.kw) FILTER (WHERE date_trunc('month', pf.created_at)::date = mo.m), 0)::float AS "onboardedKw",
-    COUNT(pf.project_id) FILTER (WHERE date_trunc('month', pf.meter_completed_at)::date = mo.m)::int AS "meterInstalled",
-    COALESCE(SUM(pf.kw) FILTER (WHERE date_trunc('month', pf.meter_completed_at)::date = mo.m), 0)::float AS "meterKw"
+    COUNT(d.project_id) FILTER (WHERE d.onboard_month = mo.m)::int AS "onboarded",
+    COALESCE(SUM(d.kw) FILTER (WHERE d.onboard_month = mo.m), 0)::float AS "onboardedKw",
+    COUNT(d.project_id) FILTER (WHERE d.meter_month = mo.m)::int AS "meterInstalled",
+    COALESCE(SUM(d.kw) FILTER (WHERE d.meter_month = mo.m), 0)::float AS "meterKw"
   FROM months mo
-  LEFT JOIN scoped pf
-    ON date_trunc('month', pf.created_at)::date = mo.m
-    OR date_trunc('month', pf.meter_completed_at)::date = mo.m
+  LEFT JOIN dated d ON d.onboard_month = mo.m OR d.meter_month = mo.m
   GROUP BY mo.m
   ORDER BY mo.m`;
 
@@ -205,7 +210,7 @@ export class ProjectDashboardService {
       this.rows(STAGES_SQL, base),
       this.rows(NEEDS_ACTION_SQL, base),
       this.rows(TEAMS_SQL, base),
-      this.rows(TREND_SQL, base),
+      this.rows(TREND_SQL, [...base, input.today]),
       input.includeMoney ? this.getMoney(financing) : Promise.resolve(null),
     ]);
 

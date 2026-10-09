@@ -195,12 +195,14 @@ export interface ProjectFactsFilters {
 }
 
 /**
- * TypeORM `andWhere` clause for the project list. Returns null when no facts
- * filter is set, so the common list query is untouched.
+ * The project-list facts filter as a standalone query: `SELECT pf.project_id …`
+ * with TypeORM `:name` parameters. Returns null when no facts filter is set, so
+ * the common list query is untouched. The caller runs it once and narrows the
+ * list by the ids, so the CTE is not re-evaluated by each statement TypeORM
+ * issues for a paginated list.
  */
 export function buildProjectFactsFilter(
   f: ProjectFactsFilters | undefined,
-  projectIdColumn = 'project.id',
 ): { sql: string; params: Record<string, unknown> } | null {
   if (!f) return null;
   const where: string[] = [];
@@ -245,9 +247,9 @@ export function buildProjectFactsFilter(
 
   if (where.length === 0) return null;
   return {
-    sql: `${projectIdColumn} IN (WITH ${PROJECT_FACTS_CTE} SELECT pf.project_id FROM project_facts pf WHERE ${where
+    sql: `WITH ${PROJECT_FACTS_CTE} SELECT pf.project_id FROM project_facts pf WHERE ${where
       .map((w) => `(${w})`)
-      .join(' AND ')})`,
+      .join(' AND ')}`,
     params,
   };
 }

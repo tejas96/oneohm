@@ -129,35 +129,37 @@ export function isSideTrackStep(
  * apps/backend/src/modules/projects/sql/project-facts.sql.ts. Change both.
  */
 export function deriveProjectStage(tasks: readonly StageTaskInput[]): ProjectStage {
-  const main = tasks.flatMap((t) => {
-    if (isSideTrackStep(t)) return [];
-    const phase = t.milestoneName ? canonicalMilestoneName(t.milestoneName) : undefined;
-    if (!phase || !GROUP_BY_PHASE.has(phase)) return [];
-    return [{ index: canonicalMilestoneOrder(phase) as number, phase, done: t.done }];
-  });
-  if (main.length === 0) return { currentPhase: null, stageGroup: null, oldOpenStepCount: 0 };
+  const none: ProjectStage = { currentPhase: null, stageGroup: null, oldOpenStepCount: 0 };
 
-  const doneIndexes = main.filter((s) => s.done).map((s) => s.index);
-  const furthest = doneIndexes.length > 0 ? Math.max(...doneIndexes) : null;
-  const open = main.filter((s) => !s.done);
-  const earliest = (steps: typeof open): (typeof open)[number] | undefined =>
-    steps.reduce<(typeof open)[number] | undefined>(
-      (best, s) => (best === undefined || s.index < best.index ? s : best),
-      undefined,
-    );
+  // Main-line steps only: a known phase that belongs to a stage group, not a side track.
+  const main: { index: number; phase: string; done: boolean }[] = [];
+  for (const t of tasks) {
+    if (isSideTrackStep(t) || !t.milestoneName) continue;
+    const phase = canonicalMilestoneName(t.milestoneName);
+    if (phase === undefined || !GROUP_BY_PHASE.has(phase)) continue;
+    const index = canonicalMilestoneOrder(phase);
+    if (index !== undefined) main.push({ index, phase, done: t.done });
+  }
+  if (main.length === 0) return none;
 
-  let phase: string;
-  if (furthest === null) {
-    phase = (earliest(open) as (typeof open)[number]).phase;
-  } else {
-    phase =
-      earliest(open.filter((s) => s.index >= furthest))?.phase ??
-      (MILESTONE_LIFECYCLE_SEQUENCE[furthest - 1] as string);
+  // Catalog indexes start at 1, so 0 means "nothing done yet".
+  let furthest = 0;
+  for (const s of main) if (s.done && s.index > furthest) furthest = s.index;
+
+  // The earliest phase, from the furthest one on, that still has an open step.
+  let next: { index: number; phase: string } | undefined;
+  let oldOpenStepCount = 0;
+  for (const s of main) {
+    if (s.done) continue;
+    if (s.index < furthest) oldOpenStepCount += 1;
+    else if (next === undefined || s.index < next.index) next = s;
   }
 
+  const phase = next?.phase ?? MILESTONE_LIFECYCLE_SEQUENCE[furthest - 1];
+  if (phase === undefined) return none;
   return {
     currentPhase: phase,
     stageGroup: GROUP_BY_PHASE.get(phase) ?? null,
-    oldOpenStepCount: furthest === null ? 0 : open.filter((s) => s.index < furthest).length,
+    oldOpenStepCount,
   };
 }
