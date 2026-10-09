@@ -42,6 +42,7 @@ export function ProjectDashboardPage(): React.JSX.Element {
     'New project',
   );
   const retry = (): void => void refetch();
+  const refreshFailed = isError && !!data;
 
   const isEmpty =
     !!data &&
@@ -129,19 +130,26 @@ export function ProjectDashboardPage(): React.JSX.Element {
           </Button>
         </div>
       </header>
-      {isError && data ? (
-        <p role="status" className="-mt-2 text-xs text-foreground-secondary">
-          Could not refresh ·{' '}
-          <button
-            type="button"
-            onClick={retry}
-            disabled={isFetching}
-            className="font-medium text-primary-dark hover:underline disabled:opacity-60"
-          >
-            Retry
-          </button>
-        </p>
-      ) : null}
+      {/* Always mounted so a screen reader announces the text when it appears; out of the
+          layout (no flex gap) while empty. */}
+      <p
+        role="status"
+        className={refreshFailed ? '-mt-2 text-xs text-foreground-secondary' : 'sr-only'}
+      >
+        {refreshFailed ? (
+          <>
+            Could not refresh ·{' '}
+            <button
+              type="button"
+              onClick={retry}
+              disabled={isFetching}
+              className="font-medium text-primary-dark hover:underline disabled:opacity-60"
+            >
+              Retry
+            </button>
+          </>
+        ) : null}
+      </p>
       {body}
     </div>
   );

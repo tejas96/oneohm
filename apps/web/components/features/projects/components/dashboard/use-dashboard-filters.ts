@@ -81,7 +81,6 @@ export function useDashboardFilters(): {
 
   const write = useCallback(
     (next: DashboardFilters) => {
-      pending.current = next;
       const params = new URLSearchParams();
       if (next.period !== 'this_month') params.set('period', next.period);
       if (next.period === 'custom' && next.from && next.to) {
@@ -90,7 +89,12 @@ export function useDashboardFilters(): {
       }
       if (next.financing !== 'all') params.set('type', next.financing);
       const qs = params.toString();
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+      const target = qs ? `${pathname}?${qs}` : pathname;
+      // A write that lands on the URL we are already at never changes searchParams,
+      // so it must not leave a stale copy behind.
+      pending.current =
+        target === `${window.location.pathname}${window.location.search}` ? null : next;
+      router.replace(target, { scroll: false });
     },
     [pathname, router],
   );
