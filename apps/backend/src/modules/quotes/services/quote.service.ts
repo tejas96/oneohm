@@ -434,6 +434,7 @@ export class QuoteService {
     ]
       .filter(Boolean)
       .join(' ')
+      .replace(/\s+/g, ' ')
       .trim();
 
     const sanitizedCustomerName = customerName
