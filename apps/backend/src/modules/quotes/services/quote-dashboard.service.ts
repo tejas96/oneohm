@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { LOSS_REASON_LABELS } from '@tejas96/shared/constants';
-import type {
-  DashboardRange,
-  DealAttention,
-  QuotesDashboard,
-  QuotesDashboardNeedsAction,
-  QuotesDashboardSource,
+import {
+  type DashboardRange,
+  type DealAttention,
+  LeadSource,
+  type QuotesDashboard,
+  type QuotesDashboardNeedsAction,
+  type QuotesDashboardSource,
 } from '@tejas96/shared/types';
 import { DEAL_ATTENTIONS, LEAD_SOURCE_OTHER_BUCKET, leadSourceLabel } from '@tejas96/shared/utils';
 import { DataSource } from 'typeorm';
@@ -288,8 +289,12 @@ export class QuoteDashboardService {
       won,
       winPercent: count >= MIN_FOR_WIN_RATE ? Math.round((won * 100) / count) : null,
     });
-    const top = rows.slice(0, SOURCE_LIMIT);
-    const rest = rows.slice(SOURCE_LIMIT);
+    // The stored value `other` ("Other" picked on the customer form) always belongs
+    // to the Other row, never a row of its own — two rows would both read "Other".
+    // It is never a top key, so the Other link (leadSourceNotIn = top keys) keeps it.
+    const top = rows.filter((r) => r.key !== LeadSource.OTHER).slice(0, SOURCE_LIMIT);
+    const topKeys = new Set(top.map((r) => r.key));
+    const rest = rows.filter((r) => !topKeys.has(r.key));
     const sources = top.map((r) =>
       row(String(r.key), leadSourceLabel(String(r.key)), num(r.count), num(r.won)),
     );

@@ -175,6 +175,9 @@ days since `valid_until`), and the ₹ on the right.
 
 **Where deals come from** (period tag). The deals new in the period, grouped by lead
 source. The top 4 sources by count, then "Other" (the rest, "Not set" included).
+The stored value `other` (normalised) is always part of the Other row and never a row of
+its own: the top 4 are the 4 most common sources other than `other`, so `topSourceKeys`
+never holds it and the Other link's `leadSourceNotIn` keeps those deals.
 Each row: source label, a bar, the count, and "N% win" (won now ÷ count). "—" when count < 3.
 The Other row's key is `LEAD_SOURCE_OTHER_BUCKET` (`__other__`, in `libs/shared/src/utils/deal-stage.ts`),
 never `other`: real profiles store the word `other`, so a bucket keyed `other` would collide with it.
