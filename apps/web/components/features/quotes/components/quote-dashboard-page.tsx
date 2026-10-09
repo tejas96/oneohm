@@ -33,7 +33,11 @@ export function QuoteDashboardPage(): React.JSX.Element {
   const router = useRouter();
   const { filters, setFilters, reset, isDefault } = useDashboardFilters();
   const { data, isLoading, isError, isFetching, refetch } = useQuotesDashboard(filters);
-  const newQuote = useGatedAction('quotes.create', () => void router.push(ROUTES.QUOTES.NEW), 'New quote');
+  const newQuote = useGatedAction(
+    'quotes.create',
+    () => void router.push(ROUTES.QUOTES.NEW),
+    'New quote',
+  );
   const retry = (): void => void refetch();
   const refreshFailed = isError && !!data;
 
@@ -63,7 +67,11 @@ export function QuoteDashboardPage(): React.JSX.Element {
           {isDefault ? 'No deals yet.' : 'No deals match these filters.'}
         </p>
         {!isDefault ? (
-          <button type="button" onClick={reset} className="mt-3 text-sm font-medium text-primary-dark hover:underline">
+          <button
+            type="button"
+            onClick={reset}
+            className="mt-3 text-sm font-medium text-primary-dark hover:underline"
+          >
             Clear filters
           </button>
         ) : null}
@@ -118,7 +126,10 @@ export function QuoteDashboardPage(): React.JSX.Element {
           </Button>
         </div>
       </header>
-      <p role="status" className={refreshFailed ? '-mt-2 text-xs text-foreground-secondary' : 'sr-only'}>
+      <p
+        role="status"
+        className={refreshFailed ? '-mt-2 text-xs text-foreground-secondary' : 'sr-only'}
+      >
         {refreshFailed ? (
           <>
             Could not refresh ·{' '}
