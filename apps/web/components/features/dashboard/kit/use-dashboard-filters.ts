@@ -36,13 +36,13 @@ function spanDays(from: string, to: string): number {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS) + 1;
 }
 
-export const DEFAULT_DASHBOARD_FILTERS: DashboardFilters = {
+const DEFAULT_DASHBOARD_FILTERS: DashboardFilters = {
   period: 'this_month',
   financing: 'all',
 };
 
 /** Bad or half-filled values fall back to the defaults — a stale link must still open. */
-export function readDashboardFilters(params: URLSearchParams): DashboardFilters {
+function readDashboardFilters(params: URLSearchParams): DashboardFilters {
   const rawPeriod = params.get('period');
   const rawType = params.get('type');
   const financing = FINANCING.includes(rawType as DashboardFinancing)

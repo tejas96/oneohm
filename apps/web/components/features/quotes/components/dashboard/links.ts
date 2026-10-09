@@ -6,7 +6,7 @@ import type { DashboardFilters } from '@/lib/hooks/resources';
 type ListFilters = Record<string, unknown>;
 
 /** The quote list keeps its filters as JSON under `quotes_filters` (`useTableUrlState`, prefix "quotes"). */
-export function quoteListHref(filters: ListFilters): string {
+function quoteListHref(filters: ListFilters): string {
   const params = new URLSearchParams();
   params.set('quotes_filters', JSON.stringify(filters));
   return `${ROUTES.QUOTES.LIST}?${params.toString()}`;

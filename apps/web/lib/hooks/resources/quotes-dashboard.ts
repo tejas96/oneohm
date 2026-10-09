@@ -7,7 +7,7 @@ import type { DashboardFilters } from './projects-dashboard';
 
 import { apiClient } from '@/lib/api/client';
 
-export const quotesDashboardKeys = {
+const quotesDashboardKeys = {
   all: ['quotes-dashboard'] as const,
   summary: (f: DashboardFilters) => ['quotes-dashboard', 'summary', f] as const,
 };

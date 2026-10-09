@@ -133,7 +133,7 @@ export {
 } from './projects-dashboard';
 
 // Quotes dashboard (summary)
-export { quotesDashboardKeys, useQuotesDashboard } from './quotes-dashboard';
+export { useQuotesDashboard } from './quotes-dashboard';
 
 // Quotes list (FDAL resource)
 export { useQuoteListResource, type QuoteListFilters } from './quotes';
