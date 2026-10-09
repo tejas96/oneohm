@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { LOSS_REASON_LABELS } from '@tejas96/shared/constants';
 import type {
   DashboardRange,
   DealAttention,
@@ -22,7 +23,8 @@ const SCOPED = `
            OR ($2::text = 'cash' AND ${DEAL_FACTS.cash}))
   )`;
 
-const PERSON_NAME = `COALESCE(NULLIF(TRIM(CONCAT_WS(' ', u.first_name, u.last_name)), ''), 'Unknown')`;
+/** First + last name, runs of whitespace collapsed ("Deepali  Patil" → "Deepali Patil"). */
+const PERSON_NAME = `COALESCE(NULLIF(regexp_replace(TRIM(CONCAT_WS(' ', u.first_name, u.last_name)), '\\s+', ' ', 'g'), ''), 'Unknown')`;
 const inPeriod = (c: 'new_at' | 'won_at' | 'lost_at'): string => dealBetween(c, '$3', '$4');
 
 /** $3 from, $4 to, $5 previousFrom, $6 previousTo */
@@ -139,6 +141,14 @@ const PEOPLE_SQL = `WITH ${DEAL_FACTS_CTE}
     AND (${DEAL_FACTS.open} OR CAST(df.new_at AS date) >= $1::date - interval '12 months')
   ORDER BY "name"`;
 
+/** The house label for a `LossReason`; a value outside the enum is humanised. */
+function lossReasonLabel(value: string): string {
+  const known = (LOSS_REASON_LABELS as Record<string, string>)[value];
+  if (known) return known;
+  const text = value.replace(/_/g, ' ').trim();
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 type Row = Record<string, unknown>;
 const num = (v: unknown): number => Number(v ?? 0);
 const TEAM_LIMIT = 8;
@@ -213,7 +223,7 @@ export class QuoteDashboardService {
         won: { count: num(s.wonCount), kw: num(s.wonKw) },
         lost: {
           count: num(s.lostCount),
-          topReason: typeof s.topLossReason === 'string' ? leadSourceLabel(s.topLossReason) : null,
+          topReason: typeof s.topLossReason === 'string' ? lossReasonLabel(s.topLossReason) : null,
         },
       },
       needsAction: DEAL_ATTENTIONS.map((key) => this.shapeNeeds(key, needsRows)),

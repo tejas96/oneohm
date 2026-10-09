@@ -59,6 +59,9 @@ import { QuoteEntity } from '../entities/quote.entity';
 import { QuoteRepository } from '../repositories';
 import type { UploadedPdfFile } from '../types/uploaded-pdf-file.interface';
 
+/** A quote list row: the quote plus its deal stage, set when it is its property's deal quote. */
+type QuoteListEntity = QuoteEntity & { dealStage?: DealStage | null };
+
 /**
  * Quote Service
  * Business logic for quote management
@@ -212,13 +215,12 @@ export class QuoteService {
   /**
    * Find all quotes with filters, sorting, and pagination
    */
-  async findAll(query: QuoteQueryDto): Promise<{ data: QuoteEntity[]; total: number }> {
-    const [data, total] = await this.quoteRepository.findWithFilters(query);
-    const stages = await this.quoteRepository.findDealStages(data.map((q) => q.id));
-    for (const quote of data) {
-      (quote as QuoteEntity & { dealStage?: DealStage | null }).dealStage =
-        stages.get(quote.id) ?? null;
-    }
+  async findAll(query: QuoteQueryDto): Promise<{ data: QuoteListEntity[]; total: number }> {
+    const [quotes, total] = await this.quoteRepository.findWithFilters(query);
+    const stages = await this.quoteRepository.findDealStages(quotes.map((q) => q.id));
+    const data: QuoteListEntity[] = quotes.map((quote) =>
+      Object.assign(quote, { dealStage: stages.get(quote.id) ?? null }),
+    );
     return { data, total };
   }
 

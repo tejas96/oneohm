@@ -7,7 +7,7 @@ import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialE
 import { systemSizeKwOf } from '../../../common/utils';
 import { QuoteQueryDto } from '../dto/quotes/quote-query.dto';
 import { QuoteEntity } from '../entities/quote.entity';
-import { buildDealFactsFilter, DEAL_FACTS_CTE } from '../sql/deal-facts.sql';
+import { buildDealFactsFilter, DEAL_FACTS_CTE, dealFactsCte } from '../sql/deal-facts.sql';
 
 /**
  * Latest quote info for property enrichment
@@ -165,7 +165,8 @@ export class QuoteRepository {
         );
       const dealRows: { quote_id: string }[] = await this.repository.query(dealSql, dealParams);
       if (dealRows.length === 0) return [[], 0];
-      qb.andWhere('quote.id IN (:...dfQuoteIds)', { dfQuoteIds: dealRows.map((r) => r.quote_id) });
+      // One array parameter, not one per id: no 65k bind-parameter ceiling.
+      qb.andWhere('quote.id = ANY(:dfQuoteIds)', { dfQuoteIds: dealRows.map((r) => r.quote_id) });
     }
 
     /*
@@ -285,7 +286,7 @@ export class QuoteRepository {
   async findDealStages(quoteIds: string[]): Promise<Map<string, DealStage | null>> {
     if (quoteIds.length === 0) return new Map();
     const rows: { quote_id: string; stage: string }[] = await this.repository.query(
-      `WITH ${DEAL_FACTS_CTE} SELECT df.quote_id, df.stage FROM deal_facts df WHERE df.quote_id = ANY($1::uuid[])`,
+      `WITH ${dealFactsCte({ quoteIdsParam: '$1' })} SELECT df.quote_id, df.stage FROM deal_facts df WHERE df.quote_id = ANY($1::uuid[])`,
       [quoteIds],
     );
     return new Map(

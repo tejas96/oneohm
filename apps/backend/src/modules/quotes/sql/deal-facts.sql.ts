@@ -17,10 +17,15 @@ import { systemSizeKwSqlRaw } from '../../../common/utils/transform.util';
  * `viewed` and `expired` are never set reliably, so the date decides.
  *
  * Text, not a view: callers write `WITH ${DEAL_FACTS_CTE} SELECT … FROM deal_facts df`.
+ * `quoteIdsParam` (e.g. `$1`, a uuid[]) narrows it to the properties of those
+ * quotes — every quote of each such property stays in, so the per-property
+ * window (and so every fact) is identical to the full CTE's row for that deal.
+ * Mirrors `projectFactsCte({ projectIdsParam })`.
  * Dates and CURRENT_DATE use the session time zone, which the app sets to IST.
  * Spec: docs/superpowers/specs/2026-10-09-quotes-dashboard-design.md
  */
-export const DEAL_FACTS_CTE = `
+export function dealFactsCte(opts: { quoteIdsParam?: string } = {}): string {
+  return `
   df_quote AS (
     SELECT
       q.*,
@@ -36,6 +41,11 @@ export const DEAL_FACTS_CTE = `
       MIN(q.created_at) OVER (PARTITION BY q.property_id) AS first_quote_at
     FROM quotes q
     WHERE q.deleted_at IS NULL AND q.property_id IS NOT NULL
+      ${
+        opts.quoteIdsParam
+          ? `AND q.property_id IN (SELECT qi.property_id FROM quotes qi WHERE qi.id = ANY(${opts.quoteIdsParam}::uuid[]))`
+          : ''
+      }
   ),
   df_base AS (
     SELECT
@@ -107,6 +117,10 @@ export const DEAL_FACTS_CTE = `
     FROM df_base b
   )
 `;
+}
+
+/** The whole population: every deal. */
+export const DEAL_FACTS_CTE = dealFactsCte();
 
 /**
  * Every "which deals" rule the dashboard counts with and the list filters by.
