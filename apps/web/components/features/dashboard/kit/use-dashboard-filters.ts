@@ -41,8 +41,11 @@ const DEFAULT_DASHBOARD_FILTERS: DashboardFilters = {
   financing: 'all',
 };
 
-/** Bad or half-filled values fall back to the defaults — a stale link must still open. */
-function readDashboardFilters(params: URLSearchParams): DashboardFilters {
+/**
+ * Bad or half-filled values fall back to the defaults — a stale link must still open.
+ * `person` is read only for a page that has a person picker (`withPerson`).
+ */
+function readDashboardFilters(params: URLSearchParams, withPerson: boolean): DashboardFilters {
   const rawPeriod = params.get('period');
   const rawType = params.get('type');
   const financing = FINANCING.includes(rawType as DashboardFinancing)
@@ -51,19 +54,24 @@ function readDashboardFilters(params: URLSearchParams): DashboardFilters {
   const period = PERIODS.includes(rawPeriod as DashboardPeriod)
     ? (rawPeriod as DashboardPeriod)
     : 'this_month';
-  const rawPerson = params.get('person');
+  const rawPerson = withPerson ? params.get('person') : null;
   const person = rawPerson && UUID.test(rawPerson) ? rawPerson : undefined;
-  if (period !== 'custom') return { period, financing, ...(person ? { person } : {}) };
+  const base: DashboardFilters = { period, financing, ...(person ? { person } : {}) };
+  if (period !== 'custom') return base;
 
   const from = params.get('from') ?? '';
   const to = params.get('to') ?? '';
   if (!isIsoDay(from) || !isIsoDay(to) || from > to || spanDays(from, to) > MAX_CUSTOM_DAYS) {
-    return { ...DEFAULT_DASHBOARD_FILTERS, financing, ...(person ? { person } : {}) };
+    return { ...base, period: DEFAULT_DASHBOARD_FILTERS.period };
   }
-  return { period, from, to, financing, ...(person ? { person } : {}) };
+  return { ...base, from, to };
 }
 
-export function useDashboardFilters(): {
+/**
+ * Period, Cash/Loan and — with `{ withPerson: true }` (the quotes dashboard) —
+ * Person, all in the URL. Without it `person` is never read, written or counted.
+ */
+export function useDashboardFilters({ withPerson = false }: { withPerson?: boolean } = {}): {
   filters: DashboardFilters;
   setFilters: (patch: Partial<DashboardFilters>) => void;
   reset: () => void;
@@ -74,8 +82,8 @@ export function useDashboardFilters(): {
   const searchParams = useSearchParams();
 
   const filters = useMemo(
-    () => readDashboardFilters(new URLSearchParams(searchParams.toString())),
-    [searchParams],
+    () => readDashboardFilters(new URLSearchParams(searchParams.toString()), withPerson),
+    [searchParams, withPerson],
   );
 
   // What the last write asked for. `router.replace` lands after the call, so neither
@@ -95,7 +103,7 @@ export function useDashboardFilters(): {
         params.set('to', next.to);
       }
       if (next.financing !== 'all') params.set('type', next.financing);
-      if (next.person) params.set('person', next.person);
+      if (withPerson && next.person) params.set('person', next.person);
       const qs = params.toString();
       const target = qs ? `${pathname}?${qs}` : pathname;
       // A write that lands on the URL we are already at never changes searchParams,
@@ -104,7 +112,7 @@ export function useDashboardFilters(): {
         target === `${window.location.pathname}${window.location.search}` ? null : next;
       router.replace(target, { scroll: false });
     },
-    [pathname, router],
+    [pathname, router, withPerson],
   );
 
   /**
@@ -117,21 +125,24 @@ export function useDashboardFilters(): {
       // Merge into what is current at call time, not the last render's copy: two
       // changes in one tick (e.g. period then financing) must both land.
       const current =
-        pending.current ?? readDashboardFilters(new URLSearchParams(window.location.search));
+        pending.current ??
+        readDashboardFilters(new URLSearchParams(window.location.search), withPerson);
       const next = { ...current, ...patch };
       if (next.period !== 'custom') {
         delete next.from;
         delete next.to;
       }
-      if (!next.person) delete next.person;
+      if (!withPerson || !next.person) delete next.person;
       write(next);
     },
-    [write],
+    [write, withPerson],
   );
 
   const reset = useCallback(() => write(DEFAULT_DASHBOARD_FILTERS), [write]);
   const isDefault =
-    filters.period === 'this_month' && filters.financing === 'all' && !filters.person;
+    filters.period === 'this_month' &&
+    filters.financing === 'all' &&
+    !(withPerson && filters.person);
 
   return { filters, setFilters, reset, isDefault };
 }

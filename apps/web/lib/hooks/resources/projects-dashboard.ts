@@ -29,7 +29,8 @@ export interface StageProjectsParams {
 
 export const projectsDashboardKeys = {
   all: ['projects-dashboard'] as const,
-  summary: (f: DashboardFilters) => ['projects-dashboard', 'summary', f] as const,
+  /** Keyed on the request sent (from/to only for a custom period; no person). */
+  summary: (query: string) => ['projects-dashboard', 'summary', query] as const,
   stage: (p: StageProjectsParams) => ['projects-dashboard', 'stage', p] as const,
 };
 
@@ -38,15 +39,16 @@ export const projectsDashboardKeys = {
  * tweens them to the new ones, instead of flashing back to skeletons.
  */
 export function useProjectsDashboard(filters: DashboardFilters): UseQueryResult<ProjectsDashboard> {
+  const params = new URLSearchParams({ period: filters.period, financing: filters.financing });
+  if (filters.period === 'custom' && filters.from && filters.to) {
+    params.set('from', filters.from);
+    params.set('to', filters.to);
+  }
+  const query = params.toString();
   return useQuery({
-    queryKey: projectsDashboardKeys.summary(filters),
+    queryKey: projectsDashboardKeys.summary(query),
     queryFn: async ({ signal }) => {
-      const params = new URLSearchParams({ period: filters.period, financing: filters.financing });
-      if (filters.period === 'custom' && filters.from && filters.to) {
-        params.set('from', filters.from);
-        params.set('to', filters.to);
-      }
-      const { data } = await apiClient.get<ProjectsDashboard>(`/projects/dashboard?${params}`, {
+      const { data } = await apiClient.get<ProjectsDashboard>(`/projects/dashboard?${query}`, {
         signal,
       });
       return data;

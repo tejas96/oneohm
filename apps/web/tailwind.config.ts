@@ -443,6 +443,12 @@ const config: Config = {
             transform: 'translateY(0)',
           },
         },
+        // Dashboard kit entrance (ENTER): opacity only. A held `transform` from the
+        // fill mode would fight the cards' hover lift.
+        'dashboard-enter': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
         'fade-out': {
           '0%': {
             opacity: '1',
@@ -498,6 +504,7 @@ const config: Config = {
       },
       animation: {
         'fade-in': 'fade-in 0.4s ease forwards',
+        'dashboard-enter': 'dashboard-enter 0.4s ease forwards',
         'fade-out': 'fade-out 0.2s ease forwards',
         'slide-in-right': 'slide-in-right 0.3s ease-out',
         'slide-out-right': 'slide-out-right 0.2s ease-in',

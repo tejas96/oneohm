@@ -31,7 +31,7 @@ import { useGatedAction } from '@/lib/rbac';
  */
 export function QuoteDashboardPage(): React.JSX.Element {
   const router = useRouter();
-  const { filters, setFilters, reset, isDefault } = useDashboardFilters();
+  const { filters, setFilters, reset, isDefault } = useDashboardFilters({ withPerson: true });
   const { data, isLoading, isError, isFetching, refetch } = useQuotesDashboard(filters);
   const newQuote = useGatedAction(
     'quotes.create',

@@ -7,23 +7,29 @@ import type { DashboardFilters } from './projects-dashboard';
 
 import { apiClient } from '@/lib/api/client';
 
+/** Exactly the query string sent; from/to only for a custom period. */
+function toQuery(filters: DashboardFilters): string {
+  const params = new URLSearchParams({ period: filters.period, financing: filters.financing });
+  if (filters.period === 'custom' && filters.from && filters.to) {
+    params.set('from', filters.from);
+    params.set('to', filters.to);
+  }
+  if (filters.person) params.set('person', filters.person);
+  return params.toString();
+}
+
 const quotesDashboardKeys = {
-  all: ['quotes-dashboard'] as const,
-  summary: (f: DashboardFilters) => ['quotes-dashboard', 'summary', f] as const,
+  /** Keyed on the request, so two filter objects that send the same query share one entry. */
+  summary: (query: string) => ['quotes-dashboard', 'summary', query] as const,
 };
 
 /** `keepPreviousData`: a filter change tweens old numbers to new ones, no skeleton flash. */
 export function useQuotesDashboard(filters: DashboardFilters): UseQueryResult<QuotesDashboard> {
+  const query = toQuery(filters);
   return useQuery({
-    queryKey: quotesDashboardKeys.summary(filters),
+    queryKey: quotesDashboardKeys.summary(query),
     queryFn: async ({ signal }) => {
-      const params = new URLSearchParams({ period: filters.period, financing: filters.financing });
-      if (filters.period === 'custom' && filters.from && filters.to) {
-        params.set('from', filters.from);
-        params.set('to', filters.to);
-      }
-      if (filters.person) params.set('person', filters.person);
-      const { data } = await apiClient.get<QuotesDashboard>(`/quotes/dashboard?${params}`, {
+      const { data } = await apiClient.get<QuotesDashboard>(`/quotes/dashboard?${query}`, {
         signal,
       });
       return data;

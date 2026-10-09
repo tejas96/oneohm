@@ -2,8 +2,12 @@
 
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 
-/** Entrance: fade + rise once. `motion-reduce` turns it off. */
-export const ENTER = 'animate-fade-in motion-reduce:animate-none';
+/**
+ * Entrance: fade in once. Opacity only — an entrance that animates `transform`
+ * holds it after finishing (fill mode both), which can override a card's
+ * `hover:-translate-y-0.5` lift. `motion-reduce` turns it off.
+ */
+export const ENTER = 'animate-dashboard-enter motion-reduce:animate-none';
 
 export function enterDelay(index: number, stepMs = 60): CSSProperties {
   return { animationDelay: `${index * stepMs}ms`, animationFillMode: 'both' };
