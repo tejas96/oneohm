@@ -250,6 +250,11 @@ export class IntegrationService {
       const result = await sendFn(messagingProvider);
 
       if (result.status === IntegrationStatus.FAILED) {
+        // Meta's reply names the bad parameter in error_data.details; the
+        // message alone (#132018 etc.) does not say which value was refused.
+        this.logger.warn(
+          `Message send failed (${result.error?.code ?? 'UNKNOWN'}): ${JSON.stringify(result.error?.details ?? result.error?.message)}`,
+        );
         throw new BadRequestException(
           result.error?.message || 'Failed to send message. Please try again.',
         );
