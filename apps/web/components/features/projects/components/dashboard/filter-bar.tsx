@@ -17,6 +17,8 @@ const PERIOD_OPTIONS: Array<{ value: DashboardPeriod; label: string }> = [
 ];
 
 const MAX_DAYS = 1096;
+/** The API rejects custom dates before 2000. */
+const MIN_DAY = '2000-01-01';
 
 function toIsoDay(d: Date): string {
   const pad = (n: number): string => String(n).padStart(2, '0');
@@ -61,10 +63,10 @@ export function FilterBar({
 
   const applyDraft = (next: { from?: string; to?: string }): void => {
     setDraft(next);
+    // Checked per date, so one early date is flagged before the other is picked.
+    const tooEarly = [next.from, next.to].some((d) => isRealDay(d) && d < MIN_DAY);
+    if (tooEarly) return setError('Pick a date from 2000 on.');
     if (!isRealDay(next.from) || !isRealDay(next.to)) return setError(null);
-    if (next.from < '2000-01-01' || next.to < '2000-01-01') {
-      return setError('Pick a date from 2000 on.');
-    }
     if (next.from > next.to) return setError('"To" is before "From".');
     const span = (Date.parse(next.to) - Date.parse(next.from)) / 86_400_000 + 1;
     if (span > MAX_DAYS) return setError('Pick 3 years or less.');

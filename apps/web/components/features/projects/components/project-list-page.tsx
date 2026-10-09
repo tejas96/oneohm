@@ -600,10 +600,15 @@ const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
     header: 'Phase',
     track: crm['col-project-phase'],
     renderCell: (row): JSX.Element => {
-      const { currentPhase: phase, totalTasks, completedTasks } = row as ProjectListItem;
+      const { currentPhase: phase, totalTasks, completedTasks, status } = row as ProjectListItem;
       // Every step done: the Phase filter only matches live projects, so the column
-      // must not name a phase it cannot be filtered by.
-      if ((totalTasks ?? 0) > 0 && completedTasks === totalTasks) {
+      // must not name a phase it cannot be filtered by. A cancelled project was
+      // stopped, not finished, so it keeps its phase.
+      if (
+        status !== ProjectStatus.CANCELLED &&
+        (totalTasks ?? 0) > 0 &&
+        completedTasks === totalTasks
+      ) {
         return <MUIStatusChip label="All phases done" color="success" />;
       }
       if (!phase) return <MUITypography variant="placeholder">-</MUITypography>;
