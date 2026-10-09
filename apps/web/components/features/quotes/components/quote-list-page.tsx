@@ -22,6 +22,7 @@ import {
   DEAL_ATTENTIONS,
   DEAL_STAGE_FILTERS,
   DEAL_STAGE_LABELS,
+  indiaToday,
   leadSourceLabel,
 } from '@tejas96/shared/utils';
 import NextLink from 'next/link';
@@ -36,6 +37,7 @@ import { VoidQuoteDialog } from './void-quote-dialog';
 import { useEmployees } from '@/components/features/projects/hooks/use-employees';
 import { FilterAutocomplete, type ColumnConfig } from '@/components/shared/advanced-table';
 import { CrmTable, type CrmColumn } from '@/components/shared/crm-table';
+import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
 import { MUIDateRangePicker } from '@/components/ui';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
@@ -66,6 +68,9 @@ const STATUS_OPTIONS = Object.values(QuoteStatus).map((value) => ({
 
 /** The grid has no column gap: text cells keep a right gutter so neighbours never touch. */
 const CELL_GUTTER = { pr: 2 } as const;
+
+/** One page large enough for every employee profile. */
+const EMPLOYEES_ALL = 1000;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -203,6 +208,7 @@ function RowActionsMenu({ quote }: { quote: QuoteRow }): JSX.Element {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [voidOpen, setVoidOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const deleteQuoteMutation = useDeleteQuote();
 
   const handleClose = (): void => setAnchorEl(null);
@@ -214,8 +220,15 @@ function RowActionsMenu({ quote }: { quote: QuoteRow }): JSX.Element {
       removeQuote.onGatedClick();
       return;
     }
+    setDeleteOpen(true);
+  };
+
+  const confirmDelete = (): void => {
     deleteQuoteMutation.mutate(quote.id, {
-      onSuccess: () => showToast.success('Quote deleted'),
+      onSuccess: () => {
+        setDeleteOpen(false);
+        showToast.success('Quote deleted');
+      },
       onError: (err) => showToast.error(getErrorMessage(err)),
     });
   };
@@ -297,6 +310,16 @@ function RowActionsMenu({ quote }: { quote: QuoteRow }): JSX.Element {
         )}
       </Menu>
 
+      <DeleteConfirmationDialog
+        open={deleteOpen}
+        title="Delete quote"
+        itemName={quote.quoteNumber}
+        permanent={false}
+        isPending={deleteQuoteMutation.isPending}
+        onCancel={() => setDeleteOpen(false)}
+        onConfirm={confirmDelete}
+      />
+
       <VoidQuoteDialog
         open={voidOpen}
         onOpenChange={setVoidOpen}
@@ -332,14 +355,6 @@ function StageCell({ stage }: { stage: DealStage | null | undefined }): JSX.Elem
       {DEAL_STAGE_LABELS[stage]}
     </span>
   );
-}
-
-function formatShortDate(ts: string): string {
-  return new Date(ts).toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
 }
 
 // ============================================================================
@@ -445,7 +460,7 @@ const CRM_COLUMNS: CrmColumn<QuoteRow>[] = [
     renderCell: (row) =>
       row.createdAt ? (
         <MUITypography variant="body" sx={{ whiteSpace: 'nowrap' }}>
-          {formatShortDate(row.createdAt)}
+          {formatBusinessDate(row.createdAt)}
         </MUITypography>
       ) : (
         <MUITypography variant="placeholder">-</MUITypography>
@@ -458,10 +473,11 @@ const CRM_COLUMNS: CrmColumn<QuoteRow>[] = [
     sortable: true,
     renderCell: (row) => {
       if (!row.validUntil) return <MUITypography variant="placeholder">-</MUITypography>;
-      const isExpired = new Date(row.validUntil) < new Date();
+      // Same rule as the deal stage: valid through the whole of its last IST day.
+      const isExpired = row.validUntil.slice(0, 10) < indiaToday();
       return (
         <MUIStatusChip
-          label={formatShortDate(row.validUntil)}
+          label={formatBusinessDate(row.validUntil)}
           color={isExpired ? 'error' : 'default'}
         />
       );
@@ -705,7 +721,9 @@ export function QuoteListPage(): JSX.Element {
   }, [filters, replaceUrlFilters, urlState.state.filters]);
 
   // "Made by" options — the same employees list the project list's team filter uses.
-  const { data: employeesData } = useEmployees({ limit: 100 });
+  // Every status (people who left still made quotes); GET /employees has no max,
+  // so one page of EMPLOYEES_ALL is everyone (61 profiles today).
+  const { data: employeesData } = useEmployees({ limit: EMPLOYEES_ALL });
   const employeeOptions = useMemo(() => {
     return (
       employeesData?.items.map((emp) => ({
@@ -891,7 +909,7 @@ export function QuoteListPage(): JSX.Element {
         refetching={isFetching && !isLoading}
         initialSearch={urlState.state.search}
         onSearchChange={urlState.setSearch}
-        searchPlaceholder="Search by quote #, customer, phone, property"
+        searchPlaceholder="Search quote, customer, phone"
         filterColumns={filterColumns}
         filterModel={filters}
         onFilterChange={urlState.setFilters}
