@@ -222,6 +222,11 @@ export class QuoteService {
     return { data, total };
   }
 
+  /** Normalised lead sources that have a deal, most deals first (list filter options). */
+  async findDealLeadSources(): Promise<string[]> {
+    return this.quoteRepository.findDealLeadSources();
+  }
+
   /**
    * Find quote by ID
    */

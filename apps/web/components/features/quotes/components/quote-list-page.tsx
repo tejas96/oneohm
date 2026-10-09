@@ -44,7 +44,11 @@ import { showToast } from '@/components/ui/sonner';
 import { SystemSizeDisplay } from '@/components/ui/system-size-display';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useTableUrlState, type TableUrlFilterRecord } from '@/lib/hooks';
-import { useQuoteListResource, type QuoteListFilters } from '@/lib/hooks/resources';
+import {
+  useQuoteLeadSources,
+  useQuoteListResource,
+  type QuoteListFilters,
+} from '@/lib/hooks/resources';
 import { useGatedAction } from '@/lib/rbac';
 import { crm } from '@/lib/theme/tokens';
 import { formatBusinessDate, formatCurrency, formatLocalDate, getErrorMessage } from '@/lib/utils';
@@ -125,6 +129,11 @@ function isRealDay(value: unknown): value is string {
   return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
 }
 
+/** A trimmed non-empty string, else undefined. */
+function text(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
 /** Most sources the API takes in `leadSourceNotIn` (the dashboard sends its top 4). */
 const MAX_EXCLUDED_SOURCES = 20;
 
@@ -155,8 +164,6 @@ function toQuoteFilters(filters: TableUrlFilterRecord): Partial<QuoteListFilters
     typeof value === 'string' && (allowed as readonly string[]).includes(value)
       ? (value as T)
       : undefined;
-  const text = (value: unknown): string | undefined =>
-    typeof value === 'string' && value.trim() ? value.trim() : undefined;
   const range = (value: unknown): { from?: string; to?: string } => {
     const r = (value ?? {}) as { from?: unknown; to?: unknown };
     return { from: isRealDay(r.from) ? r.from : undefined, to: isRealDay(r.to) ? r.to : undefined };
@@ -534,19 +541,23 @@ const FILTER_COLUMNS: ColumnConfig<QuoteRow>[] = [
       { label: 'Loan', value: 'loan' },
     ],
   },
+  // Options are GET /quotes/lead-sources, injected at render time.
   {
     field: 'leadSource',
     headerName: 'Lead source',
     filterable: true,
-    filterType: 'text',
+    filterType: 'select',
+    filterOptions: [],
     formatFilterValue: (v) => leadSourceLabel(String(v ?? '')),
   },
+  // Not a control in the panel: only the dashboard's "Other" row sets it, and
+  // it shows as a removable chip.
   {
     field: 'leadSourceNotIn',
-    headerName: 'Lead source not',
-    filterable: true,
-    filterType: 'text',
-    formatFilterValue: (v) => (leadSourceList(v) ?? []).map(leadSourceLabel).join(', '),
+    headerName: 'Lead source',
+    filterable: false,
+    formatFilterValue: (v) =>
+      `other than ${(leadSourceList(v) ?? []).map(leadSourceLabel).join(', ')}`,
   },
   { field: 'createdAt', headerName: 'Created on', filterable: true, filterType: 'date' },
   {
@@ -582,6 +593,12 @@ function sanitizeUrlFilters(filters: TableUrlFilterRecord): TableUrlFilterRecord
   for (const [key, value] of Object.entries(filters)) {
     if (key === 'person') {
       if (typeof value === 'string' && UUID.test(value)) result[key] = value;
+      else changed = true;
+      continue;
+    }
+    // Its options load after the first render; any non-empty source is a real filter.
+    if (key === 'leadSource') {
+      if (text(value)) result[key] = value;
       else changed = true;
       continue;
     }
@@ -701,8 +718,28 @@ export function QuoteListPage(): JSX.Element {
     );
   }, [employeesData?.items]);
 
+  const { data: leadSources } = useQuoteLeadSources();
+  const leadSourceOptions = useMemo(
+    () => (leadSources ?? []).map((value) => ({ value, label: leadSourceLabel(value) })),
+    [leadSources],
+  );
+
   const filterColumns = useMemo<ColumnConfig<QuoteRow>[]>(() => {
     return FILTER_COLUMNS.map((col) => {
+      if (col.field === 'leadSource') {
+        return {
+          ...col,
+          filterOptions: leadSourceOptions,
+          renderFilter: ({ value, onChange }) => (
+            <FilterAutocomplete
+              options={leadSourceOptions}
+              value={value}
+              onChange={onChange}
+              placeholder="Search source…"
+            />
+          ),
+        };
+      }
       if (col.field === 'person') {
         return {
           ...col,
@@ -727,7 +764,7 @@ export function QuoteListPage(): JSX.Element {
       }
       return col;
     });
-  }, [employeeOptions]);
+  }, [employeeOptions, leadSourceOptions]);
 
   // Server-side data fetch — driven entirely by URL state via FDAL resource hook
   const {

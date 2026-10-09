@@ -1,6 +1,6 @@
 'use client';
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { type DealAttention, type DealStageFilter, QuoteStatus } from '@tejas96/shared/types';
 
 import {
@@ -106,5 +106,21 @@ export function useQuoteListResource(filters: QuoteListFilters = {}) {
     },
     placeholderData: keepPreviousData,
     staleTime: RESOURCE_QUERY_DEFAULTS.staleTime,
+  });
+}
+
+/**
+ * Options for the quote list's "Lead source" filter: every normalised source
+ * that has a deal (`GET /quotes/lead-sources`), most deals first. Under the
+ * `quotes` key, so anything that invalidates quotes refreshes it too.
+ */
+export function useQuoteLeadSources(): UseQueryResult<string[]> {
+  return useQuery({
+    queryKey: [...quoteResourceKeys.all(), 'lead-sources'],
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get<string[]>('/quotes/lead-sources', { signal });
+      return data;
+    },
+    staleTime: 5 * 60_000,
   });
 }

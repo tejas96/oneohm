@@ -253,6 +253,10 @@ as a JSON array in `quotes_filters`). Both lead-source filters compare the norma
 quote and the list's one-row-per-property collapse returns the same rows the
 dashboard counted. Existing filters are unchanged.
 
+`GET /quotes/lead-sources` returns the distinct normalised lead sources over
+deals (most deals first): the options of the list's "Lead source" filter.
+Declared before `GET /quotes/:id`; no `@ResellerAllowed()`.
+
 List items gain `dealStage`. The list shows it as a **Stage** column (a calm
 chip, same colors as the stage blocks).
 
@@ -274,7 +278,10 @@ chip, same colors as the stage blocks).
   Projects pattern), because only `CrmTable` takes filter-only fields
   (`filterColumns`). Same visible columns plus a Stage column; the new filters in
   its filter panel (dates use `MUIDateRangePicker`; "Made by" is fed by the
-  employees list, as on the project list), sent through `useQuoteListResource`.
+  employees list, as on the project list; "Lead source" is a select fed by
+  `GET /quotes/lead-sources`), sent through `useQuoteListResource`.
+  `leadSourceNotIn` is not a panel control: it only arrives from the dashboard's
+  "Other" row and shows as a removable chip ("Lead source: other than …").
 
 ### States
 

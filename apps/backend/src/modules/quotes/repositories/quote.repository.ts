@@ -266,6 +266,18 @@ export class QuoteRepository {
   }
 
   /**
+   * Every normalised lead source that has a deal, most deals first — the
+   * options of the quote list's "Lead source" filter. Same values the
+   * dashboard groups by, so a source row's link always matches an option.
+   */
+  async findDealLeadSources(): Promise<string[]> {
+    const rows: { lead_source: string }[] = await this.repository.query(
+      `WITH ${DEAL_FACTS_CTE} SELECT df.lead_source FROM deal_facts df GROUP BY 1 ORDER BY COUNT(*) DESC, 1`,
+    );
+    return rows.map((r) => r.lead_source);
+  }
+
+  /**
    * The deal stage of each given quote, for quotes that are their property's
    * deal quote. Other quotes (an older version shown on one property's history)
    * are absent from the map.
