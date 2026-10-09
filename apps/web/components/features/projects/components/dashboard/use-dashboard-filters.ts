@@ -2,7 +2,7 @@
 
 import type { DashboardFinancing, DashboardPeriod } from '@tejas96/shared/types';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import type { DashboardFilters } from '@/lib/hooks/resources';
 
@@ -71,8 +71,17 @@ export function useDashboardFilters(): {
     [searchParams],
   );
 
+  // What the last write asked for. `router.replace` lands after the call, so neither
+  // the last render nor `window.location` has it yet when a second change arrives in
+  // the same tick; the URL taking over (any change to it) clears this.
+  const pending = useRef<DashboardFilters | null>(null);
+  useEffect(() => {
+    pending.current = null;
+  }, [searchParams]);
+
   const write = useCallback(
     (next: DashboardFilters) => {
+      pending.current = next;
       const params = new URLSearchParams();
       if (next.period !== 'this_month') params.set('period', next.period);
       if (next.period === 'custom' && next.from && next.to) {
@@ -93,14 +102,18 @@ export function useDashboardFilters(): {
    */
   const setFilters = useCallback(
     (patch: Partial<DashboardFilters>) => {
-      const next = { ...filters, ...patch };
+      // Merge into what is current at call time, not the last render's copy: two
+      // changes in one tick (e.g. period then financing) must both land.
+      const current =
+        pending.current ?? readDashboardFilters(new URLSearchParams(window.location.search));
+      const next = { ...current, ...patch };
       if (next.period !== 'custom') {
         delete next.from;
         delete next.to;
       }
       write(next);
     },
-    [filters, write],
+    [write],
   );
 
   const reset = useCallback(() => write(DEFAULT_DASHBOARD_FILTERS), [write]);

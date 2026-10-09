@@ -1,6 +1,6 @@
 import type { DashboardFinancing, ProjectAttention, StageGroupKey } from '@tejas96/shared/types';
 
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 
 type ListFilters = Record<string, unknown>;
 
@@ -44,10 +44,11 @@ export const dashboardLinks = {
     const { from, to } = monthBounds(month);
     return projectListHref({ ...fin(f), [kind]: { from, to } });
   },
-  project: (projectId: string): string => `/projects/${projectId}`,
+  project: (projectId: string): string => buildRoute(ROUTES.PROJECTS.DETAIL, { id: projectId }),
   task: (projectId: string, taskId: string): string =>
-    `/projects/${projectId}?${new URLSearchParams({ tab: 'tasks', t_task: taskId })}`,
-  workload: (department: string): string => `/workload?${new URLSearchParams({ department })}`,
+    buildRoute(ROUTES.PROJECTS.DETAIL, { id: projectId }, { tab: 'tasks', t_task: taskId }),
+  workload: (department: string): string =>
+    buildRoute(ROUTES.WORKLOAD.HOME, undefined, { department }),
   receivables: (f: DashboardFinancing): string =>
     f === 'all' ? ROUTES.FINANCE.RECEIVABLES : `${ROUTES.FINANCE.RECEIVABLES}?funding=${f}`,
   recovery: (f: DashboardFinancing): string =>

@@ -34,7 +34,7 @@ import { useGatedAction } from '@/lib/rbac';
 export function ProjectDashboardPage(): React.JSX.Element {
   const router = useRouter();
   const { filters, setFilters, reset, isDefault } = useDashboardFilters();
-  const { data, isLoading, isError, refetch } = useProjectsDashboard(filters);
+  const { data, isLoading, isError, isFetching, refetch } = useProjectsDashboard(filters);
   const [openStage, setOpenStage] = React.useState<StageGroupKey | null>(null);
   const newProject = useGatedAction(
     'projects.create',
@@ -129,6 +129,19 @@ export function ProjectDashboardPage(): React.JSX.Element {
           </Button>
         </div>
       </header>
+      {isError && data ? (
+        <p role="status" className="-mt-2 text-xs text-foreground-secondary">
+          Could not refresh ·{' '}
+          <button
+            type="button"
+            onClick={retry}
+            disabled={isFetching}
+            className="font-medium text-primary-dark hover:underline disabled:opacity-60"
+          >
+            Retry
+          </button>
+        </p>
+      ) : null}
       {body}
     </div>
   );

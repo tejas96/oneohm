@@ -45,7 +45,12 @@ export function StagePanel({
   }
 
   const stage = data.stages.find((s) => s.key === shownKey);
-  const query = useStageProjects(shownKey ? { stage: shownKey, phase, financing } : null);
+  // Disabled once the drawer is closed (no refetch on window focus), but the
+  // cached rows stay readable while it slides out.
+  const query = useStageProjects(
+    shownKey ? { stage: shownKey, phase, financing } : null,
+    stageKey !== null,
+  );
   // Until the rows arrive, the bar's own numbers stand in (phase chip count when one is chosen).
   const total =
     query.data?.total ?? stage?.phases.find((p) => p.name === phase)?.count ?? stage?.count ?? 0;
@@ -55,8 +60,12 @@ export function StagePanel({
       anchor="right"
       open={stageKey !== null}
       onClose={onClose}
-      aria-labelledby={titleId}
-      slotProps={{ paper: { sx: { width: { xs: '100%', sm: 440 } } } }}
+      slotProps={{
+        paper: {
+          'aria-labelledby': titleId,
+          sx: { width: { xs: '100%', sm: 440 } },
+        },
+      }}
     >
       {stage ? (
         <div className="flex h-full flex-col">

@@ -16,6 +16,9 @@ import { cn } from '@/lib/utils';
 
 type Unit = 'projects' | 'kw';
 
+const CHART_MARGIN = { top: 8, right: 0, left: -16, bottom: 0 };
+const Y_AXIS_WIDTH = 44;
+
 const COLORS = {
   onboarded: 'var(--ds-neutral-300)',
   meter: 'var(--ds-primary)',
@@ -41,9 +44,30 @@ export function TrendChart({
     meter: unit === 'projects' ? t.meterInstalled : Math.round(t.meterKw * 10) / 10,
   }));
 
-  const open = (kind: 'onboarded' | 'meterInstalled') => (entry: unknown) => {
-    const month = (entry as { payload?: { month?: string } }).payload?.month;
-    if (month) router.push(dashboardLinks.month(kind, month, financing));
+  const go = (kind: 'onboarded' | 'meterInstalled', month: string): void =>
+    router.push(dashboardLinks.month(kind, month, financing));
+
+  // A bar opens its own series. Recharts draws no rectangle for 0, so a month
+  // with nothing to click still takes a click anywhere in its column: it opens
+  // the onboarded list, or the meter list when only meters were installed.
+  const openBar =
+    (kind: 'onboarded' | 'meterInstalled') =>
+    (entry: unknown, _index: number, event?: React.MouseEvent): void => {
+      event?.stopPropagation();
+      const month = (entry as { payload?: { month?: string } }).payload?.month;
+      if (month) go(kind, month);
+    };
+  // The month under the pointer comes from the click's own position, not the
+  // chart's hover state: a tap on a phone arrives before that state updates.
+  const openColumn = (_state: unknown, event: React.MouseEvent): void => {
+    const box = event.currentTarget.getBoundingClientRect();
+    const plotLeft = CHART_MARGIN.left + Y_AXIS_WIDTH;
+    const plotWidth = box.width - plotLeft - CHART_MARGIN.right;
+    const x = event.clientX - box.left - plotLeft;
+    if (rows.length === 0 || x < 0 || x >= plotWidth) return;
+    const row = rows[Math.floor((x / plotWidth) * rows.length)];
+    if (!row) return;
+    go(row.onboarded === 0 && row.meter > 0 ? 'meterInstalled' : 'onboarded', row.month);
   };
   const fmt = (v: number): string => (unit === 'kw' ? formatKw(v) : String(v));
 
@@ -79,8 +103,19 @@ export function TrendChart({
         </ToggleButtonGroup>
       </header>
       <div className="h-[220px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={rows} barGap={2} margin={{ top: 8, right: 0, left: -16, bottom: 0 }}>
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          minWidth={0}
+          initialDimension={{ width: 640, height: 220 }}
+        >
+          <BarChart
+            data={rows}
+            barGap={2}
+            onClick={openColumn}
+            style={{ cursor: 'pointer' }}
+            margin={CHART_MARGIN}
+          >
             <CartesianGrid vertical={false} stroke={COLORS.grid} />
             <XAxis
               dataKey="label"
@@ -92,7 +127,7 @@ export function TrendChart({
               allowDecimals={unit === 'kw'}
               tickLine={false}
               axisLine={false}
-              width={44}
+              width={Y_AXIS_WIDTH}
               tick={{ fontSize: 11, fill: COLORS.axis }}
             />
             <Tooltip
@@ -107,7 +142,7 @@ export function TrendChart({
               isAnimationActive={!reduced}
               animationDuration={700}
               cursor="pointer"
-              onClick={open('onboarded')}
+              onClick={openBar('onboarded')}
             />
             <Bar
               dataKey="meter"
@@ -118,7 +153,7 @@ export function TrendChart({
               animationDuration={700}
               animationBegin={150}
               cursor="pointer"
-              onClick={open('meterInstalled')}
+              onClick={openBar('meterInstalled')}
             />
           </BarChart>
         </ResponsiveContainer>

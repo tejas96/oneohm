@@ -54,8 +54,13 @@ export function useProjectsDashboard(filters: DashboardFilters): UseQueryResult<
   });
 }
 
+/**
+ * `enabled` lets a caller keep showing the cached rows while it stops fetching
+ * (a closing drawer): no refetch on window focus or remount once it is false.
+ */
 export function useStageProjects(
   params: StageProjectsParams | null,
+  enabled = true,
 ): UseQueryResult<StageProjects> {
   return useQuery({
     queryKey: params
@@ -71,7 +76,7 @@ export function useStageProjects(
       );
       return data;
     },
-    enabled: params !== null,
+    enabled: params !== null && enabled,
     // No keepPreviousData: a stage switch would show the old stage's projects under the new title.
     staleTime: 60_000,
   });

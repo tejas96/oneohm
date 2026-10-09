@@ -101,7 +101,7 @@ export function StagePipeline({
                       <span className="w-full bg-error" style={{ height: `${latePct}%` }} />
                     </span>
                   </span>
-                  <span className="block truncate text-center text-xs text-foreground-secondary">
+                  <span className="line-clamp-2 min-h-8 break-words text-balance text-center text-xs text-foreground-secondary">
                     {s.label}
                   </span>
                   <span className="block text-center text-2xs text-foreground-tertiary">

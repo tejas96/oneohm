@@ -20,7 +20,7 @@ const MAX_DAYS = 1096;
 
 function toIsoDay(d: Date): string {
   const pad = (n: number): string => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return `${String(d.getFullYear()).padStart(4, '0')}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 /** The date fields hand over an Invalid Date while a value is half-typed. */
