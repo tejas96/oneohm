@@ -19,3 +19,4 @@ export * from './customer-update-text';
 export * from './maintenance';
 export * from './commission';
 export * from './project-stage';
+export * from './deal-stage';
