@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   type CalculatorInputs,
+  type DealStage,
   type PaymentMilestone,
   type PricingBreakdown,
   type QuoteSnapshot,
@@ -280,6 +281,14 @@ export class QuoteResponseDto {
   @ApiPropertyOptional({ example: 'Project PRJ-ONEOHM-2025-0042 cancelled: customer withdrew' })
   @Expose()
   voidReason?: string;
+
+  @ApiPropertyOptional({
+    enum: ['drafting', 'waiting', 'quiet', 'won', 'lost'],
+    nullable: true,
+    description: 'The deal stage, when this quote is its property’s deal quote (list only)',
+  })
+  @Expose()
+  dealStage?: DealStage | null;
 
   @ApiPropertyOptional({ example: 'High priority customer' })
   @Expose()

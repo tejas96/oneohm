@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QuoteSortField, QuoteStatus, SortOrder } from '@tejas96/shared/types';
+import { QuoteSortField, QuoteStatus, SortOrder, type DealStage } from '@tejas96/shared/types';
 import { Repository, type EntityManager } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { systemSizeKwOf } from '../../../common/utils';
 import { QuoteQueryDto } from '../dto/quotes/quote-query.dto';
 import { QuoteEntity } from '../entities/quote.entity';
+import { buildDealFactsFilter, DEAL_FACTS_CTE } from '../sql/deal-facts.sql';
 
 /**
  * Latest quote info for property enrichment
@@ -151,6 +152,22 @@ export class QuoteRepository {
       qb.andWhere('quote.quoteDate <= CAST(:toDate AS date)', { toDate: query.toDate });
     }
 
+    // Dashboard drill-downs. Same SQL rules the dashboard counts with, so the number
+    // on a card is the number of rows here. The CTE runs once, here, and narrows the
+    // query to each deal's own quote — the collapse below then keeps exactly that one.
+    const dealFilter = buildDealFactsFilter(query);
+    if (dealFilter) {
+      const [dealSql, dealParams] =
+        this.repository.manager.connection.driver.escapeQueryWithParameters(
+          dealFilter.sql,
+          dealFilter.params,
+          {},
+        );
+      const dealRows: { quote_id: string }[] = await this.repository.query(dealSql, dealParams);
+      if (dealRows.length === 0) return [[], 0];
+      qb.andWhere('quote.id IN (:...dfQuoteIds)', { dfQuoteIds: dealRows.map((r) => r.quote_id) });
+    }
+
     /*
       Fetch all matching quotes ordered by createdAt desc, then keep one row per
       property — the one that best represents the roof; see `rank` below.
@@ -246,6 +263,22 @@ export class QuoteRepository {
     const start = (query.page - 1) * query.limit;
     const end = start + query.limit;
     return [rows.slice(start, end), total];
+  }
+
+  /**
+   * The deal stage of each given quote, for quotes that are their property's
+   * deal quote. Other quotes (an older version shown on one property's history)
+   * are absent from the map.
+   */
+  async findDealStages(quoteIds: string[]): Promise<Map<string, DealStage | null>> {
+    if (quoteIds.length === 0) return new Map();
+    const rows: { quote_id: string; stage: string }[] = await this.repository.query(
+      `WITH ${DEAL_FACTS_CTE} SELECT df.quote_id, df.stage FROM deal_facts df WHERE df.quote_id = ANY($1::uuid[])`,
+      [quoteIds],
+    );
+    return new Map(
+      rows.map((r) => [r.quote_id, r.stage === 'none' ? null : (r.stage as DealStage)]),
+    );
   }
 
   /**

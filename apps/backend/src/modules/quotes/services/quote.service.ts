@@ -12,6 +12,7 @@ import {
   type CalculatorInputs,
   DocumentCategory,
   IntegrationProvider,
+  type DealStage,
   type ITemplateMessage,
   LossReason,
   PaymentMilestone,
@@ -213,6 +214,11 @@ export class QuoteService {
    */
   async findAll(query: QuoteQueryDto): Promise<{ data: QuoteEntity[]; total: number }> {
     const [data, total] = await this.quoteRepository.findWithFilters(query);
+    const stages = await this.quoteRepository.findDealStages(data.map((q) => q.id));
+    for (const quote of data) {
+      (quote as QuoteEntity & { dealStage?: DealStage | null }).dealStage =
+        stages.get(quote.id) ?? null;
+    }
     return { data, total };
   }
 
