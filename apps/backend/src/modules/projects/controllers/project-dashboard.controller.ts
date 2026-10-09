@@ -2,6 +2,7 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { ProjectsDashboard, StageGroupKey, StageProjects } from '@tejas96/shared/types';
 
+import { istToday, resolveDashboardRange } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -11,7 +12,6 @@ import {
   StageProjectsQueryDto,
 } from '../dto/dashboard/projects-dashboard-query.dto';
 import { ProjectDashboardService } from '../services/project-dashboard.service';
-import { istToday, resolveDashboardRange } from '../utils/dashboard-period';
 
 const toFinancing = (v: string | undefined): 'cash' | 'loan' | null =>
   v === 'cash' || v === 'loan' ? v : null;
