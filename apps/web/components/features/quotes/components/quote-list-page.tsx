@@ -909,7 +909,7 @@ export function QuoteListPage(): JSX.Element {
         refetching={isFetching && !isLoading}
         initialSearch={urlState.state.search}
         onSearchChange={urlState.setSearch}
-        searchPlaceholder="Search quote, customer, phone"
+        searchPlaceholder="Search quote, name, phone"
         filterColumns={filterColumns}
         filterModel={filters}
         onFilterChange={urlState.setFilters}
