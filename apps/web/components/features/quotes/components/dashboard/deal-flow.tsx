@@ -16,7 +16,13 @@ const BLOCK =
   'relative block overflow-hidden rounded-[10px] bg-surface-alt p-4 transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none';
 
 function Base({ color }: { color: string }): React.JSX.Element {
-  return <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1" style={{ background: color }} />;
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute inset-x-0 bottom-0 h-1"
+      style={{ background: color }}
+    />
+  );
 }
 
 function OpenBlock({
@@ -38,7 +44,9 @@ function OpenBlock({
       <span className="mt-1 block text-2xl font-semibold tabular-nums text-foreground">
         <AnimatedNumber value={money.count} />
       </span>
-      <span className="block text-xs text-foreground-tertiary">{formatRupees(money.valueRupees)}</span>
+      <span className="block text-xs text-foreground-tertiary">
+        {formatRupees(money.valueRupees)}
+      </span>
       <span className="block text-xs text-foreground-tertiary">{formatKw(money.kw)}</span>
       <Base color={color} />
     </Link>
@@ -100,7 +108,8 @@ export function DealFlow({
             style={enterDelay(8)}
           >
             <span className="flex items-baseline justify-between text-xs font-medium text-foreground-secondary">
-              Won <span className="text-2xs font-normal text-foreground-tertiary">{period.label}</span>
+              Won{' '}
+              <span className="text-2xs font-normal text-foreground-tertiary">{period.label}</span>
             </span>
             <span className="mt-0.5 flex items-baseline gap-2">
               <span className="text-lg font-semibold tabular-nums text-foreground">
@@ -115,7 +124,8 @@ export function DealFlow({
             style={enterDelay(9)}
           >
             <span className="flex items-baseline justify-between text-xs font-medium text-foreground-secondary">
-              Lost <span className="text-2xs font-normal text-foreground-tertiary">{period.label}</span>
+              Lost{' '}
+              <span className="text-2xs font-normal text-foreground-tertiary">{period.label}</span>
             </span>
             <span className="mt-0.5 flex items-baseline gap-2">
               <span className="text-lg font-semibold tabular-nums text-foreground">

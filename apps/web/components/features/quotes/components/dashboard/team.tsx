@@ -25,13 +25,20 @@ export function Team({
 }): React.JSX.Element {
   const max = Math.max(1, ...data.team.map((t) => t.open));
   return (
-    <section className={cn('h-full rounded-xl bg-surface p-5 shadow-e2', ENTER)} style={enterDelay(11)}>
+    <section
+      className={cn('h-full rounded-xl bg-surface p-5 shadow-e2', ENTER)}
+      style={enterDelay(11)}
+    >
       <header className="flex flex-wrap items-baseline justify-between gap-2 pb-2">
         <h2 className="text-sm font-semibold text-foreground">Team</h2>
         <span className="text-2xs text-foreground-tertiary">
           {SEGMENTS.map((s) => (
             <span key={s.key} className="ml-2 inline-flex items-center gap-1">
-              <span aria-hidden="true" className="inline-block size-2 rounded-sm" style={{ background: s.color }} />
+              <span
+                aria-hidden="true"
+                className="inline-block size-2 rounded-sm"
+                style={{ background: s.color }}
+              />
               {s.label}
             </span>
           ))}
@@ -49,13 +56,19 @@ export function Team({
                 title={`${t.name}: ${t.drafting} drafting, ${t.waiting} waiting, ${t.quiet} quiet`}
               >
                 <span className="truncate text-foreground">{t.name}</span>
-                <span className="flex h-1.5 overflow-hidden rounded-full bg-surface-alt" style={{ width: `${(t.open / max) * 100}%` }}>
+                <span
+                  className="flex h-1.5 overflow-hidden rounded-full bg-surface-alt"
+                  style={{ width: `${(t.open / max) * 100}%` }}
+                >
                   {SEGMENTS.map((s) =>
                     t[s.key] > 0 ? (
                       <span
                         key={s.key}
                         className="h-full transition-[width] duration-700 ease-out motion-reduce:transition-none"
-                        style={{ width: `${(t[s.key] / Math.max(1, t.open)) * 100}%`, background: s.color }}
+                        style={{
+                          width: `${(t[s.key] / Math.max(1, t.open)) * 100}%`,
+                          background: s.color,
+                        }}
                       />
                     ) : null,
                   )}
@@ -68,7 +81,10 @@ export function Team({
         </ul>
       )}
       {data.teamMore > 0 ? (
-        <Link href={quoteLinks.stage('open', filters)} className="mt-2 inline-block text-xs font-medium text-primary-dark hover:underline">
+        <Link
+          href={quoteLinks.stage('open', filters)}
+          className="mt-2 inline-block text-xs font-medium text-primary-dark hover:underline"
+        >
           +{data.teamMore} more
         </Link>
       ) : null}

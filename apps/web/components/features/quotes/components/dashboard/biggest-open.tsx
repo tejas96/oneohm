@@ -19,10 +19,16 @@ export function BiggestOpen({
   filters: DashboardFilters;
 }): React.JSX.Element {
   return (
-    <section className={cn('h-full rounded-xl bg-surface p-5 shadow-e2', ENTER)} style={enterDelay(12)}>
+    <section
+      className={cn('h-full rounded-xl bg-surface p-5 shadow-e2', ENTER)}
+      style={enterDelay(12)}
+    >
       <header className="flex items-baseline justify-between gap-2 pb-2">
         <h2 className="text-sm font-semibold text-foreground">Biggest open deals</h2>
-        <Link href={quoteLinks.stage('pipeline', filters)} className="text-2xs text-foreground-tertiary hover:text-primary-dark hover:underline">
+        <Link
+          href={quoteLinks.stage('pipeline', filters)}
+          className="text-2xs text-foreground-tertiary hover:text-primary-dark hover:underline"
+        >
           waiting or quiet
         </Link>
       </header>
@@ -32,9 +38,15 @@ export function BiggestOpen({
         <ul className="divide-y divide-border">
           {data.biggestOpen.map((d, i) => (
             <li key={d.quoteId} className={ENTER} style={enterDelay(i, 40)}>
-              <Link href={quoteLinks.quote(d.quoteId)} className="-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-2.5 hover:bg-surface-alt">
+              <Link
+                href={quoteLinks.quote(d.quoteId)}
+                className="-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-2.5 hover:bg-surface-alt"
+              >
                 <span className="min-w-0">
-                  <span className="block truncate text-sm text-foreground" title={d.customerName ?? undefined}>
+                  <span
+                    className="block truncate text-sm text-foreground"
+                    title={d.customerName ?? undefined}
+                  >
                     {d.customerName ?? 'Unnamed customer'}
                   </span>
                   <span className="block truncate text-xs text-foreground-tertiary">
@@ -49,7 +61,9 @@ export function BiggestOpen({
                     )}
                   </span>
                 </span>
-                <span className="shrink-0 text-sm font-semibold tabular-nums text-foreground">{formatRupees(d.valueRupees)}</span>
+                <span className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
+                  {formatRupees(d.valueRupees)}
+                </span>
               </Link>
             </li>
           ))}

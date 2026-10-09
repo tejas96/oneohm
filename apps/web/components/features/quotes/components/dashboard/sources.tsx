@@ -20,13 +20,18 @@ export function Sources({
   const { period } = data;
   const max = Math.max(1, ...data.sources.map((s) => s.count));
   return (
-    <section className={cn('h-full rounded-xl bg-surface p-5 shadow-e2', ENTER)} style={enterDelay(13)}>
+    <section
+      className={cn('h-full rounded-xl bg-surface p-5 shadow-e2', ENTER)}
+      style={enterDelay(13)}
+    >
       <header className="flex items-baseline justify-between gap-2 pb-2">
         <h2 className="text-sm font-semibold text-foreground">Where deals come from</h2>
         <span className="text-2xs text-foreground-tertiary">{period.label}</span>
       </header>
       {data.sources.length === 0 ? (
-        <p className="py-8 text-center text-sm text-foreground-secondary">No new deals in this period.</p>
+        <p className="py-8 text-center text-sm text-foreground-secondary">
+          No new deals in this period.
+        </p>
       ) : (
         <ul className="divide-y divide-border">
           {data.sources.map((s, i) => (

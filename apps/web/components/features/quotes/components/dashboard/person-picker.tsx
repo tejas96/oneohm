@@ -17,7 +17,10 @@ export function PersonPicker({
   onChange: (person: string | undefined) => void;
 }): React.JSX.Element {
   const options = React.useMemo(
-    () => [{ value: EVERYONE, label: 'Everyone' }, ...people.map((p) => ({ value: p.id, label: p.name }))],
+    () => [
+      { value: EVERYONE, label: 'Everyone' },
+      ...people.map((p) => ({ value: p.id, label: p.name })),
+    ],
     [people],
   );
   return (

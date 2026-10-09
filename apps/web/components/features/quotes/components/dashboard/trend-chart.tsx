@@ -11,7 +11,12 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { quoteLinks } from './links';
 import { formatRupees } from './strip';
 
-import { ENTER, enterDelay, monthLabel, usePrefersReducedMotion } from '@/components/features/dashboard/kit';
+import {
+  ENTER,
+  enterDelay,
+  monthLabel,
+  usePrefersReducedMotion,
+} from '@/components/features/dashboard/kit';
 import type { DashboardFilters } from '@/lib/hooks/resources';
 import { cn } from '@/lib/utils';
 
@@ -47,7 +52,8 @@ export function QuotesTrendChart({
   }));
 
   const margin = unit === 'value' ? CHART_MARGIN_VALUE : CHART_MARGIN;
-  const go = (kind: 'new' | 'won', month: string): void => router.push(quoteLinks.month(kind, month, filters));
+  const go = (kind: 'new' | 'won', month: string): void =>
+    router.push(quoteLinks.month(kind, month, filters));
   const openBar =
     (kind: 'new' | 'won') =>
     (entry: unknown, _index: number, event?: React.MouseEvent): void => {
@@ -74,22 +80,52 @@ export function QuotesTrendChart({
         <div>
           <h2 className="text-sm font-semibold text-foreground">Last 12 months</h2>
           <p className="text-2xs text-foreground-tertiary">
-            <span aria-hidden="true" className="mr-1 inline-block size-2 rounded-sm align-middle" style={{ background: COLORS.new }} />
+            <span
+              aria-hidden="true"
+              className="mr-1 inline-block size-2 rounded-sm align-middle"
+              style={{ background: COLORS.new }}
+            />
             new deals
-            <span aria-hidden="true" className="ml-3 mr-1 inline-block size-2 rounded-sm align-middle" style={{ background: COLORS.won }} />
+            <span
+              aria-hidden="true"
+              className="ml-3 mr-1 inline-block size-2 rounded-sm align-middle"
+              style={{ background: COLORS.won }}
+            />
             won · select a bar to see its deals
           </p>
         </div>
-        <ToggleButtonGroup exclusive size="small" value={unit} onChange={(_, next: Unit | null) => next && setUnit(next)} aria-label="Chart unit">
+        <ToggleButtonGroup
+          exclusive
+          size="small"
+          value={unit}
+          onChange={(_, next: Unit | null) => next && setUnit(next)}
+          aria-label="Chart unit"
+        >
           <ToggleButton value="deals">Deals</ToggleButton>
           <ToggleButton value="value">₹</ToggleButton>
         </ToggleButtonGroup>
       </header>
       <div className="h-[220px]">
-        <ResponsiveContainer width="100%" height="100%" minWidth={0} initialDimension={{ width: 320, height: 220 }}>
-          <BarChart data={rows} barGap={2} onClick={openColumn} style={{ cursor: 'pointer' }} margin={margin}>
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          minWidth={0}
+          initialDimension={{ width: 320, height: 220 }}
+        >
+          <BarChart
+            data={rows}
+            barGap={2}
+            onClick={openColumn}
+            style={{ cursor: 'pointer' }}
+            margin={margin}
+          >
             <CartesianGrid vertical={false} stroke={COLORS.grid} />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: COLORS.axis }} />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fontSize: 11, fill: COLORS.axis }}
+            />
             <YAxis
               allowDecimals={false}
               tickLine={false}
@@ -98,9 +134,31 @@ export function QuotesTrendChart({
               tick={{ fontSize: 11, fill: COLORS.axis }}
               tickFormatter={(v: number) => (unit === 'value' ? formatRupees(v) : String(v))}
             />
-            <Tooltip cursor={{ fill: 'var(--ds-canvas-sunken)' }} formatter={(value, name) => [fmt(Number(value ?? 0)), String(name ?? '')]} />
-            <Bar dataKey="new" name="New deals" fill={COLORS.new} radius={[3, 3, 0, 0]} isAnimationActive={!reduced} animationDuration={700} cursor="pointer" onClick={openBar('new')} />
-            <Bar dataKey="won" name="Won" fill={COLORS.won} radius={[3, 3, 0, 0]} isAnimationActive={!reduced} animationDuration={700} animationBegin={150} cursor="pointer" onClick={openBar('won')} />
+            <Tooltip
+              cursor={{ fill: 'var(--ds-canvas-sunken)' }}
+              formatter={(value, name) => [fmt(Number(value ?? 0)), String(name ?? '')]}
+            />
+            <Bar
+              dataKey="new"
+              name="New deals"
+              fill={COLORS.new}
+              radius={[3, 3, 0, 0]}
+              isAnimationActive={!reduced}
+              animationDuration={700}
+              cursor="pointer"
+              onClick={openBar('new')}
+            />
+            <Bar
+              dataKey="won"
+              name="Won"
+              fill={COLORS.won}
+              radius={[3, 3, 0, 0]}
+              isAnimationActive={!reduced}
+              animationDuration={700}
+              animationBegin={150}
+              cursor="pointer"
+              onClick={openBar('won')}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -108,11 +166,17 @@ export function QuotesTrendChart({
         {data.trend.map((t) => (
           <li key={t.month}>
             {monthLabel(t.month)}:{' '}
-            <Link className="hover:text-primary-dark hover:underline" href={quoteLinks.month('new', t.month, filters)}>
+            <Link
+              className="hover:text-primary-dark hover:underline"
+              href={quoteLinks.month('new', t.month, filters)}
+            >
               {t.newCount} new
             </Link>
             ,{' '}
-            <Link className="hover:text-primary-dark hover:underline" href={quoteLinks.month('won', t.month, filters)}>
+            <Link
+              className="hover:text-primary-dark hover:underline"
+              href={quoteLinks.month('won', t.month, filters)}
+            >
               {t.wonCount} won
             </Link>
           </li>

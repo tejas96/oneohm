@@ -16,7 +16,8 @@ import {
 import type { DashboardFilters } from '@/lib/hooks/resources';
 import { cn } from '@/lib/utils';
 
-export const formatRupees = (rupees: number): string => formatPaiseCompact(Math.round(rupees * 100));
+export const formatRupees = (rupees: number): string =>
+  formatPaiseCompact(Math.round(rupees * 100));
 
 const BIG =
   'block text-2xl font-semibold tabular-nums text-foreground hover:text-primary-dark focus-visible:underline';
@@ -71,11 +72,17 @@ export function QuotesStrip({
         <span className={LINE}>{formatKw(strip.newDeals.kw)}</span>
         {filters.financing === 'all' ? (
           <span className={LINE}>
-            <Link className={SMALL} href={quoteLinks.newDeals(period.from, period.to, filters, 'cash')}>
+            <Link
+              className={SMALL}
+              href={quoteLinks.newDeals(period.from, period.to, filters, 'cash')}
+            >
               {strip.newDeals.cash} cash
             </Link>
             {' · '}
-            <Link className={SMALL} href={quoteLinks.newDeals(period.from, period.to, filters, 'loan')}>
+            <Link
+              className={SMALL}
+              href={quoteLinks.newDeals(period.from, period.to, filters, 'loan')}
+            >
               {strip.newDeals.loan} loan
             </Link>
           </span>
@@ -88,8 +95,14 @@ export function QuotesStrip({
         </Link>
         <span className={LINE}>{formatKw(strip.wonValue.kw)}</span>
         <span className={LINE}>
-          <span className={cn('font-medium', delta > 0 && 'text-success', delta < 0 && 'text-error')}>
-            {delta > 0 ? `+${formatRupees(delta)}` : delta < 0 ? `−${formatRupees(-delta)}` : 'Same'}
+          <span
+            className={cn('font-medium', delta > 0 && 'text-success', delta < 0 && 'text-error')}
+          >
+            {delta > 0
+              ? `+${formatRupees(delta)}`
+              : delta < 0
+                ? `−${formatRupees(-delta)}`
+                : 'Same'}
           </span>{' '}
           vs {period.previousLabel}
         </span>
@@ -97,7 +110,11 @@ export function QuotesStrip({
 
       <Stat label="Win rate" tag={period.label} index={2}>
         <Link href={quoteLinks.wonOfNew(period.from, period.to, filters)} className={BIG}>
-          {rate.percent == null ? '—' : <AnimatedNumber value={rate.percent} format={(n) => `${Math.round(n)}%`} />}
+          {rate.percent == null ? (
+            '—'
+          ) : (
+            <AnimatedNumber value={rate.percent} format={(n) => `${Math.round(n)}%`} />
+          )}
         </Link>
         <span className={LINE}>
           {rate.wonOfNew} won of {rate.newCount} new

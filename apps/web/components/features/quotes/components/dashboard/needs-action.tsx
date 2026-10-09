@@ -20,19 +20,27 @@ export function NeedsAction({
 }): React.JSX.Element {
   const allClear = data.needsAction.every((n) => n.count === 0);
   return (
-    <section className={cn('h-full rounded-xl bg-surface p-5 shadow-e2', ENTER)} style={enterDelay(10)}>
+    <section
+      className={cn('h-full rounded-xl bg-surface p-5 shadow-e2', ENTER)}
+      style={enterDelay(10)}
+    >
       <header className="pb-2">
         <h2 className="text-sm font-semibold text-foreground">Needs action</h2>
       </header>
       {allClear ? (
-        <p className="py-8 text-center text-sm text-foreground-secondary">Nothing waiting on anyone.</p>
+        <p className="py-8 text-center text-sm text-foreground-secondary">
+          Nothing waiting on anyone.
+        </p>
       ) : (
         <ul className="divide-y divide-border">
           {data.needsAction.map((n, i) => (
             <li key={n.key} className={ENTER} style={enterDelay(i, 40)}>
               <div className="flex items-center justify-between gap-3 py-2.5">
                 <div className="min-w-0">
-                  <Link href={quoteLinks.attention(n.key, filters)} className="text-sm text-foreground hover:text-primary-dark hover:underline">
+                  <Link
+                    href={quoteLinks.attention(n.key, filters)}
+                    className="text-sm text-foreground hover:text-primary-dark hover:underline"
+                  >
                     {DEAL_ATTENTION_LABELS[n.key]}
                   </Link>
                   {n.owners.length > 0 ? (
@@ -40,7 +48,10 @@ export function NeedsAction({
                       {n.owners.map((o, j) => (
                         <React.Fragment key={o.personId}>
                           {j > 0 ? ' · ' : null}
-                          <Link href={quoteLinks.attention(n.key, filters, o.personId)} className="hover:text-primary-dark hover:underline">
+                          <Link
+                            href={quoteLinks.attention(n.key, filters, o.personId)}
+                            className="hover:text-primary-dark hover:underline"
+                          >
                             {o.name} {o.count}
                           </Link>
                         </React.Fragment>
@@ -50,7 +61,10 @@ export function NeedsAction({
                   ) : null}
                 </div>
                 {n.count > 0 ? (
-                  <Link href={quoteLinks.attention(n.key, filters)} className="shrink-0 text-sm font-semibold tabular-nums text-error hover:underline">
+                  <Link
+                    href={quoteLinks.attention(n.key, filters)}
+                    className="shrink-0 text-sm font-semibold tabular-nums text-error hover:underline"
+                  >
                     {n.count}
                   </Link>
                 ) : (
