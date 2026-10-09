@@ -1,6 +1,6 @@
 'use client';
 
-import type { QuotesDashboard } from '@tejas96/shared/types';
+import type { QuotesDashboard, QuotesDashboardBigDeal } from '@tejas96/shared/types';
 import Link from 'next/link';
 import * as React from 'react';
 
@@ -10,6 +10,11 @@ import { formatRupees } from './strip';
 import { ENTER, enterDelay, formatKw } from '@/components/features/dashboard/kit';
 import type { DashboardFilters } from '@/lib/hooks/resources';
 import { cn } from '@/lib/utils';
+
+function dealTiming(d: QuotesDashboardBigDeal): string {
+  if (d.stage === 'quiet') return `quiet ${d.days} d`;
+  return d.days === 0 ? 'ends today' : `ends in ${d.days} d`;
+}
 
 export function BiggestOpen({
   data,
@@ -49,15 +54,16 @@ export function BiggestOpen({
                   >
                     {d.customerName ?? 'Unnamed customer'}
                   </span>
-                  <span className="block truncate text-xs text-foreground-tertiary">
+                  <span
+                    className="block truncate text-xs text-foreground-tertiary"
+                    title={`${d.kw != null ? `${formatKw(d.kw)} · ` : ''}${d.personName} · ${dealTiming(d)}`}
+                  >
                     {d.kw != null ? `${formatKw(d.kw)} · ` : ''}
                     {d.personName} ·{' '}
                     {d.stage === 'quiet' ? (
-                      <span className="text-error">quiet {d.days} d</span>
-                    ) : d.days === 0 ? (
-                      'ends today'
+                      <span className="text-error">{dealTiming(d)}</span>
                     ) : (
-                      `ends in ${d.days} d`
+                      dealTiming(d)
                     )}
                   </span>
                 </span>

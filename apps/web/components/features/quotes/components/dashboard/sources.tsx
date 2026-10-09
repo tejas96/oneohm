@@ -40,7 +40,9 @@ export function Sources({
                 href={quoteLinks.source(s.key, data.topSourceKeys, period.from, period.to, filters)}
                 className="-mx-2 grid grid-cols-[minmax(0,96px)_minmax(0,1fr)_28px_60px] items-center gap-3 rounded-md px-2 py-2.5 text-sm hover:bg-surface-alt"
               >
-                <span className="truncate text-foreground">{s.label}</span>
+                <span className="truncate text-foreground" title={s.label}>
+                  {s.label}
+                </span>
                 <span className="h-1.5 overflow-hidden rounded-full bg-surface-alt">
                   <span
                     className="block h-full rounded-full bg-primary-light transition-[width] duration-700 ease-out motion-reduce:transition-none"
