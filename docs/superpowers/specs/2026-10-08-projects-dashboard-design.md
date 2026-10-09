@@ -176,7 +176,7 @@ link, "New project" button (gated by `projects.create`, existing `useGatedAction
 | Running late | late projects | "% of live" | No |
 | To collect | ₹ open (L / Cr) | "₹42 L meter in" | No |
 
-Period cards show the period name as a small tag ("Oct", "Q3", "FY 26-27", "1 Sep – 30 Sep").
+Period cards show the period name as a small tag ("Oct", "Oct–Dec", "FY 26-27", "1 Sep – 30 Sep").
 
 ### Band 2 — Where every project is (hero)
 

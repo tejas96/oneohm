@@ -40,11 +40,15 @@ export function NeedsAction({
                   >
                     {row.customerName ?? row.projectNumber}
                   </span>
-                  <span className="block truncate text-xs text-foreground-tertiary">
-                    {row.stepName}
-                    {row.department ? ` · ${row.department.replace(/ Department$/, '')}` : ''}
-                    {' · '}
-                    {row.assigneeName ?? <span className="text-error">Unassigned</span>}
+                  <span className="flex text-xs text-foreground-tertiary">
+                    <span className="min-w-0 truncate">
+                      {row.stepName}
+                      {row.department ? ` · ${row.department.replace(/ Department$/, '')}` : ''}
+                    </span>
+                    <span className="shrink-0 whitespace-pre">
+                      {' · '}
+                      {row.assigneeName ?? <span className="text-error">Unassigned</span>}
+                    </span>
                   </span>
                 </span>
                 <span className="shrink-0 text-xs font-medium tabular-nums text-error">
