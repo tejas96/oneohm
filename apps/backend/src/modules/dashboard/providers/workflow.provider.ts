@@ -151,9 +151,8 @@ stalls AS (
   WHERE q.status = 'draft'
 
   UNION ALL
-  -- 7/8. Expiry is computed from valid_until, NEVER read from status:
-  -- markExpiredQuotes() exists and nothing schedules it, so a quote past its
-  -- date still says 'sent'. See quote.service.ts:257.
+  -- 7/8. Expiry is computed from valid_until, NEVER read from status: nothing
+  -- sets 'expired', so a quote past its date still says 'sent'. See quote.service.ts.
   SELECT
     CASE WHEN q.valid_until < CURRENT_DATE THEN 'quote_lapsed' ELSE 'quote_expiring' END,
     CASE WHEN q.valid_until < CURRENT_DATE THEN 'critical' ELSE 'warning' END,

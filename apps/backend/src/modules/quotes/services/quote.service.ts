@@ -293,10 +293,9 @@ export class QuoteService {
       Past its validity date.
 
       Keyed on the DATE, not on the status, because nothing in this system ever
-      writes `expired`: `markExpiredQuotes` exists and no scheduler calls it. A
-      quote eight months dead still reads `sent`, so a status check alone stops
-      nothing. Without this, that quote goes to the customer looking current
-      and they can hold us to the price on it.
+      writes `expired`. A quote eight months dead still reads `sent`, so a
+      status check alone stops nothing. Without this, that quote goes to the
+      customer looking current and they can hold us to the price on it.
 
       Both sides are IST business dates (`YYYY-MM-DD`). `validUntil` is a
       postgres `date`: TypeORM may hand it back as a string or as a local-midnight
@@ -925,20 +924,6 @@ export class QuoteService {
       locked: !!accepted,
       acceptedQuoteNumber: accepted?.quoteNumber,
     };
-  }
-
-  /**
-   * Mark expired quotes (for cron job)
-   */
-  async markExpiredQuotes(): Promise<number> {
-    const expiredQuotes = await this.quoteRepository.findExpiredQuotes();
-
-    if (expiredQuotes.length > 0) {
-      const quoteIds = expiredQuotes.map((q) => q.id);
-      await this.quoteRepository.bulkUpdateStatus(quoteIds, QuoteStatus.EXPIRED);
-    }
-
-    return expiredQuotes.length;
   }
 
   /**

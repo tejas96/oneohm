@@ -387,34 +387,6 @@ export class QuoteRepository {
   }
 
   /**
-   * Find expired quotes
-   */
-  async findExpiredQuotes(): Promise<QuoteEntity[]> {
-    const today = new Date().toISOString().split('T')[0];
-
-    return this.repository
-      .createQueryBuilder('quote')
-      .where('quote.validUntil < :today', { today })
-      .andWhere('quote.status NOT IN (:...statuses)', {
-        statuses: [QuoteStatus.ACCEPTED, QuoteStatus.REJECTED, QuoteStatus.EXPIRED],
-      })
-      .andWhere('quote.deletedAt IS NULL')
-      .getMany();
-  }
-
-  /**
-   * Bulk update status (for expiry cron job)
-   */
-  async bulkUpdateStatus(quoteIds: string[], status: QuoteStatus): Promise<void> {
-    await this.repository
-      .createQueryBuilder()
-      .update(QuoteEntity)
-      .set({ status, updatedAt: new Date() })
-      .where('id IN (:...quoteIds)', { quoteIds })
-      .execute();
-  }
-
-  /**
    * Find an accepted quote for a given property.
    * Used to enforce property-level locking once any quote is accepted.
    */
