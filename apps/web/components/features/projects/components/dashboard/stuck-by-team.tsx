@@ -27,6 +27,9 @@ export function StuckByTeam({
         <h2 className="text-sm font-semibold text-foreground">Stuck by team</h2>
         <span className="text-2xs text-foreground-tertiary">late steps</span>
       </header>
+      {financing !== 'all' ? (
+        <p className="pb-2 text-xs text-foreground-tertiary">Workload shows all projects.</p>
+      ) : null}
       {data.teams.length === 0 ? (
         <p className="py-8 text-center text-sm text-foreground-secondary">No late steps.</p>
       ) : (

@@ -19,9 +19,13 @@ const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_CUSTOM_DAYS = 1096;
 const DAY_MS = 86_400_000;
 
-/** Format AND calendar check: `2026-13-45` matches the regex but is not a day. */
+/** The API rejects custom dates before this year. */
+const MIN_YEAR = 2000;
+
+/** Format AND calendar check: `2026-13-45` matches the regex but is not a day; years before 2000 are refused. */
 function isIsoDay(v: string): boolean {
   if (!ISO_DAY.test(v)) return false;
+  if (Number(v.slice(0, 4)) < MIN_YEAR) return false;
   const d = new Date(`${v}T00:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
 }

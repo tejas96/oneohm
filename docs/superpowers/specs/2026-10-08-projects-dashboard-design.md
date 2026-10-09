@@ -259,15 +259,16 @@ dialog, not a dead link.
 
 ### SQL facts — `apps/backend/src/modules/projects/sql/project-facts.sql.ts`
 
-One CTE builder, `projectFactsCte({ memberId?, financing? })`, producing one row
+One CTE builder, `projectFactsCte({ projectIdsParam? })`, producing one row
 per non-deleted project (cancelled ones included, flagged by `is_counted`):
 
 `project_id, wants_loan, kw (nullable), created_at, step_count, done_steps,
 open_steps, current_phase, stage_group, old_open_steps, unstaged_open_steps,
 late_steps, meter_installed, meter_completed_at, meter_due_date, is_counted, is_live`
 (`is_live` is false for cancelled projects; `meter_due_date` is null for them).
-Exported as `PROJECT_FACTS_CTE` (CTE text, no `WITH`) and used by raw SQL and by
-TypeORM `IN (WITH … SELECT …)` subqueries alike. It takes no parameters; callers
+Exported as `PROJECT_FACTS_CTE` (= `projectFactsCte()`; CTE text, no `WITH`) and used by raw SQL and by
+TypeORM `IN (WITH … SELECT …)` subqueries alike. The optional `projectIdsParam` (a `$n`
+placeholder holding a uuid[]) narrows the CTE to those projects; callers otherwise
 filter the `project_facts` rows.
 
 The stage rule is written once in SQL here, mirroring `deriveProjectStage`.

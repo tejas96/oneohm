@@ -32,7 +32,8 @@ export class ProjectDashboardController {
     summary: 'Projects dashboard',
     description:
       'Owner strip, projects by stage, needs action, late steps by team, 12-month trend and ' +
-      'meters due — all from PROJECT_FACTS_CTE, so each figure equals the project list it links to.',
+      'meters due — all from PROJECT_FACTS_CTE, so each figure equals the project list it links to. ' +
+      'Onboarded and meter-installed counts include cancelled projects; live figures exclude them.',
   })
   async getDashboard(
     @CurrentUser() user: CurrentUserType,

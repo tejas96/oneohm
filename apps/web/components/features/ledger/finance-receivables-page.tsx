@@ -452,11 +452,10 @@ export function FinanceReceivablesPage(): JSX.Element {
       recovery.data &&
       recovery.data.buckets.missingLenderProjects > 0 ? (
         <Alert variant="warning">
-          {recovery.data.buckets.missingLenderProjects} of {recovery.data.buckets.all}{' '}
-          {scope === 'recovery' ? 'projects' : 'loan projects'} have no bank share split out of the
-          contract (marked on their rows). The customer may be getting chased for the bank&apos;s
-          money. This needs the project&apos;s payment terms reviewed — adding a bank name below
-          won&apos;t change this count.
+          {recovery.data.buckets.missingLenderProjects} of {recovery.data.buckets.loanProjects} loan
+          projects have no bank share split out of the contract (marked on their rows). The customer
+          may be getting chased for the bank&apos;s money. This needs the project&apos;s payment
+          terms reviewed — adding a bank name below won&apos;t change this count.
         </Alert>
       ) : null}
 

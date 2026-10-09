@@ -35,9 +35,13 @@ function Stat({
       )}
       style={enterDelay(index)}
     >
-      <header className="flex items-baseline justify-between gap-2">
+      <header className="flex flex-wrap items-baseline justify-between gap-x-2">
         <h2 className="truncate text-xs font-medium text-foreground-secondary">{label}</h2>
-        {tag ? <span className="shrink-0 text-2xs text-foreground-tertiary">{tag}</span> : null}
+        {tag ? (
+          <span className="w-full text-2xs text-foreground-tertiary sm:w-auto sm:shrink-0">
+            {tag}
+          </span>
+        ) : null}
       </header>
       {children}
     </section>

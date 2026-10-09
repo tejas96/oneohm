@@ -62,6 +62,9 @@ export function FilterBar({
   const applyDraft = (next: { from?: string; to?: string }): void => {
     setDraft(next);
     if (!isRealDay(next.from) || !isRealDay(next.to)) return setError(null);
+    if (next.from < '2000-01-01' || next.to < '2000-01-01') {
+      return setError('Pick a date from 2000 on.');
+    }
     if (next.from > next.to) return setError('"To" is before "From".');
     const span = (Date.parse(next.to) - Date.parse(next.from)) / 86_400_000 + 1;
     if (span > MAX_DAYS) return setError('Pick 3 years or less.');

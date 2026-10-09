@@ -600,7 +600,12 @@ const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
     header: 'Phase',
     track: crm['col-project-phase'],
     renderCell: (row): JSX.Element => {
-      const phase = (row as ProjectListItem).currentPhase;
+      const { currentPhase: phase, totalTasks, completedTasks } = row as ProjectListItem;
+      // Every step done: the Phase filter only matches live projects, so the column
+      // must not name a phase it cannot be filtered by.
+      if ((totalTasks ?? 0) > 0 && completedTasks === totalTasks) {
+        return <MUIStatusChip label="All phases done" color="success" />;
+      }
       if (!phase) return <MUITypography variant="placeholder">-</MUITypography>;
       return (
         <Tooltip title={phase} placement="top" enterDelay={400}>
@@ -797,7 +802,34 @@ function formatDayRange(value: unknown): string {
   return '';
 }
 
+/** Health views in the status chip row, by their `status` filter value. */
+const HEALTH_LABELS = {
+  [HEALTH_DELAYED]: 'Overdue',
+  [HEALTH_AT_RISK]: 'At risk',
+  [HEALTH_UNBILLED_OVERRUN]: 'Unbilled extras',
+  [HEALTH_COMPLETED_UNPAID]: 'Completed, unpaid',
+} as const;
+
+/** The label the status quick-filter chips use for a `status` filter value. */
+function statusFilterLabel(value: unknown): string {
+  const key = String(value);
+  if (key === ALL_STATUSES) return 'All';
+  return (
+    (HEALTH_LABELS as Record<string, string | undefined>)[key] ??
+    PROJECT_STATUS_LABELS[key as ProjectStatus] ??
+    toTitleLabel(key)
+  );
+}
+
 const FILTER_COLUMNS: ColumnConfig<ProjectRow>[] = [
+  // Not in the filter panel (the chip row above the table sets it); this column only
+  // gives the active-filter chip a readable label.
+  {
+    field: 'status',
+    headerName: 'Status',
+    filterable: false,
+    formatFilterValue: statusFilterLabel,
+  },
   {
     field: 'priority',
     headerName: 'Priority',
@@ -1115,17 +1147,27 @@ export function ProjectListPage(): JSX.Element {
         tone: STATUS_TONE[status] ?? 'neutral',
         dot: true,
       })),
-      { key: HEALTH_DELAYED, label: 'Overdue', tone: 'danger' as CrmTone, dot: true },
-      { key: HEALTH_AT_RISK, label: 'At risk', tone: 'warning' as CrmTone, dot: true },
+      {
+        key: HEALTH_DELAYED,
+        label: HEALTH_LABELS[HEALTH_DELAYED],
+        tone: 'danger' as CrmTone,
+        dot: true,
+      },
+      {
+        key: HEALTH_AT_RISK,
+        label: HEALTH_LABELS[HEALTH_AT_RISK],
+        tone: 'warning' as CrmTone,
+        dot: true,
+      },
       {
         key: HEALTH_UNBILLED_OVERRUN,
-        label: 'Unbilled extras',
+        label: HEALTH_LABELS[HEALTH_UNBILLED_OVERRUN],
         tone: 'danger' as CrmTone,
         dot: true,
       },
       {
         key: HEALTH_COMPLETED_UNPAID,
-        label: 'Completed, unpaid',
+        label: HEALTH_LABELS[HEALTH_COMPLETED_UNPAID],
         tone: 'danger' as CrmTone,
         dot: true,
       },
