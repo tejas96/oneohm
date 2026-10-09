@@ -1,4 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsEmail,
   IsOptional,
@@ -8,6 +9,8 @@ import {
   MaxLength,
   ValidateIf,
 } from 'class-validator';
+
+import { cleanName } from './create-customer.dto';
 
 /**
  * DTO for updating customer profile information
@@ -19,18 +22,21 @@ export class UpdateCustomerDto {
   @ApiPropertyOptional({ example: 'Rajesh', description: 'Customer first name' })
   @IsString()
   @IsOptional()
+  @Transform(cleanName)
   @MaxLength(100)
   firstName?: string;
 
   @ApiPropertyOptional({ example: 'Kumar', description: 'Customer middle name' })
   @IsString()
   @IsOptional()
+  @Transform(cleanName)
   @MaxLength(100)
   middleName?: string;
 
   @ApiPropertyOptional({ example: 'Kumar', description: 'Customer last name' })
   @IsString()
   @IsOptional()
+  @Transform(cleanName)
   @MaxLength(100)
   lastName?: string;
 

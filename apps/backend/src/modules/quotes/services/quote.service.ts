@@ -319,10 +319,20 @@ export class QuoteService {
     const document = await this.resolveQuotePdfDocument(quote, updatedBy, dto.documentId, file);
 
     const message = this.buildQuoteShareMessage(quote, document, recipient);
-    const result = await this.integrationService.sendTemplateMessage(
-      message,
-      IntegrationProvider.WHATSAPP_BUSINESS,
-    );
+    let result: Awaited<ReturnType<IntegrationService['sendTemplateMessage']>>;
+    try {
+      result = await this.integrationService.sendTemplateMessage(
+        message,
+        IntegrationProvider.WHATSAPP_BUSINESS,
+      );
+    } catch (error) {
+      // A PDF uploaded for this try reached no one. Keep it and every retry
+      // leaves another copy on the quote, so remove it before reporting.
+      if (file) {
+        await this.discardUnsentQuotePdf(document);
+      }
+      throw error;
+    }
 
     let quoteStatus = quote.status;
 
@@ -419,13 +429,34 @@ export class QuoteService {
     throw new BadRequestException('PDF file is required');
   }
 
+  private async discardUnsentQuotePdf(document: DocumentEntity): Promise<void> {
+    const storageKey = document.metadata?.storageKey;
+    try {
+      await this.documentService.hardDelete(document.id);
+      if (typeof storageKey === 'string') {
+        await this.storageService.deleteFile(storageKey);
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to discard unsent quote PDF ${document.id}`, error);
+    }
+  }
+
   private buildQuoteShareMessage(
     quote: QuoteEntity,
     document: DocumentEntity,
     recipient: string,
   ): ITemplateMessage {
+    // "8 Nov 2026", the same as the quote page. Read as an IST business date so
+    // the server's time zone cannot move it a day.
     const validUntil = quote.validUntil
-      ? new Date(quote.validUntil).toLocaleDateString('en-IN')
+      ? new Date(
+          `${pgDateToIso(quote.validUntil as string | Date)}T12:00:00+05:30`,
+        ).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+          timeZone: 'Asia/Kolkata',
+        })
       : 'N/A';
     const customerName = [
       quote.customer?.firstName,
@@ -434,6 +465,7 @@ export class QuoteService {
     ]
       .filter(Boolean)
       .join(' ')
+      .replace(/\s+/g, ' ')
       .trim();
 
     const sanitizedCustomerName = customerName

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CustomerStatus } from '@tejas96/shared/types';
+import { Transform } from 'class-transformer';
 import {
   IsEmail,
   IsEnum,
@@ -12,6 +13,11 @@ import {
   ValidateIf,
 } from 'class-validator';
 
+// A pasted name can carry a tab or a run of spaces, and WhatsApp templates
+// refuse both. Store names with single spaces only.
+export const cleanName = ({ value }: { value: unknown }): unknown =>
+  typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : value;
+
 /**
  * DTO for creating a new customer profile
  * Note: Property/site details are now in CreateCustomerPropertyDto
@@ -21,18 +27,21 @@ export class CreateCustomerDto {
   @ApiProperty({ example: 'Rajesh', description: 'Customer first name' })
   @IsString()
   @IsNotEmpty()
+  @Transform(cleanName)
   @MaxLength(100)
   firstName!: string;
 
   @ApiPropertyOptional({ example: 'Kumar', description: 'Customer middle name' })
   @IsString()
   @IsOptional()
+  @Transform(cleanName)
   @MaxLength(100)
   middleName?: string;
 
   @ApiPropertyOptional({ example: 'Kumar', description: 'Customer last name' })
   @IsString()
   @IsOptional()
+  @Transform(cleanName)
   @MaxLength(100)
   lastName?: string;
 

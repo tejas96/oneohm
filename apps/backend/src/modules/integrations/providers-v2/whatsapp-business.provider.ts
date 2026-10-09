@@ -310,11 +310,20 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
       }
 
       if (typeof value.text === 'string') {
-        return { type: 'text', text: value.text };
+        return { type: 'text', text: this.cleanTemplateText(value.text) };
       }
     }
 
-    return { type: 'text', text: String(value) };
+    return { type: 'text', text: this.cleanTemplateText(String(value)) };
+  }
+
+  /**
+   * Meta refuses a text parameter holding a tab, a new line or more than four
+   * spaces in a row (#132018). Collapse all whitespace so a stray tab in a
+   * customer's name cannot block the message.
+   */
+  private cleanTemplateText(text: string): string {
+    return text.replace(/\s+/g, ' ').trim();
   }
 
   private isRecord(value: unknown): value is Record<string, unknown> {
