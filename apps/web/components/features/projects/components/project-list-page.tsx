@@ -22,7 +22,7 @@ import { ProjectPriority, ProjectStatus } from '@tejas96/shared/types';
 import { SIDE_TRACK_PHASES, STAGE_GROUP_KEYS, STAGE_GROUPS } from '@tejas96/shared/utils';
 import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { type JSX, type MouseEvent, useCallback, useMemo, useState } from 'react';
+import { type JSX, type MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   PROJECT_PRIORITY_LABELS,
@@ -186,6 +186,14 @@ const MAIN_LINE_PHASES: readonly string[] = STAGE_GROUPS.flatMap((g) => g.phases
   (p) => !SIDE_TRACK_PHASES.includes(p),
 );
 
+/** A real calendar day as `YYYY-MM-DD` — `2026-02-31` has the shape but is not one. */
+function isRealDay(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [y = 0, m = 0, d = 0] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
+}
+
 function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters> {
   const raw = filters as Record<string, unknown>;
   const result: Partial<ProjectFilters> = {};
@@ -297,8 +305,7 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
   result.phase = pick(raw.phase, MAIN_LINE_PHASES);
   result.attention = pick(raw.attention, ['late_steps', 'old_steps', 'unstaged_steps'] as const);
 
-  const day = (value: unknown): string | undefined =>
-    typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined;
+  const day = (value: unknown): string | undefined => (isRealDay(value) ? value : undefined);
   const range = (value: unknown): { from?: string; to?: string } => {
     const r = (value ?? {}) as { from?: unknown; to?: unknown };
     return { from: day(r.from), to: day(r.to) };
@@ -898,6 +905,60 @@ const FILTER_COLUMNS: ColumnConfig<ProjectRow>[] = [
   },
 ];
 
+const DAY_RANGE_KEYS: readonly string[] = ['onboarded', 'meterInstalled', 'meterDue'];
+
+/** Status chip values the page understands: All, each status, each health view. */
+const KNOWN_STATUS_VALUES: readonly string[] = [
+  ALL_STATUSES,
+  ...Object.values(ProjectStatus),
+  HEALTH_DELAYED,
+  HEALTH_AT_RISK,
+  HEALTH_UNBILLED_OVERRUN,
+  HEALTH_COMPLETED_UNPAID,
+];
+
+/**
+ * The URL record with every value the list would ignore taken out, so a chip
+ * never claims a filter that is not applied (`projects_filters={"phase":"Bogus"}`
+ * must not show "Phase: Bogus"). Select filters keep only values that are one of
+ * their options, day ranges keep only real days, and `status` only a chip the
+ * page has. Returns the same object when nothing was dropped.
+ */
+function sanitizeUrlFilters(filters: TableUrlFilterRecord): TableUrlFilterRecord {
+  const result: TableUrlFilterRecord = {};
+  let changed = false;
+  for (const [key, value] of Object.entries(filters)) {
+    if (key === 'status') {
+      if (typeof value === 'string' && KNOWN_STATUS_VALUES.includes(value)) result[key] = value;
+      else changed = true;
+      continue;
+    }
+    if (DAY_RANGE_KEYS.includes(key)) {
+      const { from, to } = (value ?? {}) as { from?: unknown; to?: unknown };
+      const kept: { from?: string; to?: string } = {};
+      if (isRealDay(from)) kept.from = from;
+      if (isRealDay(to)) kept.to = to;
+      if (kept.from !== undefined || kept.to !== undefined) result[key] = kept;
+      if (kept.from !== from || kept.to !== to) changed = true;
+      continue;
+    }
+    const column = FILTER_COLUMNS.find((c) => c.field === key);
+    if (column?.filterType === 'select' && column.filterOptions) {
+      if (
+        typeof value === 'string' &&
+        column.filterOptions.some((o) => String(o.value) === value)
+      ) {
+        result[key] = value;
+      } else {
+        changed = true;
+      }
+      continue;
+    }
+    result[key] = value;
+  }
+  return changed ? result : filters;
+}
+
 function DateRangeFilter({
   value,
   onChange,
@@ -954,10 +1015,20 @@ export function ProjectListPage(): JSX.Element {
     initialFilters,
   });
 
+  // A link can carry filter values the list ignores; show and send only the ones
+  // it applies, and rewrite the URL to match (replace, no new history entry —
+  // `setFilters` uses `replaceState`).
+  const { setFilters: replaceUrlFilters } = urlState;
+  const filters = useMemo(
+    () => sanitizeUrlFilters(urlState.state.filters),
+    [urlState.state.filters],
+  );
+  useEffect(() => {
+    if (filters !== urlState.state.filters) replaceUrlFilters(filters);
+  }, [filters, replaceUrlFilters, urlState.state.filters]);
+
   const activeStatusFilter =
-    typeof urlState.state.filters.status === 'string' && urlState.state.filters.status
-      ? urlState.state.filters.status
-      : DEFAULT_STATUS_FILTER;
+    typeof filters.status === 'string' && filters.status ? filters.status : DEFAULT_STATUS_FILTER;
 
   // Fetch employees for the team / creator filters
   const { data: employeesData } = useEmployees({ limit: 100 });
@@ -990,7 +1061,7 @@ export function ProjectListPage(): JSX.Element {
     search: urlState.state.search || undefined,
     sortBy: toApiSortField(urlState.state.sortModel),
     sortOrder: toApiSortOrder(urlState.state.sortModel),
-    ...toProjectFilters(urlState.state.filters),
+    ...toProjectFilters(filters),
   });
 
   const tableRows = useMemo<ProjectRow[]>(
@@ -1057,11 +1128,9 @@ export function ProjectListPage(): JSX.Element {
 
   const handleQuickFilterChange = useCallback(
     (key: string) => {
-      urlState.setFilters(
-        withDefaultStatus({ ...urlState.state.filters, status: key || DEFAULT_STATUS_FILTER }),
-      );
+      urlState.setFilters(withDefaultStatus({ ...filters, status: key || DEFAULT_STATUS_FILTER }));
     },
-    [urlState],
+    [urlState, filters],
   );
 
   const handleFilterChange = useCallback(
@@ -1276,7 +1345,7 @@ export function ProjectListPage(): JSX.Element {
         activeQuickFilter={activeStatusFilter}
         onQuickFilterChange={handleQuickFilterChange}
         filterColumns={filterColumns}
-        filterModel={urlState.state.filters}
+        filterModel={filters}
         onFilterChange={handleFilterChange}
         sortModel={urlState.state.sortModel}
         onSortChange={urlState.setSortModel}

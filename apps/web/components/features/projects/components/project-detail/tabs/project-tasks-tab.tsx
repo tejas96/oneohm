@@ -135,6 +135,14 @@ export const ProjectTasksTab = React.memo(
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [createPreselectedStatus, setCreatePreselectedStatus] = useState<string | null>(null);
 
+    // The one way the task drawer closes. It also clears a `?t_task=` deep link,
+    // whatever the reason for closing — otherwise a refresh, or coming back to
+    // the tab, reopens the drawer on a task that was closed or deleted.
+    const handleCloseDrawer = useCallback(() => {
+      setDrawerOpen(false);
+      if (filters.t_task) setFilter('t_task', '');
+    }, [filters.t_task, setFilter]);
+
     // One gate for both ways into the create dialog — the header button and the
     // "+" on each board column. Gating only the header would leave the board
     // view wide open, which is exactly what it did before.
@@ -159,7 +167,7 @@ export const ProjectTasksTab = React.memo(
         // Only the drawer needs handling here: useDeleteTask already busts the
         // project task list and the milestone rollup, unlike useUpdateTask.
         if (pendingDeleteRef.current?.id === openTaskId) {
-          setDrawerOpen(false);
+          handleCloseDrawer();
           setOpenTaskId(null);
         }
       },
@@ -194,11 +202,6 @@ export const ProjectTasksTab = React.memo(
       setOpenTaskId(filters.t_task);
       setDrawerOpen(true);
     }, [isActive, filters.t_task]);
-
-    const handleCloseDrawer = useCallback(() => {
-      setDrawerOpen(false);
-      if (filters.t_task) setFilter('t_task', '');
-    }, [filters.t_task, setFilter]);
 
     const handleStatusChange = useCallback(
       (taskId: string, newStatus: string, _currentStatus: string, currentCompletionPct: number) => {

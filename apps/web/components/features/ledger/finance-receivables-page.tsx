@@ -170,20 +170,23 @@ export function FinanceReceivablesPage(): JSX.Element {
   const [bucket, setBucket] = useState<ReceivableFilters['bucket']>(undefined);
   const [search, setSearch] = useState('');
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
-  // Page and sort belong to one scope: the two lists sort on different
-  // columns, and page 3 of one is not page 3 of the other. Keyed by scope so
-  // a scope change — from the toggle or from the URL — starts both afresh.
-  const [view, setView] = useState<{ scope: Scope; page: number; sort: TableSortModel | null }>({
-    scope,
+  // Page and sort belong to one list: the lists sort on different columns, and
+  // page 3 of one is not page 3 of another. Keyed by scope AND funding so a
+  // change of either — from the toggle, a link, or Back/Forward between
+  // `?funding=cash` and the bare URL — starts both afresh, never on a page the
+  // shorter list does not have.
+  const viewKey = `${scope}|${funding ?? 'all'}`;
+  const [view, setView] = useState<{ key: string; page: number; sort: TableSortModel | null }>({
+    key: viewKey,
     page: 0,
     sort: null,
   });
   // CrmTable's `page` is zero-indexed; the API is one-indexed.
-  const page = view.scope === scope ? view.page : 0;
-  const sortModel = view.scope === scope ? view.sort : null;
-  const setPage = (next: number): void => setView({ scope, page: next, sort: sortModel });
+  const page = view.key === viewKey ? view.page : 0;
+  const sortModel = view.key === viewKey ? view.sort : null;
+  const setPage = (next: number): void => setView({ key: viewKey, page: next, sort: sortModel });
   const setSortModel = (next: TableSortModel | null): void =>
-    setView({ scope, page: 0, sort: next });
+    setView({ key: viewKey, page: 0, sort: next });
   const changePageSize = (next: number): void => {
     setPageSize(next);
     setPage(0);
@@ -293,21 +296,34 @@ export function FinanceReceivablesPage(): JSX.Element {
           {SCOPE_INTRO[scope]}
         </Box>
         {scope === 'all' && funding ? (
-          <p className="text-xs text-foreground-secondary">
+          <Box
+            component="p"
+            sx={{ m: 0, mt: 0.5, fontSize: crm['text-row'], color: color['text-secondary'] }}
+          >
             {funding === 'cash' ? 'Cash' : 'Loan'} jobs only.{' '}
-            <button
+            <Box
+              component="button"
               type="button"
-              className="font-medium text-primary-dark hover:underline"
               onClick={() => {
                 const params = new URLSearchParams(searchParams.toString());
                 params.delete('funding');
                 const qs = params.toString();
                 router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
               }}
+              sx={{
+                p: 0,
+                border: 0,
+                background: 'none',
+                font: 'inherit',
+                fontWeight: 600,
+                color: color['accent-ink'],
+                cursor: 'pointer',
+                '&:hover': { textDecoration: 'underline' },
+              }}
             >
               Show all
-            </button>
-          </p>
+            </Box>
+          </Box>
         ) : null}
       </Box>
 
