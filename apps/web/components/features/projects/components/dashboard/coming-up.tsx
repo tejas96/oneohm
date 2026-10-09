@@ -4,11 +4,9 @@ import type { DashboardFinancing, ProjectsDashboard } from '@tejas96/shared/type
 import Link from 'next/link';
 import * as React from 'react';
 
-import { AnimatedNumber } from './animated-number';
-import { formatKw } from './format';
 import { dashboardLinks } from './links';
-import { ENTER, enterDelay } from './motion';
 
+import { AnimatedNumber, ENTER, enterDelay, formatKw } from '@/components/features/dashboard/kit';
 import { cn } from '@/lib/utils';
 
 /** Meters due in 30 days. Due dates are schedule estimates, so the card says "planned". */

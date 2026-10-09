@@ -8,19 +8,17 @@ import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
 import {
-  BandError,
   ComingUp,
   DashboardSkeleton,
-  FilterBar,
   NeedsAction,
   OwnerStrip,
   StagePanel,
   StagePipeline,
   StuckByTeam,
   TrendChart,
-  useDashboardFilters,
 } from './dashboard';
 
+import { BandError, FilterBar, useDashboardFilters } from '@/components/features/dashboard/kit';
 import { ROUTES } from '@/lib/config/routes';
 import { useProjectsDashboard } from '@/lib/hooks/resources';
 import { useGatedAction } from '@/lib/rbac';

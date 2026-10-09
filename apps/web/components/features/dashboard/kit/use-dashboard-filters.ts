@@ -18,6 +18,7 @@ const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 /** Same cap as the API (3 years, inclusive), so a range it would reject never reaches it. */
 const MAX_CUSTOM_DAYS = 1096;
 const DAY_MS = 86_400_000;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** The API rejects custom dates before this year. */
 const MIN_YEAR = 2000;
@@ -50,14 +51,16 @@ export function readDashboardFilters(params: URLSearchParams): DashboardFilters 
   const period = PERIODS.includes(rawPeriod as DashboardPeriod)
     ? (rawPeriod as DashboardPeriod)
     : 'this_month';
-  if (period !== 'custom') return { period, financing };
+  const rawPerson = params.get('person');
+  const person = rawPerson && UUID.test(rawPerson) ? rawPerson : undefined;
+  if (period !== 'custom') return { period, financing, ...(person ? { person } : {}) };
 
   const from = params.get('from') ?? '';
   const to = params.get('to') ?? '';
   if (!isIsoDay(from) || !isIsoDay(to) || from > to || spanDays(from, to) > MAX_CUSTOM_DAYS) {
-    return { ...DEFAULT_DASHBOARD_FILTERS, financing };
+    return { ...DEFAULT_DASHBOARD_FILTERS, financing, ...(person ? { person } : {}) };
   }
-  return { period, from, to, financing };
+  return { period, from, to, financing, ...(person ? { person } : {}) };
 }
 
 export function useDashboardFilters(): {
@@ -92,6 +95,7 @@ export function useDashboardFilters(): {
         params.set('to', next.to);
       }
       if (next.financing !== 'all') params.set('type', next.financing);
+      if (next.person) params.set('person', next.person);
       const qs = params.toString();
       const target = qs ? `${pathname}?${qs}` : pathname;
       // A write that lands on the URL we are already at never changes searchParams,
@@ -119,13 +123,15 @@ export function useDashboardFilters(): {
         delete next.from;
         delete next.to;
       }
+      if (!next.person) delete next.person;
       write(next);
     },
     [write],
   );
 
   const reset = useCallback(() => write(DEFAULT_DASHBOARD_FILTERS), [write]);
-  const isDefault = filters.period === 'this_month' && filters.financing === 'all';
+  const isDefault =
+    filters.period === 'this_month' && filters.financing === 'all' && !filters.person;
 
   return { filters, setFilters, reset, isDefault };
 }

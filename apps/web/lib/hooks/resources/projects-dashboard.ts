@@ -17,6 +17,8 @@ export interface DashboardFilters {
   from?: string;
   to?: string;
   financing: DashboardFinancing;
+  /** Quotes dashboard only: deals whose quote this user made. */
+  person?: string;
 }
 
 export interface StageProjectsParams {

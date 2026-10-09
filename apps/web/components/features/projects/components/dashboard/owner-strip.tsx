@@ -4,12 +4,16 @@ import type { DashboardFinancing, ProjectsDashboard } from '@tejas96/shared/type
 import Link from 'next/link';
 import * as React from 'react';
 
-import { AnimatedNumber } from './animated-number';
-import { formatKw, formatPaiseCompact } from './format';
 import { dashboardLinks } from './links';
-import { ENTER, enterDelay } from './motion';
 
 import { GatedLink } from '@/components/features/dashboard/business/components/gated-link';
+import {
+  AnimatedNumber,
+  ENTER,
+  enterDelay,
+  formatKw,
+  formatPaiseCompact,
+} from '@/components/features/dashboard/kit';
 import { cn } from '@/lib/utils';
 
 const BIG =
