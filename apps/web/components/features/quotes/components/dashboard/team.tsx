@@ -1,6 +1,6 @@
 'use client';
 
-import type { QuotesDashboard } from '@tejas96/shared/types';
+import type { QuotesDashboard, QuotesDashboardTeamRow } from '@tejas96/shared/types';
 import Link from 'next/link';
 import * as React from 'react';
 
@@ -11,10 +11,15 @@ import type { DashboardFilters } from '@/lib/hooks/resources';
 import { cn } from '@/lib/utils';
 
 const SEGMENTS = [
-  { key: 'drafting', label: 'draft', color: 'var(--ds-neutral-300)' },
+  { key: 'drafting', label: 'drafting', color: 'var(--ds-neutral-300)' },
   { key: 'waiting', label: 'waiting', color: 'var(--ds-primary-light)' },
   { key: 'quiet', label: 'quiet', color: 'var(--ds-danger)' },
 ] as const;
+
+/** "Deepali: 10 drafting, 18 waiting, 6 quiet, 4 won" — the row's numbers in words. */
+function teamSummary(t: QuotesDashboardTeamRow): string {
+  return `${t.name}: ${t.drafting} drafting, ${t.waiting} waiting, ${t.quiet} quiet, ${t.won} won`;
+}
 
 export function Team({
   data,
@@ -53,10 +58,15 @@ export function Team({
               <Link
                 href={quoteLinks.personOpen(t.personId, filters)}
                 className="-mx-2 grid grid-cols-[minmax(0,88px)_minmax(0,1fr)_28px_52px] items-center gap-3 rounded-md px-2 py-2.5 text-sm hover:bg-surface-alt"
-                title={`${t.name}: ${t.drafting} drafting, ${t.waiting} waiting, ${t.quiet} quiet`}
+                title={teamSummary(t)}
               >
-                <span className="truncate text-foreground">{t.name}</span>
+                {/* The link reads as the summary; the visible cells are the same facts. */}
+                <span className="sr-only">{teamSummary(t)}</span>
+                <span aria-hidden="true" className="truncate text-foreground">
+                  {t.name}
+                </span>
                 <span
+                  aria-hidden="true"
                   className="flex h-1.5 overflow-hidden rounded-full bg-surface-alt"
                   style={{ width: `${(t.open / max) * 100}%` }}
                 >
@@ -73,8 +83,12 @@ export function Team({
                     ) : null,
                   )}
                 </span>
-                <span className="text-right tabular-nums text-foreground">{t.open}</span>
-                <span className="text-right text-xs text-foreground-tertiary">{t.won} won</span>
+                <span aria-hidden="true" className="text-right tabular-nums text-foreground">
+                  {t.open}
+                </span>
+                <span aria-hidden="true" className="text-right text-xs text-foreground-tertiary">
+                  {t.won} won
+                </span>
               </Link>
             </li>
           ))}

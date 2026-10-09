@@ -116,9 +116,7 @@ export function QuotesStrip({
             <AnimatedNumber value={rate.percent} format={(n) => `${Math.round(n)}%`} />
           )}
         </Link>
-        <span className={LINE}>
-          {rate.wonOfNew} won of {rate.newCount} new
-        </span>
+        <span className={LINE}>{rate.wonOfNew} won so far</span>
         {rate.medianDaysToWin != null ? (
           <span className={LINE}>Median {rate.medianDaysToWin} days to win</span>
         ) : null}

@@ -46,6 +46,7 @@ export function QuoteDashboardPage(): React.JSX.Element {
     data.strip.newDeals.count === 0 &&
     data.stages.drafting.count + data.stages.waiting.count + data.stages.quiet.count === 0 &&
     data.stages.won.count === 0 &&
+    data.stages.lost.count === 0 &&
     data.trend.every((t) => t.newCount === 0 && t.wonCount === 0);
 
   let body: React.ReactNode;
@@ -91,7 +92,7 @@ export function QuoteDashboardPage(): React.JSX.Element {
           </div>
         </div>
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <BiggestOpen data={data} filters={filters} />
+          <BiggestOpen data={data} />
           <Sources data={data} filters={filters} />
         </div>
         <QuotesTrendChart data={data} filters={filters} />

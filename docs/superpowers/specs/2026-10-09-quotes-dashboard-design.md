@@ -131,7 +131,7 @@ Left: "Quotes". Right: Period picker, Person picker, ALL / CASH / LOAN switch,
 |---|---|---|---|
 | New deals | deals with a new deal date in the period | kW · "30 cash · 12 loan" (each clickable; hidden unless the switch is All) | Yes |
 | Won value | ₹ of deals won in the period | kW · ₹ change vs the previous period, cut to the same number of days when the period includes today (projects rule) | Yes |
-| Win rate | % of the period's new deals that are Won now (a cohort; a different number from Won value) | "N won of M new" · "Median D days to win" (deals won in the period; hidden when none) | Yes |
+| Win rate | % of the period's new deals that are Won now (a cohort; a different number from Won value) | "N won so far" (not "of M new": M is the New deals card's number, one fact one home) · "Median D days to win" (deals won in the period; hidden when none) | Yes |
 | Open pipeline | ₹ of Waiting + Gone quiet | "N deals waiting or quiet" · kW | No |
 
 ### Band 2 — Where every deal is (hero)

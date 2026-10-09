@@ -35,46 +35,44 @@ export function NeedsAction({
         <ul className="divide-y divide-border">
           {data.needsAction.map((n, i) => (
             <li key={n.key} className={ENTER} style={enterDelay(i, 40)}>
-              <div className="flex items-center justify-between gap-3 py-2.5">
-                <div className="min-w-0">
-                  <Link
-                    href={quoteLinks.attention(n.key, filters)}
-                    className="text-sm text-foreground hover:text-primary-dark hover:underline"
-                  >
+              <div className="py-2.5">
+                {/* One link per row: the label and the count open the same list. */}
+                <Link
+                  href={quoteLinks.attention(n.key, filters)}
+                  className="group flex items-baseline justify-between gap-3"
+                >
+                  <span className="min-w-0 truncate text-sm text-foreground group-hover:text-primary-dark group-hover:underline">
                     {DEAL_ATTENTION_LABELS[n.key]}
-                  </Link>
-                  {n.owners.length > 0 ? (
-                    <p
-                      className="truncate text-xs text-foreground-tertiary"
-                      title={`${n.owners.map((o) => `${o.name} ${o.count}`).join(' · ')}${
-                        n.moreOwners > 0 ? ` · +${n.moreOwners} more` : ''
-                      }`}
-                    >
-                      {n.owners.map((o, j) => (
-                        <React.Fragment key={o.personId}>
-                          {j > 0 ? ' · ' : null}
-                          <Link
-                            href={quoteLinks.attention(n.key, filters, o.personId)}
-                            className="hover:text-primary-dark hover:underline"
-                          >
-                            {o.name} {o.count}
-                          </Link>
-                        </React.Fragment>
-                      ))}
-                      {n.moreOwners > 0 ? ` · +${n.moreOwners} more` : null}
-                    </p>
-                  ) : null}
-                </div>
-                {n.count > 0 ? (
-                  <Link
-                    href={quoteLinks.attention(n.key, filters)}
-                    className="shrink-0 text-sm font-semibold tabular-nums text-error hover:underline"
+                  </span>
+                  {n.count > 0 ? (
+                    <span className="shrink-0 text-sm font-semibold tabular-nums text-error">
+                      {n.count}
+                    </span>
+                  ) : (
+                    <span className="shrink-0 text-xs text-foreground-tertiary">None</span>
+                  )}
+                </Link>
+                {n.owners.length > 0 ? (
+                  <p
+                    className="truncate text-xs text-foreground-tertiary"
+                    title={`${n.owners.map((o) => `${o.name} ${o.count}`).join(' · ')}${
+                      n.moreOwners > 0 ? ` · +${n.moreOwners} more` : ''
+                    }`}
                   >
-                    {n.count}
-                  </Link>
-                ) : (
-                  <span className="shrink-0 text-xs text-foreground-tertiary">None</span>
-                )}
+                    {n.owners.map((o, j) => (
+                      <React.Fragment key={o.personId}>
+                        {j > 0 ? ' · ' : null}
+                        <Link
+                          href={quoteLinks.attention(n.key, filters, o.personId)}
+                          className="hover:text-primary-dark hover:underline"
+                        >
+                          {o.name} {o.count}
+                        </Link>
+                      </React.Fragment>
+                    ))}
+                    {n.moreOwners > 0 ? ` · +${n.moreOwners} more` : null}
+                  </p>
+                ) : null}
               </div>
             </li>
           ))}

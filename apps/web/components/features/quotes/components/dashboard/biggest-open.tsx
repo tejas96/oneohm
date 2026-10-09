@@ -8,7 +8,6 @@ import { quoteLinks } from './links';
 import { formatRupees } from './strip';
 
 import { ENTER, enterDelay, formatKw } from '@/components/features/dashboard/kit';
-import type { DashboardFilters } from '@/lib/hooks/resources';
 import { cn } from '@/lib/utils';
 
 function dealTiming(d: QuotesDashboardBigDeal): string {
@@ -16,13 +15,7 @@ function dealTiming(d: QuotesDashboardBigDeal): string {
   return d.days === 0 ? 'ends today' : `ends in ${d.days} d`;
 }
 
-export function BiggestOpen({
-  data,
-  filters,
-}: {
-  data: QuotesDashboard;
-  filters: DashboardFilters;
-}): React.JSX.Element {
+export function BiggestOpen({ data }: { data: QuotesDashboard }): React.JSX.Element {
   return (
     <section
       className={cn('h-full rounded-xl bg-surface p-5 shadow-e2', ENTER)}
@@ -30,12 +23,8 @@ export function BiggestOpen({
     >
       <header className="flex items-baseline justify-between gap-2 pb-2">
         <h2 className="text-sm font-semibold text-foreground">Biggest open deals</h2>
-        <Link
-          href={quoteLinks.stage('pipeline', filters)}
-          className="text-2xs text-foreground-tertiary hover:text-primary-dark hover:underline"
-        >
-          waiting or quiet
-        </Link>
+        {/* Plain text: the Open pipeline card already links to these deals. */}
+        <span className="text-2xs text-foreground-tertiary">waiting or quiet</span>
       </header>
       {data.biggestOpen.length === 0 ? (
         <p className="py-8 text-center text-sm text-foreground-secondary">No open deals.</p>
