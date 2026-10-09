@@ -90,7 +90,7 @@ export function JourneyCard({
   const phases = React.useMemo(() => sortPhases(milestones.data), [milestones.data]);
   const journey = React.useMemo(() => computeJourney(phases), [phases]);
   const clock = React.useMemo(() => computeClock(project), [project]);
-  const nowIndex = currentPhaseIndex(phases);
+  const nowIndex = currentPhaseIndex(phases, project.currentPhase);
 
   /*
    * The headline counts come from the SUMMARY, not from the phases.

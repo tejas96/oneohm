@@ -19,9 +19,10 @@ import {
   Typography,
 } from '@mui/material';
 import { ProjectPriority, ProjectStatus } from '@tejas96/shared/types';
+import { SIDE_TRACK_PHASES, STAGE_GROUP_KEYS, STAGE_GROUPS } from '@tejas96/shared/utils';
 import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { type JSX, type MouseEvent, useCallback, useMemo, useState } from 'react';
+import { type JSX, type MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   PROJECT_PRIORITY_LABELS,
@@ -52,6 +53,7 @@ import {
   type CrmQuickFilter,
   type CrmTone,
 } from '@/components/shared/crm-table';
+import { MUIDateRangePicker } from '@/components/ui';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
@@ -62,8 +64,10 @@ import { useAllActiveWorkflowSteps } from '@/lib/hooks/resources';
 import { useGatedAction } from '@/lib/rbac';
 import { color, crm } from '@/lib/theme/tokens';
 import {
+  formatBusinessDate,
   formatCurrency,
   formatDate,
+  formatLocalDate,
   formatRelativeDate,
   getErrorMessage,
   toTitleLabel,
@@ -177,6 +181,19 @@ function withDefaultStatus(filters: TableUrlFilterRecord): TableUrlFilterRecord 
   return { ...filters, status: DEFAULT_STATUS_FILTER };
 }
 
+/** The phases the dashboard drills into: every main-line phase, no side tracks. One list for the Phase filter's options and the URL allowlist. */
+const MAIN_LINE_PHASES: readonly string[] = STAGE_GROUPS.flatMap((g) => g.phases).filter(
+  (p) => !SIDE_TRACK_PHASES.includes(p),
+);
+
+/** A real calendar day as `YYYY-MM-DD` — `2026-02-31` has the shape but is not one. */
+function isRealDay(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [y = 0, m = 0, d = 0] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
+}
+
 function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters> {
   const raw = filters as Record<string, unknown>;
   const result: Partial<ProjectFilters> = {};
@@ -276,6 +293,32 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
   if (createdBy && typeof createdBy === 'string' && createdBy !== 'all') {
     result.createdBy = createdBy;
   }
+
+  // Dashboard drill-downs. Unknown values are dropped, like every filter above.
+  const pick = <T extends string>(value: unknown, allowed: readonly T[]): T | undefined =>
+    typeof value === 'string' && (allowed as readonly string[]).includes(value)
+      ? (value as T)
+      : undefined;
+  result.financing = pick(raw.financing, ['cash', 'loan'] as const);
+  result.progress = pick(raw.progress, ['live', 'not_started', 'in_progress'] as const);
+  result.stage = pick(raw.stage, [...STAGE_GROUP_KEYS, 'none'] as const);
+  result.phase = pick(raw.phase, MAIN_LINE_PHASES);
+  result.attention = pick(raw.attention, ['late_steps', 'old_steps', 'unstaged_steps'] as const);
+
+  const day = (value: unknown): string | undefined => (isRealDay(value) ? value : undefined);
+  const range = (value: unknown): { from?: string; to?: string } => {
+    const r = (value ?? {}) as { from?: unknown; to?: unknown };
+    return { from: day(r.from), to: day(r.to) };
+  };
+  const onboarded = range(raw.onboarded);
+  result.onboardedFrom = onboarded.from;
+  result.onboardedTo = onboarded.to;
+  const meterInstalled = range(raw.meterInstalled);
+  result.meterInstalledFrom = meterInstalled.from;
+  result.meterInstalledTo = meterInstalled.to;
+  const meterDue = range(raw.meterDue);
+  result.meterDueFrom = meterDue.from;
+  result.meterDueTo = meterDue.to;
 
   return result;
 }
@@ -557,7 +600,17 @@ const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
     header: 'Phase',
     track: crm['col-project-phase'],
     renderCell: (row): JSX.Element => {
-      const phase = (row as ProjectListItem).currentPhase;
+      const { currentPhase: phase, totalTasks, completedTasks, status } = row as ProjectListItem;
+      // Every step done: the Phase filter only matches live projects, so the column
+      // must not name a phase it cannot be filtered by. A cancelled project was
+      // stopped, not finished, so it keeps its phase.
+      if (
+        status !== ProjectStatus.CANCELLED &&
+        (totalTasks ?? 0) > 0 &&
+        completedTasks === totalTasks
+      ) {
+        return <MUIStatusChip label="All phases done" color="success" />;
+      }
       if (!phase) return <MUITypography variant="placeholder">-</MUITypography>;
       return (
         <Tooltip title={phase} placement="top" enterDelay={400}>
@@ -745,7 +798,43 @@ const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
   },
 ];
 
+/** Chip text for a { from, to } day range: "1 Sep 2026 – 30 Sep 2026", "From …" or "Until …". */
+function formatDayRange(value: unknown): string {
+  const { from, to } = (value ?? {}) as { from?: string; to?: string };
+  if (from && to) return `${formatBusinessDate(from)} – ${formatBusinessDate(to)}`;
+  if (from) return `From ${formatBusinessDate(from)}`;
+  if (to) return `Until ${formatBusinessDate(to)}`;
+  return '';
+}
+
+/** Health views in the status chip row, by their `status` filter value. */
+const HEALTH_LABELS = {
+  [HEALTH_DELAYED]: 'Overdue',
+  [HEALTH_AT_RISK]: 'At risk',
+  [HEALTH_UNBILLED_OVERRUN]: 'Unbilled extras',
+  [HEALTH_COMPLETED_UNPAID]: 'Completed, unpaid',
+} as const;
+
+/** The label the status quick-filter chips use for a `status` filter value. */
+function statusFilterLabel(value: unknown): string {
+  const key = String(value);
+  if (key === ALL_STATUSES) return 'All';
+  return (
+    (HEALTH_LABELS as Record<string, string | undefined>)[key] ??
+    PROJECT_STATUS_LABELS[key as ProjectStatus] ??
+    toTitleLabel(key)
+  );
+}
+
 const FILTER_COLUMNS: ColumnConfig<ProjectRow>[] = [
+  // Not in the filter panel (the chip row above the table sets it); this column only
+  // gives the active-filter chip a readable label.
+  {
+    field: 'status',
+    headerName: 'Status',
+    filterable: false,
+    formatFilterValue: statusFilterLabel,
+  },
   {
     field: 'priority',
     headerName: 'Priority',
@@ -784,7 +873,151 @@ const FILTER_COLUMNS: ColumnConfig<ProjectRow>[] = [
     filterPlaceholder: 'Pincode / city / address',
     filterDebounceMs: 800,
   },
+  {
+    field: 'financing',
+    headerName: 'Cash / loan',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      { label: 'Cash', value: 'cash' },
+      { label: 'Loan', value: 'loan' },
+    ],
+  },
+  {
+    field: 'progress',
+    headerName: 'Progress',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      { label: 'Live (open work)', value: 'live' },
+      { label: 'Not started', value: 'not_started' },
+      { label: 'In progress', value: 'in_progress' },
+    ],
+  },
+  {
+    field: 'stage',
+    headerName: 'Stage',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      ...STAGE_GROUPS.map((g) => ({ label: g.label, value: g.key })),
+      { label: 'No stage yet', value: 'none' },
+    ],
+  },
+  {
+    field: 'phase',
+    headerName: 'Phase',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: MAIN_LINE_PHASES.map((p) => ({ label: p, value: p })),
+  },
+  {
+    field: 'attention',
+    headerName: 'Needs attention',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      { label: 'Late steps', value: 'late_steps' },
+      { label: 'Old steps left open', value: 'old_steps' },
+      { label: 'Steps without a stage', value: 'unstaged_steps' },
+    ],
+  },
+  {
+    field: 'onboarded',
+    headerName: 'Onboarded between',
+    filterable: true,
+    formatFilterValue: formatDayRange,
+  },
+  {
+    field: 'meterInstalled',
+    headerName: 'Meter installed between',
+    filterable: true,
+    formatFilterValue: formatDayRange,
+  },
+  {
+    field: 'meterDue',
+    headerName: 'Meter due between',
+    filterable: true,
+    formatFilterValue: formatDayRange,
+  },
 ];
+
+const DAY_RANGE_KEYS: readonly string[] = ['onboarded', 'meterInstalled', 'meterDue'];
+
+/** Status chip values the page understands: All, each status, each health view. */
+const KNOWN_STATUS_VALUES: readonly string[] = [
+  ALL_STATUSES,
+  ...Object.values(ProjectStatus),
+  HEALTH_DELAYED,
+  HEALTH_AT_RISK,
+  HEALTH_UNBILLED_OVERRUN,
+  HEALTH_COMPLETED_UNPAID,
+];
+
+/**
+ * The URL record with every value the list would ignore taken out, so a chip
+ * never claims a filter that is not applied (`projects_filters={"phase":"Bogus"}`
+ * must not show "Phase: Bogus"). Select filters keep only values that are one of
+ * their options, day ranges keep only real days, and `status` only a chip the
+ * page has. Returns the same object when nothing was dropped.
+ */
+function sanitizeUrlFilters(filters: TableUrlFilterRecord): TableUrlFilterRecord {
+  const result: TableUrlFilterRecord = {};
+  let changed = false;
+  for (const [key, value] of Object.entries(filters)) {
+    if (key === 'status') {
+      if (typeof value === 'string' && KNOWN_STATUS_VALUES.includes(value)) result[key] = value;
+      else changed = true;
+      continue;
+    }
+    if (DAY_RANGE_KEYS.includes(key)) {
+      const { from, to } = (typeof value === 'object' && value !== null ? value : {}) as {
+        from?: unknown;
+        to?: unknown;
+      };
+      const kept: { from?: string; to?: string } = {};
+      if (isRealDay(from)) kept.from = from;
+      if (isRealDay(to)) kept.to = to;
+      if (kept.from !== undefined || kept.to !== undefined) result[key] = kept;
+      // Anything but exactly the kept shape (a string, unknown keys, a bad end)
+      // is junk the list ignores, so the URL is rewritten without it.
+      if (JSON.stringify(kept) !== JSON.stringify(value)) changed = true;
+      continue;
+    }
+    const column = FILTER_COLUMNS.find((c) => c.field === key);
+    if (column?.filterType === 'select' && column.filterOptions) {
+      if (
+        typeof value === 'string' &&
+        column.filterOptions.some((o) => String(o.value) === value)
+      ) {
+        result[key] = value;
+      } else {
+        changed = true;
+      }
+      continue;
+    }
+    result[key] = value;
+  }
+  return changed ? result : filters;
+}
+
+function DateRangeFilter({
+  value,
+  onChange,
+}: {
+  value: unknown;
+  onChange: (value: unknown) => void;
+}): JSX.Element {
+  const range = (value ?? {}) as { from?: string; to?: string };
+  return (
+    <MUIDateRangePicker
+      fromDate={range.from ?? null}
+      toDate={range.to ?? null}
+      onFromChange={(d) => onChange({ ...range, from: formatLocalDate(d) || undefined })}
+      onToChange={(d) => onChange({ ...range, to: formatLocalDate(d) || undefined })}
+    />
+  );
+}
 
 // ============================================================================
 // Page component
@@ -824,10 +1057,22 @@ export function ProjectListPage(): JSX.Element {
     initialFilters,
   });
 
+  // A link can carry filter values the list ignores, or no usable status; show
+  // and send only what it applies (an absent or dropped status becomes the page
+  // default, so the highlighted chip is the status that is sent), and rewrite the
+  // URL to match (replace, no new history entry — `setFilters` uses
+  // `replaceState`). Once rewritten the record is stable, so this runs once.
+  const { setFilters: replaceUrlFilters } = urlState;
+  const filters = useMemo(
+    () => withDefaultStatus(sanitizeUrlFilters(urlState.state.filters)),
+    [urlState.state.filters],
+  );
+  useEffect(() => {
+    if (filters !== urlState.state.filters) replaceUrlFilters(filters);
+  }, [filters, replaceUrlFilters, urlState.state.filters]);
+
   const activeStatusFilter =
-    typeof urlState.state.filters.status === 'string' && urlState.state.filters.status
-      ? urlState.state.filters.status
-      : DEFAULT_STATUS_FILTER;
+    typeof filters.status === 'string' && filters.status ? filters.status : DEFAULT_STATUS_FILTER;
 
   // Fetch employees for the team / creator filters
   const { data: employeesData } = useEmployees({ limit: 100 });
@@ -860,7 +1105,7 @@ export function ProjectListPage(): JSX.Element {
     search: urlState.state.search || undefined,
     sortBy: toApiSortField(urlState.state.sortModel),
     sortOrder: toApiSortOrder(urlState.state.sortModel),
-    ...toProjectFilters(urlState.state.filters),
+    ...toProjectFilters(filters),
   });
 
   const tableRows = useMemo<ProjectRow[]>(
@@ -907,17 +1152,27 @@ export function ProjectListPage(): JSX.Element {
         tone: STATUS_TONE[status] ?? 'neutral',
         dot: true,
       })),
-      { key: HEALTH_DELAYED, label: 'Overdue', tone: 'danger' as CrmTone, dot: true },
-      { key: HEALTH_AT_RISK, label: 'At risk', tone: 'warning' as CrmTone, dot: true },
+      {
+        key: HEALTH_DELAYED,
+        label: HEALTH_LABELS[HEALTH_DELAYED],
+        tone: 'danger' as CrmTone,
+        dot: true,
+      },
+      {
+        key: HEALTH_AT_RISK,
+        label: HEALTH_LABELS[HEALTH_AT_RISK],
+        tone: 'warning' as CrmTone,
+        dot: true,
+      },
       {
         key: HEALTH_UNBILLED_OVERRUN,
-        label: 'Unbilled extras',
+        label: HEALTH_LABELS[HEALTH_UNBILLED_OVERRUN],
         tone: 'danger' as CrmTone,
         dot: true,
       },
       {
         key: HEALTH_COMPLETED_UNPAID,
-        label: 'Completed, unpaid',
+        label: HEALTH_LABELS[HEALTH_COMPLETED_UNPAID],
         tone: 'danger' as CrmTone,
         dot: true,
       },
@@ -927,11 +1182,9 @@ export function ProjectListPage(): JSX.Element {
 
   const handleQuickFilterChange = useCallback(
     (key: string) => {
-      urlState.setFilters(
-        withDefaultStatus({ ...urlState.state.filters, status: key || DEFAULT_STATUS_FILTER }),
-      );
+      urlState.setFilters(withDefaultStatus({ ...filters, status: key || DEFAULT_STATUS_FILTER }));
     },
-    [urlState],
+    [urlState, filters],
   );
 
   const handleFilterChange = useCallback(
@@ -985,6 +1238,14 @@ export function ProjectListPage(): JSX.Element {
               onChange={onChange}
               placeholder="Search workflow step…"
             />
+          ),
+        };
+      }
+      if (col.field === 'onboarded' || col.field === 'meterInstalled' || col.field === 'meterDue') {
+        return {
+          ...col,
+          renderFilter: ({ value, onChange }) => (
+            <DateRangeFilter value={value} onChange={onChange} />
           ),
         };
       }
@@ -1138,7 +1399,7 @@ export function ProjectListPage(): JSX.Element {
         activeQuickFilter={activeStatusFilter}
         onQuickFilterChange={handleQuickFilterChange}
         filterColumns={filterColumns}
-        filterModel={urlState.state.filters}
+        filterModel={filters}
         onFilterChange={handleFilterChange}
         sortModel={urlState.state.sortModel}
         onSortChange={urlState.setSortModel}

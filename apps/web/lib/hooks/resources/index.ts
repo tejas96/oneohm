@@ -123,6 +123,15 @@ export {
   type ProjectListItem,
 } from './projects';
 
+// Projects dashboard (summary + stage drill-down)
+export {
+  useProjectsDashboard,
+  useStageProjects,
+  projectsDashboardKeys,
+  type DashboardFilters,
+  type StageProjectsParams,
+} from './projects-dashboard';
+
 // Quotes list (FDAL resource)
 export { useQuoteListResource, type QuoteListFilters } from './quotes';
 

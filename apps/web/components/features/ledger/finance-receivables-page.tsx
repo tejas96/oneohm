@@ -43,19 +43,22 @@ const RECOVERY_SORTABLE: readonly RecoverySortField[] = [
 ];
 
 /**
- * `all` is every open milestone; the other two are the collection list this
- * task adds — the net meter is in and money is still open, split by who
- * funded the job. One control, three states, never two rows of chips.
+ * `all` is every open milestone; the other three are the collection list this
+ * task adds — the net meter is in and money is still open, together or split
+ * by who funded the job. One control, four states, never two rows of chips.
  */
-type Scope = 'all' | 'recovery-cash' | 'recovery-loan';
+type Scope = 'all' | 'recovery' | 'recovery-cash' | 'recovery-loan';
 
 /** Anything that is not a Recovery tab is the full list — the bare URL. */
 function toScope(value: string | null): Scope {
-  return value === 'recovery-cash' || value === 'recovery-loan' ? value : 'all';
+  return value === 'recovery' || value === 'recovery-cash' || value === 'recovery-loan'
+    ? value
+    : 'all';
 }
 
 const SCOPE_OPTIONS: ReadonlyArray<{ value: Scope; label: string }> = [
   { value: 'all', label: 'All open' },
+  { value: 'recovery', label: 'Recovery — All' },
   { value: 'recovery-cash', label: 'Recovery — Cash' },
   { value: 'recovery-loan', label: 'Recovery — Loan' },
 ];
@@ -68,6 +71,8 @@ const SCOPE_OPTIONS: ReadonlyArray<{ value: Scope; label: string }> = [
  */
 const SCOPE_INTRO: Record<Scope, string> = {
   all: 'Every open milestone, worst overdue first. Waived amounts are excluded, so a written-off residual stops being chased.',
+  recovery:
+    'Meter installed, job delivered, money still owed — cash and loan jobs together, one row per project. Open a row to see its milestones. Waived amounts are excluded.',
   'recovery-cash':
     'Meter installed, job delivered, cash still owed — one row per project. Open a row to see its milestones. Waived amounts are excluded.',
   'recovery-loan':
@@ -157,24 +162,31 @@ export function FinanceReceivablesPage(): JSX.Element {
   const searchParams = useSearchParams();
   const scope = toScope(searchParams.get('scope'));
   const isRecovery = scope !== 'all';
+  // `?funding=cash|loan` narrows "All open" — the projects dashboard links here
+  // with its Cash/Loan switch, and the total must match the card it came from.
+  const fundingParam = searchParams.get('funding');
+  const funding = fundingParam === 'cash' || fundingParam === 'loan' ? fundingParam : undefined;
 
   const [bucket, setBucket] = useState<ReceivableFilters['bucket']>(undefined);
   const [search, setSearch] = useState('');
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
-  // Page and sort belong to one scope: the two lists sort on different
-  // columns, and page 3 of one is not page 3 of the other. Keyed by scope so
-  // a scope change — from the toggle or from the URL — starts both afresh.
-  const [view, setView] = useState<{ scope: Scope; page: number; sort: TableSortModel | null }>({
-    scope,
+  // Page and sort belong to one list: the lists sort on different columns, and
+  // page 3 of one is not page 3 of another. Keyed by scope AND funding so a
+  // change of either — from the toggle, a link, or Back/Forward between
+  // `?funding=cash` and the bare URL — starts both afresh, never on a page the
+  // shorter list does not have.
+  const viewKey = `${scope}|${funding ?? 'all'}`;
+  const [view, setView] = useState<{ key: string; page: number; sort: TableSortModel | null }>({
+    key: viewKey,
     page: 0,
     sort: null,
   });
   // CrmTable's `page` is zero-indexed; the API is one-indexed.
-  const page = view.scope === scope ? view.page : 0;
-  const sortModel = view.scope === scope ? view.sort : null;
-  const setPage = (next: number): void => setView({ scope, page: next, sort: sortModel });
+  const page = view.key === viewKey ? view.page : 0;
+  const sortModel = view.key === viewKey ? view.sort : null;
+  const setPage = (next: number): void => setView({ key: viewKey, page: next, sort: sortModel });
   const setSortModel = (next: TableSortModel | null): void =>
-    setView({ scope, page: 0, sort: next });
+    setView({ key: viewKey, page: 0, sort: next });
   const changePageSize = (next: number): void => {
     setPageSize(next);
     setPage(0);
@@ -182,6 +194,7 @@ export function FinanceReceivablesPage(): JSX.Element {
 
   const setScope = (next: Scope): void => {
     const params = new URLSearchParams(searchParams.toString());
+    params.delete('funding');
     if (next === 'all') params.delete('scope');
     else params.set('scope', next);
     const qs = params.toString();
@@ -190,6 +203,7 @@ export function FinanceReceivablesPage(): JSX.Element {
 
   const receivables = useReceivables(
     {
+      funding,
       bucket,
       search: search || undefined,
       sortBy: SORTABLE.find((f) => f === sortModel?.field),
@@ -201,7 +215,7 @@ export function FinanceReceivablesPage(): JSX.Element {
   );
   const recovery = useRecovery(
     {
-      funding: scope === 'recovery-loan' ? 'loan' : 'cash',
+      funding: scope === 'recovery-loan' ? 'loan' : scope === 'recovery-cash' ? 'cash' : undefined,
       bucket,
       search: search || undefined,
       sortBy: RECOVERY_SORTABLE.find((f) => f === sortModel?.field),
@@ -281,6 +295,36 @@ export function FinanceReceivablesPage(): JSX.Element {
         >
           {SCOPE_INTRO[scope]}
         </Box>
+        {scope === 'all' && funding ? (
+          <Box
+            component="p"
+            sx={{ m: 0, mt: 0.5, fontSize: crm['text-row'], color: color['text-secondary'] }}
+          >
+            {funding === 'cash' ? 'Cash' : 'Loan'} jobs only.{' '}
+            <Box
+              component="button"
+              type="button"
+              onClick={() => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete('funding');
+                const qs = params.toString();
+                router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+              }}
+              sx={{
+                p: 0,
+                border: 0,
+                background: 'none',
+                font: 'inherit',
+                fontWeight: 600,
+                color: color['accent-ink'],
+                cursor: 'pointer',
+                '&:hover': { textDecoration: 'underline' },
+              }}
+            >
+              Show all
+            </Box>
+          </Box>
+        ) : null}
       </Box>
 
       <Box
@@ -404,14 +448,14 @@ export function FinanceReceivablesPage(): JSX.Element {
         resolve this banner — otherwise a collector who clicks it and still
         sees "15 of 15" concludes the feature is broken.
       */}
-      {scope === 'recovery-loan' &&
+      {(scope === 'recovery-loan' || scope === 'recovery') &&
       recovery.data &&
       recovery.data.buckets.missingLenderProjects > 0 ? (
         <Alert variant="warning">
-          {recovery.data.buckets.missingLenderProjects} of {recovery.data.buckets.all} loan projects
-          have no bank share split out of the contract (marked on their rows). The customer may be
-          getting chased for the bank&apos;s money. This needs the project&apos;s payment terms
-          reviewed — adding a bank name below won&apos;t change this count.
+          {recovery.data.buckets.missingLenderProjects} of {recovery.data.buckets.loanProjects} loan
+          projects have no bank share split out of the contract (marked on their rows). The customer
+          may be getting chased for the bank&apos;s money. This needs the project&apos;s payment
+          terms reviewed — adding a bank name below won&apos;t change this count.
         </Alert>
       ) : null}
 

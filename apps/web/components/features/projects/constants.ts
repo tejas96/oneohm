@@ -287,6 +287,7 @@ export const TASK_LIST_FILTER_DEFAULTS = {
   t_milestone: '',
   t_page: '1',
   t_view: 'list', // 'list' or 'board'
+  t_task: '',
 } as const;
 
 export type TaskListFilters = typeof TASK_LIST_FILTER_DEFAULTS;

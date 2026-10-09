@@ -477,6 +477,8 @@ export interface RecoveryPage extends Paginated<RecoveryRow> {
     noDueDateProjects: number;
     noDueDatePaise: Paise;
     missingLenderProjects: number;
+    /** Loan-funded projects in scope — the base `missingLenderProjects` is counted against. */
+    loanProjects: number;
   };
 }
 

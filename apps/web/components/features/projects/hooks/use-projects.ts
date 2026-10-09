@@ -3,9 +3,12 @@
 import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type {
   PaginationMeta,
+  ProjectAttention,
   ProjectMetadata,
   ProjectPriority,
+  ProjectProgress,
   ProjectStatus,
+  StageGroupKey,
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
@@ -40,6 +43,18 @@ export interface ProjectFilters {
   pendingWorkflowStepId?: string;
   healthStatus?: string;
   createdBy?: string;
+  /** Dashboard drill-downs — see apps/backend/src/modules/projects/sql/project-facts.sql.ts. */
+  financing?: 'cash' | 'loan';
+  progress?: ProjectProgress;
+  stage?: StageGroupKey | 'none';
+  phase?: string;
+  attention?: ProjectAttention;
+  onboardedFrom?: string;
+  onboardedTo?: string;
+  meterInstalledFrom?: string;
+  meterInstalledTo?: string;
+  meterDueFrom?: string;
+  meterDueTo?: string;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
   // Query control
@@ -171,6 +186,24 @@ export function useProjects(
       if (queryFilters.createdBy) params.append('createdBy', queryFilters.createdBy);
       if (queryFilters.sortBy) params.append('sortBy', queryFilters.sortBy);
       if (queryFilters.sortOrder) params.append('sortOrder', queryFilters.sortOrder);
+
+      const factsKeys = [
+        'financing',
+        'progress',
+        'stage',
+        'phase',
+        'attention',
+        'onboardedFrom',
+        'onboardedTo',
+        'meterInstalledFrom',
+        'meterInstalledTo',
+        'meterDueFrom',
+        'meterDueTo',
+      ] as const;
+      for (const key of factsKeys) {
+        const value = queryFilters[key];
+        if (value) params.append(key, value);
+      }
 
       const response = await apiClient.get<ProjectListResponse>(
         `/projects?${params.toString()}`,

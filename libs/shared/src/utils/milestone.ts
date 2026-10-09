@@ -17,7 +17,7 @@ export interface MilestoneSequenceRef {
   order?: number | null;
 }
 
-function normalizeMilestoneName(name: string): string {
+export function normalizeMilestoneName(name: string): string {
   return name
     .trim()
     .toLowerCase()
@@ -47,6 +47,12 @@ const SEQUENCE_BY_NORMALIZED_NAME: ReadonlyMap<string, number> = (() => {
 export function canonicalMilestoneOrder(name: string): number | undefined {
   if (!name.trim()) return undefined;
   return SEQUENCE_BY_NORMALIZED_NAME.get(normalizeMilestoneName(name));
+}
+
+/** Catalog spelling of a known work-stage name (aliases resolved), or undefined if custom. */
+export function canonicalMilestoneName(name: string): string | undefined {
+  const order = canonicalMilestoneOrder(name);
+  return order === undefined ? undefined : MILESTONE_LIFECYCLE_SEQUENCE[order - 1];
 }
 
 /**

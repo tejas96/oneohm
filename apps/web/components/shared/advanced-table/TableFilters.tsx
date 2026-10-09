@@ -351,6 +351,8 @@ function ActiveFilterChips<TRow>({
     const col = columns.find((c) => c.field === field);
     if (!col) return toSortableString(value);
 
+    if (col.formatFilterValue) return `${col.headerName}: ${col.formatFilterValue(value)}`;
+
     const optionLabel = col.filterOptions?.find(
       (o) => String(o.value) === toSortableString(value),
     )?.label;

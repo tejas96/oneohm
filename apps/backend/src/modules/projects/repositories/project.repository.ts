@@ -12,6 +12,11 @@ import { type EntityManager, IsNull, Not, Repository } from 'typeorm';
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { systemSizeKwSql } from '../../../common/utils/transform.util';
 import { ProjectEntity } from '../entities/project.entity';
+import {
+  buildProjectFactsFilter,
+  projectFactsCte,
+  type ProjectFactsFilters,
+} from '../sql/project-facts.sql';
 
 /**
  * A project's money position, in rupees, read from `v_project_balance`.
@@ -186,7 +191,7 @@ export class ProjectRepository {
       sortOrder?: 'ASC' | 'DESC';
       /** employee_profiles.id, server-set for a reseller caller; scopes to his customers. */
       resellerId?: string;
-    },
+    } & ProjectFactsFilters,
   ): Promise<{ projects: ProjectEntity[]; total: number }> {
     const query = this.repository
       .createQueryBuilder('project')
@@ -344,6 +349,9 @@ export class ProjectRepository {
           .select('tm.project_id')
           .from('project_team_members', 'tm')
           .where('tm.user_id = :memberId')
+          // TypeORM adds this for the entity anyway; spelled out because the dashboard
+          // repeats the rule in raw SQL and both must keep agreeing.
+          .andWhere('tm.deleted_at IS NULL')
           .getQuery()}`,
         { memberId: filters.memberId },
       );
@@ -385,6 +393,23 @@ export class ProjectRepository {
           activeTicketFilterKind: ServiceTicketKind.ISSUE,
         },
       );
+    }
+
+    // Dashboard drill-downs (and the matching list filters). Same SQL rules the
+    // dashboard counts with, so the number on a card is the number of rows here.
+    // The facts CTE runs once, here; TypeORM's paginated query would otherwise
+    // repeat it for the count, the id page and the row load.
+    const factsFilter = buildProjectFactsFilter(filters);
+    if (factsFilter) {
+      const [factsSql, factsParams] =
+        this.repository.manager.connection.driver.escapeQueryWithParameters(
+          factsFilter.sql,
+          factsFilter.params,
+          {},
+        );
+      const factRows: { project_id: string }[] = await this.repository.query(factsSql, factsParams);
+      if (factRows.length === 0) return { projects: [], total: 0 };
+      query.andWhere('project.id IN (:...pfIds)', { pfIds: factRows.map((r) => r.project_id) });
     }
 
     const isSmartSort = filters?.sortBy === 'smartSort';
@@ -567,6 +592,23 @@ export class ProjectRepository {
       });
     }
     return map;
+  }
+
+  /**
+   * Current phase for a page of projects in ONE query — the furthest-reached
+   * rule from PROJECT_FACTS_CTE. Replaces a per-row task fetch.
+   */
+  async getCurrentPhases(projectIds: string[]): Promise<Map<string, string | null>> {
+    if (projectIds.length === 0) return new Map();
+    const rows: Array<{ projectId: string; currentPhase: string | null }> =
+      await this.repository.query(
+        `WITH ${projectFactsCte({ projectIdsParam: '$1' })}
+         SELECT pf.project_id AS "projectId", pf.current_phase AS "currentPhase"
+         FROM project_facts pf
+         WHERE pf.project_id = ANY($1::uuid[])`,
+        [projectIds],
+      );
+    return new Map(rows.map((r) => [r.projectId, r.currentPhase]));
   }
 
   /**

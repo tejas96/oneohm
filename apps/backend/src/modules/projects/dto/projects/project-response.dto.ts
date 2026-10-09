@@ -114,6 +114,14 @@ export class ProjectResponseDto {
   @Expose()
   progressPercentage!: number;
 
+  @ApiPropertyOptional({
+    example: 'Net Meter Installation',
+    nullable: true,
+    description: 'Phase the project is in — furthest reached; null when it has no main-line steps',
+  })
+  @Expose()
+  currentPhase?: string | null;
+
   @ApiPropertyOptional({ example: '2025-02-01' })
   @Expose()
   startDate?: Date;

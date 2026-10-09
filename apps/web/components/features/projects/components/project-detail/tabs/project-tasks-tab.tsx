@@ -8,7 +8,7 @@ import {
 } from '@tejas96/shared/constants';
 import { TaskStatus, type TaskPriority } from '@tejas96/shared/types';
 import { Plus } from 'lucide-react';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   PROJECT_MILESTONE_AGG_QUERY_KEY,
@@ -21,6 +21,7 @@ import {
   type TaskViewMode,
 } from '../../../constants';
 import {
+  projectDetailKeys,
   type TeamMemberSummary,
   useProjectMilestones,
   useProjectTaskList,
@@ -106,6 +107,11 @@ export const ProjectTasksTab = React.memo(
     const invalidateProjectTasks = useCallback(() => {
       void queryClient.invalidateQueries({ queryKey: PROJECT_TASKS_QUERY_KEY() });
       void queryClient.invalidateQueries({ queryKey: PROJECT_MILESTONE_AGG_QUERY_KEY(projectId) });
+      // The rail and Journey "now" read currentPhase from the project detail.
+      void queryClient.invalidateQueries({
+        queryKey: projectDetailKeys.detail(projectId),
+        exact: true,
+      });
     }, [queryClient, projectId]);
 
     const avatarMembers: TeamMemberSummary[] = useMemo(() => {
@@ -128,6 +134,14 @@ export const ProjectTasksTab = React.memo(
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [createPreselectedStatus, setCreatePreselectedStatus] = useState<string | null>(null);
+
+    // The one way the task drawer closes. It also clears a `?t_task=` deep link,
+    // whatever the reason for closing — otherwise a refresh, or coming back to
+    // the tab, reopens the drawer on a task that was closed or deleted.
+    const handleCloseDrawer = useCallback(() => {
+      setDrawerOpen(false);
+      if (filters.t_task) setFilter('t_task', '');
+    }, [filters.t_task, setFilter]);
 
     // One gate for both ways into the create dialog — the header button and the
     // "+" on each board column. Gating only the header would leave the board
@@ -153,7 +167,7 @@ export const ProjectTasksTab = React.memo(
         // Only the drawer needs handling here: useDeleteTask already busts the
         // project task list and the milestone rollup, unlike useUpdateTask.
         if (pendingDeleteRef.current?.id === openTaskId) {
-          setDrawerOpen(false);
+          handleCloseDrawer();
           setOpenTaskId(null);
         }
       },
@@ -181,7 +195,13 @@ export const ProjectTasksTab = React.memo(
       setDrawerOpen(true);
     }, []);
 
-    const handleCloseDrawer = useCallback(() => setDrawerOpen(false), []);
+    // Deep link from the projects dashboard (`?t_task=<id>`): open that step's
+    // drawer, whatever page of the list it sits on.
+    useEffect(() => {
+      if (!isActive || !filters.t_task) return;
+      setOpenTaskId(filters.t_task);
+      setDrawerOpen(true);
+    }, [isActive, filters.t_task]);
 
     const handleStatusChange = useCallback(
       (taskId: string, newStatus: string, _currentStatus: string, currentCompletionPct: number) => {

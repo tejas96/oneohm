@@ -19,7 +19,7 @@ import {
   TaskStatus,
 } from '@tejas96/shared/types';
 import {
-  compareMilestoneSequence,
+  deriveProjectStage,
   isProjectBaselineStep,
   stepAppliesToSite,
 } from '@tejas96/shared/utils';
@@ -57,6 +57,7 @@ import {
   ProjectTeamRepository,
   WorkflowStepRepository,
 } from '../repositories';
+import type { ProjectFactsFilters } from '../sql/project-facts.sql';
 import { onboardingBlockers, type OnboardingBlocker } from '../utils/onboarding-checks';
 import { buildTaskFromStep } from '../utils/task-from-step';
 
@@ -127,7 +128,7 @@ export class ProjectService {
       sortOrder?: 'ASC' | 'DESC';
       /** employee_profiles.id, server-set for a reseller caller; scopes to his customers. */
       resellerId?: string;
-    },
+    } & ProjectFactsFilters,
   ): Promise<{
     projects: (ProjectEntity & {
       currentPhase: string | null;
@@ -147,6 +148,7 @@ export class ProjectService {
     const projectIds = projects.map((p) => p.id);
     const paymentMap = await this.projectRepository.getPaymentSummaries(projectIds);
     const taskCountMap = await this.projectRepository.getTaskCounts(projectIds);
+    const phaseMap = await this.projectRepository.getCurrentPhases(projectIds);
 
     const nextTaskMap = new Map<
       string,
@@ -203,31 +205,29 @@ export class ProjectService {
       }
     }
 
-    const enriched = await Promise.all(
-      projects.map(async (project) => {
-        const currentPhase = await this.computeCurrentPhaseFromTasks(project.id);
-        const healthStatus = this.computeHealthStatus(project);
-        const paymentSummary = paymentMap.get(project.id) ?? {
-          totalExpected: 0,
-          totalPaid: 0,
-          contractValue: 0,
-          outstanding: 0,
-        };
-        const taskCounts = taskCountMap.get(project.id) ?? { completedTasks: 0, totalTasks: 0 };
+    const enriched = projects.map((project) => {
+      const currentPhase = phaseMap.get(project.id) ?? null;
+      const healthStatus = this.computeHealthStatus(project);
+      const paymentSummary = paymentMap.get(project.id) ?? {
+        totalExpected: 0,
+        totalPaid: 0,
+        contractValue: 0,
+        outstanding: 0,
+      };
+      const taskCounts = taskCountMap.get(project.id) ?? { completedTasks: 0, totalTasks: 0 };
 
-        const nextTask = nextTaskMap.get(project.id) ?? null;
-        const userOverdueTasks = overdueTaskCountMap.get(project.id) ?? 0;
+      const nextTask = nextTaskMap.get(project.id) ?? null;
+      const userOverdueTasks = overdueTaskCountMap.get(project.id) ?? 0;
 
-        return Object.assign(project, {
-          currentPhase,
-          healthStatus,
-          paymentSummary,
-          nextTask,
-          userOverdueTasks,
-          ...taskCounts,
-        });
-      }),
-    );
+      return Object.assign(project, {
+        currentPhase,
+        healthStatus,
+        paymentSummary,
+        nextTask,
+        userOverdueTasks,
+        ...taskCounts,
+      });
+    });
 
     return { projects: enriched, total, page, limit };
   }
@@ -732,25 +732,19 @@ export class ProjectService {
   }
 
   /**
-   * Derive current phase from tasks: the milestone group with lowest order
-   * that still has any non-done, non-cancelled task.
+   * The phase a project is in — furthest reached (spec D4). Same rule as
+   * PROJECT_FACTS_CTE; used for a single project's detail response.
    */
   async computeCurrentPhaseFromTasks(projectId: string): Promise<string | null> {
     const allTasks = await this.taskRepository.findAllForBoard(projectId);
-    const terminalStatuses = new Set([TaskStatus.DONE]);
-
-    const activeTasks = allTasks.filter((t) => !terminalStatuses.has(t.status) && t.milestoneName);
-
-    if (activeTasks.length === 0) return null;
-
-    activeTasks.sort((a, b) =>
-      compareMilestoneSequence(
-        { name: a.milestoneName ?? '', order: a.milestoneOrder },
-        { name: b.milestoneName ?? '', order: b.milestoneOrder },
-      ),
-    );
-
-    return activeTasks[0]?.milestoneName ?? null;
+    return deriveProjectStage(
+      allTasks.map((t) => ({
+        milestoneName: t.milestoneName,
+        done: t.status === TaskStatus.DONE,
+        workflowStepCode: t.workflowStep?.code ?? t.code,
+        loanOnly: t.workflowStep?.loanOnly ?? false,
+      })),
+    ).currentPhase;
   }
 
   private computeHealthStatus(project: ProjectEntity): 'on_track' | 'at_risk' | 'delayed' | null {

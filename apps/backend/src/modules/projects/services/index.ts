@@ -10,3 +10,4 @@ export * from './project-team.service';
 export * from './project-chat.service';
 export * from './project-analytics.service';
 export * from './loan-task-sync.service';
+export * from './project-dashboard.service';

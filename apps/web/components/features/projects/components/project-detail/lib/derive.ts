@@ -1,5 +1,5 @@
 import { type MilestoneDisplayStatus, ProjectPriority, ProjectStatus } from '@tejas96/shared/types';
-import { compareMilestoneSequence } from '@tejas96/shared/utils';
+import { canonicalMilestoneName, compareMilestoneSequence } from '@tejas96/shared/utils';
 
 import { MS_PER_DAY } from '../../../constants';
 import type {
@@ -171,10 +171,21 @@ export const PHASE_STATUS_LABEL: Record<MilestoneDisplayStatus, string> = {
 };
 
 /**
- * The phase the project is in: the first, in lifecycle order, that is not
- * finished. −1 when every phase is done or there are none.
+ * The phase the project is in. The server's `currentPhase` (furthest reached,
+ * the dashboard's rule) wins; without it, the first phase not finished.
+ * −1 when nothing matches.
  */
-export function currentPhaseIndex(sorted: MilestoneAggregateItem[]): number {
+export function currentPhaseIndex(
+  sorted: MilestoneAggregateItem[],
+  currentPhase?: string | null,
+): number {
+  // Every phase done: the project is closed, so nothing is "now".
+  if (sorted.length > 0 && sorted.every((m) => m.status === 'completed')) return -1;
+  if (currentPhase) {
+    const target = canonicalMilestoneName(currentPhase) ?? currentPhase;
+    const i = sorted.findIndex((m) => (canonicalMilestoneName(m.name) ?? m.name) === target);
+    if (i >= 0) return i;
+  }
   return sorted.findIndex((m) => m.status !== 'completed');
 }
 
