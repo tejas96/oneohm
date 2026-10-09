@@ -934,12 +934,17 @@ function sanitizeUrlFilters(filters: TableUrlFilterRecord): TableUrlFilterRecord
       continue;
     }
     if (DAY_RANGE_KEYS.includes(key)) {
-      const { from, to } = (value ?? {}) as { from?: unknown; to?: unknown };
+      const { from, to } = (typeof value === 'object' && value !== null ? value : {}) as {
+        from?: unknown;
+        to?: unknown;
+      };
       const kept: { from?: string; to?: string } = {};
       if (isRealDay(from)) kept.from = from;
       if (isRealDay(to)) kept.to = to;
       if (kept.from !== undefined || kept.to !== undefined) result[key] = kept;
-      if (kept.from !== from || kept.to !== to) changed = true;
+      // Anything but exactly the kept shape (a string, unknown keys, a bad end)
+      // is junk the list ignores, so the URL is rewritten without it.
+      if (JSON.stringify(kept) !== JSON.stringify(value)) changed = true;
       continue;
     }
     const column = FILTER_COLUMNS.find((c) => c.field === key);
@@ -1015,12 +1020,14 @@ export function ProjectListPage(): JSX.Element {
     initialFilters,
   });
 
-  // A link can carry filter values the list ignores; show and send only the ones
-  // it applies, and rewrite the URL to match (replace, no new history entry —
-  // `setFilters` uses `replaceState`).
+  // A link can carry filter values the list ignores, or no usable status; show
+  // and send only what it applies (an absent or dropped status becomes the page
+  // default, so the highlighted chip is the status that is sent), and rewrite the
+  // URL to match (replace, no new history entry — `setFilters` uses
+  // `replaceState`). Once rewritten the record is stable, so this runs once.
   const { setFilters: replaceUrlFilters } = urlState;
   const filters = useMemo(
-    () => sanitizeUrlFilters(urlState.state.filters),
+    () => withDefaultStatus(sanitizeUrlFilters(urlState.state.filters)),
     [urlState.state.filters],
   );
   useEffect(() => {
