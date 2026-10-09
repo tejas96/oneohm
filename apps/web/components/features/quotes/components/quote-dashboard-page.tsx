@@ -6,7 +6,17 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
-import { DealFlow, PersonPicker, QuotesDashboardSkeleton, QuotesStrip } from './dashboard';
+import {
+  BiggestOpen,
+  DealFlow,
+  NeedsAction,
+  PersonPicker,
+  QuotesDashboardSkeleton,
+  QuotesStrip,
+  QuotesTrendChart,
+  Sources,
+  Team,
+} from './dashboard';
 
 import { BandError, FilterBar, useDashboardFilters } from '@/components/features/dashboard/kit';
 import { ROUTES } from '@/lib/config/routes';
@@ -64,6 +74,19 @@ export function QuoteDashboardPage(): React.JSX.Element {
       <div className="flex flex-col gap-5">
         <QuotesStrip data={data} filters={filters} />
         <DealFlow data={data} filters={filters} />
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
+          <div className="lg:col-span-3">
+            <NeedsAction data={data} filters={filters} />
+          </div>
+          <div className="lg:col-span-2">
+            <Team data={data} filters={filters} />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <BiggestOpen data={data} filters={filters} />
+          <Sources data={data} filters={filters} />
+        </div>
+        <QuotesTrendChart data={data} filters={filters} />
       </div>
     );
   }
