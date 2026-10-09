@@ -55,7 +55,7 @@ export interface QuotesDashboardBigDeal {
 }
 
 export interface QuotesDashboardSource {
-  /** A `lead_source` value, `not_set`, or `other`. */
+  /** A normalised `lead_source` value, `not_set`, or LEAD_SOURCE_OTHER_BUCKET. */
   key: string;
   label: string;
   count: number;
@@ -106,9 +106,9 @@ export interface QuotesDashboard {
   team: QuotesDashboardTeamRow[];
   teamMore: number;
   biggestOpen: QuotesDashboardBigDeal[];
-  /** Up to 4 sources then `other` (only when non-zero). */
+  /** Up to 4 sources then the LEAD_SOURCE_OTHER_BUCKET row (only when non-zero). */
   sources: QuotesDashboardSource[];
-  /** The source keys shown before `other`, so its link can exclude them. */
+  /** The source keys shown before the Other row, so its link can exclude them. */
   topSourceKeys: string[];
   /** 12 months, oldest first. */
   trend: QuotesDashboardTrendMonth[];

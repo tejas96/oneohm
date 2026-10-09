@@ -35,7 +35,8 @@ export interface QuoteListFilters extends BaseFilters {
   person?: string;
   financing?: 'cash' | 'loan';
   leadSource?: string;
-  leadSourceNotIn?: string;
+  /** Sent as a repeated parameter, one per source (values can contain commas). */
+  leadSourceNotIn?: string[];
   newFrom?: string;
   newTo?: string;
   wonFrom?: string;
@@ -91,10 +92,13 @@ export function useQuoteListResource(filters: QuoteListFilters = {}) {
   return useQuery({
     queryKey: quoteResourceKeys.list(filters as Record<string, unknown>),
     queryFn: async ({ signal }): Promise<QuoteListResponse> => {
-      const params = buildQueryParams(filters, {
+      const { leadSourceNotIn, ...rest } = filters;
+      const params = buildQueryParams(rest, {
         minSearchLength: 2,
         skipValues: ['all'],
       });
+      // buildQueryParams stringifies an array into one comma-joined value.
+      for (const source of leadSourceNotIn ?? []) params.append('leadSourceNotIn', source);
       const { data } = await apiClient.get<QuoteListResponse>(`/quotes?${params.toString()}`, {
         signal,
       });

@@ -69,7 +69,7 @@ The deal's values come from that quote and its newest `quote_versions` row
 | kW | `quote_versions.total_wattage_wp / 1000` |
 | Person | `quotes.created_by` → `users` name. (`sales_person_id` is almost always empty; the customer owner is set on only 189 of 824 deals.) |
 | Cash / Loan | `customer_properties.wants_loan` (same as the projects dashboard and finance) |
-| Lead source | `customer_profiles.lead_source`; empty or null → "Not set" |
+| Lead source | `lower(btrim(customer_profiles.lead_source))`, so "Gharkul", "gharkul" and "gharkul " are one source; empty or null → `not_set` ("Not set"). Labels capitalise the first letter ("gharkul" → "Gharkul", "walk_in" → "Walk in"). |
 
 **Stage**, checked in this order:
 
@@ -176,6 +176,8 @@ days since `valid_until`), and the ₹ on the right.
 **Where deals come from** (period tag). The deals new in the period, grouped by lead
 source. The top 4 sources by count, then "Other" (the rest, "Not set" included).
 Each row: source label, a bar, the count, and "N% win" (won now ÷ count). "—" when count < 3.
+The Other row's key is `LEAD_SOURCE_OTHER_BUCKET` (`__other__`, in `libs/shared/src/utils/deal-stage.ts`),
+never `other`: real profiles store the word `other`, so a bucket keyed `other` would collide with it.
 
 ### Band 5 — Last 12 months
 
@@ -244,7 +246,9 @@ Money is sent as rupees (numbers), the same unit the quote list uses.
 `stage` (`drafting|waiting|quiet|won|lost|open|pipeline`; `open` = all three open
 stages, `pipeline` = Waiting + Gone quiet), `person`, `financing` (`cash|loan`),
 `attention` (the 4 keys), `newFrom/To`, `wonFrom/To`, `lostFrom/To`,
-`leadSource`, `leadSourceNotIn` (comma list). Each one is applied as
+`leadSource`, `leadSourceNotIn` (an array: repeat the parameter per source, at most 20,
+each up to 200 characters; never a comma list, because real sources contain commas; the web keeps it
+as a JSON array in `quotes_filters`). Both lead-source filters compare the normalised value. Each one is applied as
 `quote.id IN (SELECT quote_id FROM deal_facts WHERE …)`, so it pins to the deal's
 quote and the list's one-row-per-property collapse returns the same rows the
 dashboard counted. Existing filters are unchanged.

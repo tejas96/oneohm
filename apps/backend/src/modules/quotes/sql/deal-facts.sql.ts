@@ -48,7 +48,9 @@ export const DEAL_FACTS_CTE = `
       (${systemSizeKwSqlRaw('qv')})::float AS kw,
       dq.created_by AS person_id,
       COALESCE(prop.wants_loan, false) AS wants_loan,
-      COALESCE(NULLIF(btrim(cp.lead_source), ''), '${LEAD_SOURCE_NOT_SET}') AS lead_source,
+      -- Normalised once, here: "Gharkul", "gharkul" and "gharkul " are one source,
+      -- and the list's leadSource filter compares against this same value.
+      COALESCE(NULLIF(lower(btrim(cp.lead_source)), ''), '${LEAD_SOURCE_NOT_SET}') AS lead_source,
       CASE
         WHEN dq.voided_at IS NULL AND dq.status = 'accepted' THEN 'won'
         WHEN dq.status = 'rejected' OR prop.status = 'lost' THEN 'lost'
@@ -140,9 +142,10 @@ export interface DealFactsFilters {
   person?: string;
   financing?: 'cash' | 'loan';
   attention?: DealAttention;
+  /** A normalised lead source (`lower(btrim(...))`, or `not_set`). */
   leadSource?: string;
-  /** Comma list of lead-source values to exclude (the dashboard's "Other" row). */
-  leadSourceNotIn?: string;
+  /** Normalised lead sources to exclude (the dashboard's "Other" row). */
+  leadSourceNotIn?: string[];
   newFrom?: string;
   newTo?: string;
   wonFrom?: string;
@@ -176,15 +179,9 @@ export function buildDealFactsFilter(
     where.push('df.lead_source = :dfLeadSource');
     params.dfLeadSource = f.leadSource;
   }
-  if (f.leadSourceNotIn) {
-    const excluded = f.leadSourceNotIn
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (excluded.length > 0) {
-      where.push('df.lead_source NOT IN (:...dfLeadSourceNotIn)');
-      params.dfLeadSourceNotIn = excluded;
-    }
+  if (f.leadSourceNotIn && f.leadSourceNotIn.length > 0) {
+    where.push('df.lead_source <> ALL(:dfLeadSourceNotIn)');
+    params.dfLeadSourceNotIn = f.leadSourceNotIn;
   }
 
   const range = (

@@ -6,7 +6,7 @@ import type {
   QuotesDashboardNeedsAction,
   QuotesDashboardSource,
 } from '@tejas96/shared/types';
-import { DEAL_ATTENTIONS, leadSourceLabel } from '@tejas96/shared/utils';
+import { DEAL_ATTENTIONS, LEAD_SOURCE_OTHER_BUCKET, leadSourceLabel } from '@tejas96/shared/utils';
 import { DataSource } from 'typeorm';
 
 import { DEAL_FACTS, DEAL_FACTS_CTE, dealBetween } from '../sql/deal-facts.sql';
@@ -287,7 +287,7 @@ export class QuoteDashboardService {
     if (restCount > 0) {
       sources.push(
         row(
-          'other',
+          LEAD_SOURCE_OTHER_BUCKET,
           'Other',
           restCount,
           rest.reduce((a, r) => a + num(r.won), 0),

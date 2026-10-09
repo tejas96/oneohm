@@ -26,12 +26,23 @@ export const DEAL_ATTENTION_LABELS: Record<DealAttention, string> = {
   won_no_project: 'Won, no project yet',
 };
 
-/** `customer_profiles.lead_source` empty or null, as one filterable value. */
+/**
+ * `customer_profiles.lead_source` empty or null, as one filterable value.
+ * Deal facts store every source as `lower(btrim(lead_source))`, so "Gharkul",
+ * "gharkul" and "gharkul " are one source and the list filter uses the same value.
+ */
 export const LEAD_SOURCE_NOT_SET = 'not_set';
 
-/** `walk_in` → "Walk in", `not_set` → "Not set", `Gharkul` → "Gharkul". */
+/**
+ * The dashboard's "Other" row: every source outside the top 4. Not a stored
+ * value — real profiles hold the word `other`, so the bucket needs a key no
+ * profile can have.
+ */
+export const LEAD_SOURCE_OTHER_BUCKET = '__other__';
+
+/** `walk_in` → "Walk in", `not_set` or empty → "Not set", `gharkul` → "Gharkul". */
 export function leadSourceLabel(value: string): string {
-  if (value === LEAD_SOURCE_NOT_SET) return 'Not set';
   const text = value.replace(/_/g, ' ').trim();
+  if (value === LEAD_SOURCE_NOT_SET || !text) return 'Not set';
   return text.charAt(0).toUpperCase() + text.slice(1);
 }

@@ -1,4 +1,5 @@
 import type { DealAttention, DealStageFilter } from '@tejas96/shared/types';
+import { LEAD_SOURCE_OTHER_BUCKET } from '@tejas96/shared/utils';
 
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import type { DashboardFilters } from '@/lib/hooks/resources';
@@ -43,7 +44,8 @@ export const quoteLinks = {
     quoteListHref({
       ...scope(f),
       newDate: { from, to },
-      ...(key === 'other' ? { leadSourceNotIn: topKeys.join(',') } : { leadSource: key }),
+      // An array, never a comma list: real lead sources contain commas.
+      ...(key === LEAD_SOURCE_OTHER_BUCKET ? { leadSourceNotIn: topKeys } : { leadSource: key }),
     }),
   month: (kind: 'new' | 'won', month: string, f: DashboardFilters): string => {
     const { from, to } = monthBounds(month);

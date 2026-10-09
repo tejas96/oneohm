@@ -9,6 +9,8 @@ import {
 import { DEAL_ATTENTIONS, DEAL_STAGE_FILTERS } from '@tejas96/shared/utils';
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsDateString,
   IsEnum,
   IsIn,
@@ -25,6 +27,19 @@ import {
 } from 'class-validator';
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Deal facts compare against `lower(btrim(lead_source))`, so the filter value is normalised the same way. */
+const normaliseLeadSource = (v: unknown): unknown =>
+  typeof v === 'string' ? v.trim().toLowerCase() : v;
+
+/**
+ * `?leadSourceNotIn=a&leadSourceNotIn=b` arrives as an array, a single one as a
+ * string. Never split on commas: real lead sources contain them.
+ */
+const toLeadSourceList = (v: unknown): unknown => {
+  const list = typeof v === 'string' ? [v] : v;
+  return Array.isArray(list) ? list.map(normaliseLeadSource) : list;
+};
 
 /**
  * Query DTO for quote list endpoint
@@ -161,17 +176,28 @@ export class QuoteQueryDto {
   @IsIn(DEAL_ATTENTIONS)
   attention?: DealAttention;
 
-  @ApiPropertyOptional({ example: 'referral', description: "A lead_source value, or 'not_set'" })
+  @ApiPropertyOptional({
+    example: 'referral',
+    description: "A lead source, compared lower-cased and trimmed, or 'not_set'",
+  })
   @IsOptional()
+  @Transform(({ value }: { value: unknown }) => normaliseLeadSource(value))
   @IsString()
   @MaxLength(50)
   leadSource?: string;
 
-  @ApiPropertyOptional({ example: 'referral,advertisement', description: 'Comma list to exclude' })
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['referral', 'advertisement'],
+    description: 'Lead sources to exclude; repeat the parameter for each one',
+  })
   @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  leadSourceNotIn?: string;
+  @Transform(({ value }: { value: unknown }) => toLeadSourceList(value))
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(200, { each: true })
+  leadSourceNotIn?: string[];
 
   @ApiPropertyOptional({
     example: '2026-10-01',

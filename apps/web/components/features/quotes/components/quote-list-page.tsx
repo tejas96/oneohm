@@ -125,6 +125,21 @@ function isRealDay(value: unknown): value is string {
   return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
 }
 
+/** Most sources the API takes in `leadSourceNotIn` (the dashboard sends its top 4). */
+const MAX_EXCLUDED_SOURCES = 20;
+
+/**
+ * `leadSourceNotIn` as stored in the URL: a JSON array of sources, never a
+ * comma list (real sources contain commas). Anything else is junk.
+ */
+function leadSourceList(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const list = value
+    .filter((v): v is string => typeof v === 'string' && v.trim() !== '')
+    .slice(0, MAX_EXCLUDED_SOURCES);
+  return list.length > 0 ? list : undefined;
+}
+
 function toQuoteFilters(filters: TableUrlFilterRecord): Partial<QuoteListFilters> {
   // The date picker emits YYYY-MM-DD (local date, no time component).
   // We expand it to a full UTC day range so the backend's quoteDate range filter
@@ -163,7 +178,7 @@ function toQuoteFilters(filters: TableUrlFilterRecord): Partial<QuoteListFilters
       typeof filters.person === 'string' && UUID.test(filters.person) ? filters.person : undefined,
     financing: pick(filters.financing, ['cash', 'loan'] as const),
     leadSource: text(filters.leadSource),
-    leadSourceNotIn: text(filters.leadSourceNotIn),
+    leadSourceNotIn: leadSourceList(filters.leadSourceNotIn),
     newFrom: newDate.from,
     newTo: newDate.to,
     wonFrom: wonDate.from,
@@ -531,11 +546,7 @@ const FILTER_COLUMNS: ColumnConfig<QuoteRow>[] = [
     headerName: 'Lead source not',
     filterable: true,
     filterType: 'text',
-    formatFilterValue: (v) =>
-      String(v ?? '')
-        .split(',')
-        .map(leadSourceLabel)
-        .join(', '),
+    formatFilterValue: (v) => (leadSourceList(v) ?? []).map(leadSourceLabel).join(', '),
   },
   { field: 'createdAt', headerName: 'Created on', filterable: true, filterType: 'date' },
   {
@@ -572,6 +583,12 @@ function sanitizeUrlFilters(filters: TableUrlFilterRecord): TableUrlFilterRecord
     if (key === 'person') {
       if (typeof value === 'string' && UUID.test(value)) result[key] = value;
       else changed = true;
+      continue;
+    }
+    if (key === 'leadSourceNotIn') {
+      const list = leadSourceList(value);
+      if (list) result[key] = list;
+      if (JSON.stringify(list) !== JSON.stringify(value)) changed = true;
       continue;
     }
     if (DAY_RANGE_KEYS.includes(key)) {
