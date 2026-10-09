@@ -44,7 +44,12 @@ export function NeedsAction({
                     {DEAL_ATTENTION_LABELS[n.key]}
                   </Link>
                   {n.owners.length > 0 ? (
-                    <p className="truncate text-xs text-foreground-tertiary">
+                    <p
+                      className="truncate text-xs text-foreground-tertiary"
+                      title={`${n.owners.map((o) => `${o.name} ${o.count}`).join(' · ')}${
+                        n.moreOwners > 0 ? ` · +${n.moreOwners} more` : ''
+                      }`}
+                    >
                       {n.owners.map((o, j) => (
                         <React.Fragment key={o.personId}>
                           {j > 0 ? ' · ' : null}

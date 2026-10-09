@@ -132,7 +132,10 @@ export function DealFlow({
                 <AnimatedNumber value={stages.lost.count} />
               </span>
               {stages.lost.topReason ? (
-                <span className="truncate text-xs text-foreground-tertiary">
+                <span
+                  className="truncate text-xs text-foreground-tertiary"
+                  title={`mostly ${stages.lost.topReason.toLowerCase()}`}
+                >
                   mostly {stages.lost.topReason.toLowerCase()}
                 </span>
               ) : null}
