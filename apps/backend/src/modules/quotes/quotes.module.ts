@@ -1,10 +1,15 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { QuoteController, QuoteCalculatorController } from './controllers';
+import {
+  QuoteController,
+  QuoteCalculatorController,
+  QuoteDashboardController,
+} from './controllers';
 import { QuoteEntity, QuoteVersionEntity } from './entities';
 import { QuoteRepository } from './repositories';
 import { QuoteService, QuoteCalculatorService } from './services';
+import { QuoteDashboardService } from './services/quote-dashboard.service';
 import { AuditModule } from '../audit/audit.module';
 import { CustomersModule } from '../customers/customers.module';
 import { DocumentsModule } from '../documents/documents.module';
@@ -31,8 +36,8 @@ import { StorageModule } from '../storage/storage.module';
     forwardRef(() => CustomersModule),
     forwardRef(() => InventoryModule),
   ],
-  controllers: [QuoteController, QuoteCalculatorController],
-  providers: [QuoteService, QuoteRepository, QuoteCalculatorService],
+  controllers: [QuoteDashboardController, QuoteController, QuoteCalculatorController],
+  providers: [QuoteService, QuoteRepository, QuoteCalculatorService, QuoteDashboardService],
   exports: [QuoteService, QuoteRepository, QuoteCalculatorService],
 })
 export class QuotesModule {}
