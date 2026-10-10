@@ -8,7 +8,12 @@ import {
   type QuotesDashboardNeedsAction,
   type QuotesDashboardSource,
 } from '@tejas96/shared/types';
-import { DEAL_ATTENTIONS, LEAD_SOURCE_OTHER_BUCKET, leadSourceLabel } from '@tejas96/shared/utils';
+import {
+  DEAL_ATTENTIONS,
+  LEAD_SOURCE_NOT_SET,
+  LEAD_SOURCE_OTHER_BUCKET,
+  leadSourceLabel,
+} from '@tejas96/shared/utils';
 import { DataSource } from 'typeorm';
 
 import { DEAL_FACTS, DEAL_FACTS_CTE, dealBetween } from '../sql/deal-facts.sql';
@@ -155,6 +160,8 @@ const num = (v: unknown): number => Number(v ?? 0);
 const TEAM_LIMIT = 8;
 const SOURCE_LIMIT = 4;
 const MIN_FOR_WIN_RATE = 3;
+/** Lead sources that are counted inside the Other row, never shown as a top source. */
+const ALWAYS_IN_OTHER: ReadonlySet<string> = new Set([LeadSource.OTHER, LEAD_SOURCE_NOT_SET]);
 
 @Injectable()
 export class QuoteDashboardService {
@@ -289,10 +296,11 @@ export class QuoteDashboardService {
       won,
       winPercent: count >= MIN_FOR_WIN_RATE ? Math.round((won * 100) / count) : null,
     });
-    // The stored value `other` ("Other" picked on the customer form) always belongs
-    // to the Other row, never a row of its own — two rows would both read "Other".
-    // It is never a top key, so the Other link (leadSourceNotIn = top keys) keeps it.
-    const top = rows.filter((r) => r.key !== LeadSource.OTHER).slice(0, SOURCE_LIMIT);
+    // Two sources always belong to the Other row and are never a row of their own:
+    // the stored value `other` ("Other" picked on the customer form — two rows would
+    // both read "Other") and `not_set` (no source is not a source). Neither is ever
+    // a top key, so the Other link (leadSourceNotIn = top keys) keeps both.
+    const top = rows.filter((r) => !ALWAYS_IN_OTHER.has(String(r.key))).slice(0, SOURCE_LIMIT);
     const topKeys = new Set(top.map((r) => r.key));
     const rest = rows.filter((r) => !topKeys.has(r.key));
     const sources = top.map((r) =>
