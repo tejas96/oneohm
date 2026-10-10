@@ -18,6 +18,7 @@ import {
   LossReason,
   UserProfileType,
   UserStatus,
+  type CustomerJourney,
 } from '@tejas96/shared/types';
 import { normalizePhoneToE164 } from '@tejas96/shared/utils';
 import { DataSource, In, IsNull } from 'typeorm';
@@ -46,6 +47,7 @@ import { CustomerProfileEntity } from '../entities/customer-profile.entity';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 import {
   CustomerProfileRepository,
+  type CustomerFollowupState,
   type CustomerOverviewStats,
   type SitePortfolioSummary,
 } from '../repositories/customer-profile.repository';
@@ -55,6 +57,7 @@ import {
   type FollowupAssignee,
   type FollowupAssigneeRow,
 } from '../repositories/followup.repository';
+import { rollUpCustomerJourney } from '../sql/site-journey.sql';
 
 type CustomerWithDeleteInfo = CustomerProfileEntity & {
   deleteBlockReasons?: string[];
@@ -75,6 +78,15 @@ type CustomerWithDeleteInfo = CustomerProfileEntity & {
    * two rows meaning two different things.
    */
   ownFollowupAssignees?: FollowupAssignee[];
+  /**
+   * The customer's sites rolled up onto the six-step journey (list only). Built
+   * from the same per-site rows the customer's site list publishes.
+   */
+  journey?: CustomerJourney;
+  /** Follow-up state for the list row: the shared predicate, the count, the next one. */
+  needsFollowup?: CustomerFollowupState['needsFollowup'];
+  pendingFollowupCount?: CustomerFollowupState['pendingFollowupCount'];
+  nextFollowup?: CustomerFollowupState['nextFollowup'];
 };
 
 /**
@@ -251,9 +263,9 @@ export class CustomerService {
    * Attach the per-row extras the list UI needs but the paged entity query does
    * not carry: delete eligibility and the site-portfolio roll-up.
    *
-   * Both are batched over the page's customer ids and run concurrently — they
-   * touch different tables and neither depends on the other, so serialising
-   * them would only add latency. Two fixed queries per page, never per row.
+   * All are batched over the page's customer ids and run concurrently — none
+   * depends on another, so serialising them would only add latency. A fixed
+   * number of queries per page, never per row.
    */
   private async enrichListPage(
     data: CustomerProfileEntity[],
@@ -261,11 +273,14 @@ export class CustomerService {
   ): Promise<{ data: CustomerWithDeleteInfo[]; total: number }> {
     const customerIds = data.map((customer) => customer.id);
 
-    const [blockerMap, portfolioMap, assigneeRows] = await Promise.all([
-      this.customerRepository.getCustomerDeleteBlockersBatch(customerIds),
-      this.customerRepository.getSitePortfolioSummaries(customerIds),
-      this.followupRepository.findAssigneesForCustomers(customerIds),
-    ]);
+    const [blockerMap, portfolioMap, assigneeRows, journeyMap, followupStateMap] =
+      await Promise.all([
+        this.customerRepository.getCustomerDeleteBlockersBatch(customerIds),
+        this.customerRepository.getSitePortfolioSummaries(customerIds),
+        this.followupRepository.findAssigneesForCustomers(customerIds),
+        this.customerRepository.getSiteJourneysByCustomerIds(customerIds),
+        this.customerRepository.getFollowupStateByCustomerIds(customerIds),
+      ]);
 
     const assigneesByCustomer = new Map<string, FollowupAssigneeRow[]>();
     for (const row of assigneeRows) {
@@ -275,15 +290,22 @@ export class CustomerService {
     }
 
     return {
-      data: data.map((customer) => ({
-        ...customer,
-        deleteBlockReasons: blockerMap.get(customer.id) ?? [],
-        sitePortfolio: portfolioMap.get(customer.id) ?? EMPTY_SITE_PORTFOLIO,
-        followupAssignees: rollUpAssignees(assigneesByCustomer.get(customer.id) ?? []),
-        ownFollowupAssignees: rollUpAssignees(
-          (assigneesByCustomer.get(customer.id) ?? []).filter((row) => row.propertyId === null),
-        ),
-      })),
+      data: data.map((customer) => {
+        const followupState = followupStateMap.get(customer.id);
+        return {
+          ...customer,
+          deleteBlockReasons: blockerMap.get(customer.id) ?? [],
+          sitePortfolio: portfolioMap.get(customer.id) ?? EMPTY_SITE_PORTFOLIO,
+          followupAssignees: rollUpAssignees(assigneesByCustomer.get(customer.id) ?? []),
+          ownFollowupAssignees: rollUpAssignees(
+            (assigneesByCustomer.get(customer.id) ?? []).filter((row) => row.propertyId === null),
+          ),
+          journey: rollUpCustomerJourney(journeyMap.get(customer.id) ?? [], customer.status),
+          needsFollowup: followupState?.needsFollowup ?? false,
+          pendingFollowupCount: followupState?.pendingFollowupCount ?? 0,
+          nextFollowup: followupState?.nextFollowup ?? null,
+        };
+      }),
       total,
     };
   }

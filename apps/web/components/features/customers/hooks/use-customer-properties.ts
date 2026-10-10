@@ -5,12 +5,14 @@ import {
   LossReason,
   ConnectionType,
   LeadTemperature,
+  type NextFollowup,
   type ProjectStatus,
   type GpsCoordinates,
   type PropertyDocument,
   PropertyStatus,
   PropertyType,
   QuoteStatus,
+  type SiteJourney,
   SiteStatus,
   type ShadingAnalysis,
   type StoredChangeRequest,
@@ -31,7 +33,7 @@ import { apiClient } from '@/lib/api/client';
  * Customer Property - Installation site belonging to a customer
  * Matches CustomerPropertyResponseDto from backend
  */
-export interface CustomerPropertyResponse {
+export interface CustomerPropertyResponse extends Partial<SiteJourney> {
   id: string;
   customerId: string;
   propertyCode?: string;
@@ -137,6 +139,13 @@ export interface CustomerPropertyResponse {
   // Follow-up state (enriched via shared predicate — do not re-derive on the client)
   nextFollowupAt?: string | null;
   needsFollowup?: boolean;
+  /**
+   * The follow-up `nextFollowupAt` belongs to; null when nothing is pending.
+   * Like the `SiteJourney` fields (`stageIndex`, `lost`, `journeyLostReason`,
+   * `meterInstalled`), only the customer's site list
+   * (`GET /customer-properties/customer/:id`) carries it.
+   */
+  nextFollowup?: NextFollowup | null;
 }
 
 // ============================================================================

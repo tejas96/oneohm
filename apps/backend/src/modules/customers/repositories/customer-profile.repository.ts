@@ -21,6 +21,14 @@ import { CUSTOMER_NEEDS_FOLLOWUP } from './followup-predicates';
 import { systemSizeKwSqlRaw } from '../../../common/utils/transform.util';
 import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
+import {
+  NEXT_FOLLOWUP_COLUMNS,
+  nextPendingFollowupSql,
+  toNextFollowup,
+  type NextFollowupColumns,
+  type NextFollowupRow,
+} from '../sql/next-followup.sql';
+import { SITE_JOURNEY_COLUMNS, siteJourneyCte, type SiteJourneyRow } from '../sql/site-journey.sql';
 
 /**
  * Per-customer roll-up of the site portfolio, as rendered by the CRM list's
@@ -42,6 +50,16 @@ export interface SitePortfolioSummary {
   totalSystemSizeKw: number;
   /** Σ final price across each site's current quote version. */
   totalPortfolioAmount: number;
+}
+
+/** What a customer's row says about follow-ups, for one page of the list. */
+export interface CustomerFollowupState {
+  /** The shared "needs follow-up" predicate — the same one the list filter uses. */
+  needsFollowup: boolean;
+  /** Pending follow-ups on the customer and on its sites that are not deleted. */
+  pendingFollowupCount: number;
+  /** The earliest of those, or null when nothing is pending. */
+  nextFollowup: NextFollowupRow | null;
 }
 
 /** Company-wide CRM roll-up behind the four KPI cards on the list page. */
@@ -543,6 +561,84 @@ export class CustomerProfileRepository {
     }
 
     return summaries;
+  }
+
+  /**
+   * Every site of a page of customers, placed on its journey by the one SQL
+   * rule (`siteJourneyCte`) — the same rows the customer's own site list
+   * publishes, so the roll-up on a list row cannot disagree with the sites
+   * behind it. Grouped by customer; a customer with no site has no entry.
+   */
+  async getSiteJourneysByCustomerIds(
+    customerIds: string[],
+  ): Promise<Map<string, SiteJourneyRow[]>> {
+    const byCustomer = new Map<string, SiteJourneyRow[]>();
+    if (customerIds.length === 0) {
+      return byCustomer;
+    }
+
+    const rows = await this.repository.manager.query<SiteJourneyRow[]>(
+      `WITH ${siteJourneyCte({ customerIdsParam: '$1' })}
+       SELECT ${SITE_JOURNEY_COLUMNS} FROM site_journey sj`,
+      [customerIds],
+    );
+
+    for (const row of rows) {
+      const bucket = byCustomer.get(row.customerId);
+      if (bucket) bucket.push(row);
+      else byCustomer.set(row.customerId, [row]);
+    }
+    return byCustomer;
+  }
+
+  /**
+   * Follow-up state for a page of customers, in one query.
+   *
+   * `needsFollowup` is the SHARED predicate, evaluated per row — the list's
+   * "Needs follow-up" filter embeds the same text, so a row and the filter that
+   * returned it cannot disagree.
+   *
+   * The next follow-up is looked for on the customer itself and on its sites
+   * that are not deleted; a follow-up left behind on a deleted site is not
+   * something anyone can act on from this row.
+   */
+  async getFollowupStateByCustomerIds(
+    customerIds: string[],
+  ): Promise<Map<string, CustomerFollowupState>> {
+    if (customerIds.length === 0) {
+      return new Map();
+    }
+
+    const rows = await this.repository.manager.query<
+      Array<{ id: string; needs_followup: boolean } & NextFollowupColumns>
+    >(
+      `
+      SELECT c.id,
+             (${CUSTOMER_NEEDS_FOLLOWUP('c')}) AS needs_followup,
+             ${NEXT_FOLLOWUP_COLUMNS}
+        FROM customer_profiles c
+        LEFT JOIN LATERAL (${nextPendingFollowupSql(`
+               f.customer_id = c.id
+           AND (f.property_id IS NULL OR EXISTS (
+                 SELECT 1 FROM customer_properties site
+                  WHERE site.id = f.property_id
+                    AND site.customer_id = c.id
+                    AND site.deleted_at IS NULL))`)}) nf ON true
+       WHERE c.id = ANY($1::uuid[])
+      `,
+      [customerIds],
+    );
+
+    return new Map(
+      rows.map((row) => [
+        row.id,
+        {
+          needsFollowup: row.needs_followup,
+          pendingFollowupCount: row.pending_count,
+          nextFollowup: toNextFollowup(row),
+        },
+      ]),
+    );
   }
 
   /**

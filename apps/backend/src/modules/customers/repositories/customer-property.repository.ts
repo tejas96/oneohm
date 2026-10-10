@@ -14,6 +14,14 @@ import { PROPERTY_NEEDS_FOLLOWUP } from './followup-predicates';
 import { systemSizeKwSql } from '../../../common/utils/transform.util';
 import { PropertyQueryDto } from '../dto/property-query.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
+import {
+  NEXT_FOLLOWUP_COLUMNS,
+  nextPendingFollowupSql,
+  toNextFollowup,
+  type NextFollowupColumns,
+  type NextFollowupRow,
+} from '../sql/next-followup.sql';
+import { SITE_JOURNEY_COLUMNS, siteJourneyCte, type SiteJourneyRow } from '../sql/site-journey.sql';
 
 /**
  * A converted site's live contract, and how it splits.
@@ -374,29 +382,56 @@ export class CustomerPropertyRepository {
    * Batched like the other enrichments here; a per-row query would be N+1
    * across a customer's whole portfolio. "Next" stays derived — nothing is
    * stored on the property.
+   *
+   * `next` is the follow-up `nextAt` belongs to (the shared "next follow-up"
+   * rule), for the screens that say what is due and who owes it.
    */
   async findFollowupStateByPropertyIds(
     propertyIds: string[],
-  ): Promise<Map<string, { nextAt: Date | null; needsFollowup: boolean }>> {
+  ): Promise<
+    Map<string, { nextAt: Date | null; needsFollowup: boolean; next: NextFollowupRow | null }>
+  > {
     if (propertyIds.length === 0) return new Map();
 
-    const rows: Array<{ id: string; next_at: Date | null; needs_followup: boolean }> =
-      await this.repository.manager.query(
-        `
+    const rows: Array<
+      { id: string; next_at: Date | null; needs_followup: boolean } & NextFollowupColumns
+    > = await this.repository.manager.query(
+      `
       SELECT p.id,
              (SELECT MIN(f.scheduled_at) FROM followups f
                WHERE f.property_id = p.id AND f.deleted_at IS NULL AND f.status = 'pending')
                AS next_at,
-             (${PROPERTY_NEEDS_FOLLOWUP('p')}) AS needs_followup
+             (${PROPERTY_NEEDS_FOLLOWUP('p')}) AS needs_followup,
+             ${NEXT_FOLLOWUP_COLUMNS}
         FROM customer_properties p
+        LEFT JOIN LATERAL (${nextPendingFollowupSql('f.property_id = p.id')}) nf ON true
        WHERE p.id = ANY($1::uuid[])
       `,
-        [propertyIds],
-      );
+      [propertyIds],
+    );
 
     return new Map(
-      rows.map((row) => [row.id, { nextAt: row.next_at, needsFollowup: row.needs_followup }]),
+      rows.map((row) => [
+        row.id,
+        { nextAt: row.next_at, needsFollowup: row.needs_followup, next: toNextFollowup(row) },
+      ]),
     );
+  }
+
+  /**
+   * Where each site stands on its journey — stage, lost, why, meter installed —
+   * from the one SQL rule (`siteJourneyCte`). A deleted site has no row.
+   */
+  async findSiteJourneyByPropertyIds(propertyIds: string[]): Promise<Map<string, SiteJourneyRow>> {
+    if (propertyIds.length === 0) return new Map();
+
+    const rows = await this.repository.manager.query<SiteJourneyRow[]>(
+      `WITH ${siteJourneyCte({ propertyIdsParam: '$1' })}
+       SELECT ${SITE_JOURNEY_COLUMNS} FROM site_journey sj`,
+      [propertyIds],
+    );
+
+    return new Map(rows.map((row) => [row.propertyId, row]));
   }
 
   async countByTemperature(temperature: LeadTemperature): Promise<number> {

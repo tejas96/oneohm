@@ -5,3 +5,4 @@ export * from './change-request.types';
 export * from './iam.types';
 export * from './projects-dashboard';
 export * from './quotes-dashboard';
+export * from './site-journey';

@@ -10,10 +10,12 @@ import {
 } from '@tanstack/react-query';
 import {
   ConnectionType,
+  type CustomerJourney,
   CustomerSortField,
   CustomerStatus,
   LeadSource,
   LeadTemperature,
+  type NextFollowup,
   type PaginationMeta,
   PropertyStatus,
   PropertyType,
@@ -156,6 +158,19 @@ export interface Customer {
   followupAssignees?: FollowupAssignee[];
   /** Only the customer's own followups — what the row shows once expanded. */
   ownFollowupAssignees?: FollowupAssignee[];
+  /**
+   * The four below are on list responses only; single-customer reads omit them.
+   *
+   * Where the customer's sites stand on the six steps (`SITE_JOURNEY_STEPS`).
+   * Computed by the backend's one SQL rule — read it, never re-derive a stage.
+   */
+  journey?: CustomerJourney;
+  /** The list's "needs follow-up" predicate, evaluated for this row. */
+  needsFollowup?: boolean;
+  /** Pending follow-ups on the customer and its sites. */
+  pendingFollowupCount?: number;
+  /** The earliest of those; null when nothing is pending. */
+  nextFollowup?: NextFollowup | null;
 }
 
 export interface CustomerListResponse {

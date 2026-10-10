@@ -3,6 +3,7 @@ import { CustomerStatus } from '@tejas96/shared/types';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { CustomerPropertyResponseDto } from './customer-property-response.dto';
+import { NextFollowupDto } from './next-followup.dto';
 import { toNum } from '../../../common/utils';
 
 /**
@@ -53,6 +54,49 @@ export class SitePortfolioDto {
   @Expose()
   @Transform(({ value }) => toNum(value) ?? 0)
   totalPortfolioAmount!: number;
+}
+
+/**
+ * A customer's sites rolled up onto the six-step journey (Lead captured →
+ * Survey done → Quote drafted → Quote sent → Won → Commissioned).
+ *
+ * Rolled up from the per-site rows of the one SQL rule
+ * (`sql/site-journey.sql.ts`), the same rows the customer's site list
+ * publishes. Mirrors `CustomerJourney` in the shared types.
+ */
+@Exclude()
+export class CustomerJourneyDto {
+  @ApiProperty({ description: 'Non-deleted sites; 0 means no site yet' })
+  @Expose()
+  siteCount!: number;
+
+  @ApiProperty({
+    description:
+      'Step reached, 0–5: the highest among sites still in play, or — when lost — ' +
+      'the highest any site reached',
+    minimum: 0,
+    maximum: 5,
+  })
+  @Expose()
+  stageIndex!: number;
+
+  @ApiProperty({
+    description: 'Every site is lost, or the customer is marked lost and has sites',
+  })
+  @Expose()
+  lost!: boolean;
+
+  @ApiProperty({
+    type: [Number],
+    description: 'Sites still in play at each of the six steps',
+    example: [0, 1, 0, 2, 1, 0],
+  })
+  @Expose()
+  stageCounts!: number[];
+
+  @ApiProperty({ description: 'Sites that are lost' })
+  @Expose()
+  lostSites!: number;
 }
 
 /**
@@ -275,6 +319,45 @@ export class CustomerResponseDto {
   @Expose()
   @Type(() => FollowupAssigneeDto)
   ownFollowupAssignees?: FollowupAssigneeDto[];
+
+  /**
+   * The four below are on list responses only, computed for the page's
+   * customers in two queries. Single-customer reads omit them.
+   */
+  @ApiPropertyOptional({
+    type: () => CustomerJourneyDto,
+    description: 'Where this customer’s sites stand on the six-step journey (list responses only)',
+  })
+  @Expose()
+  @Type(() => CustomerJourneyDto)
+  journey?: CustomerJourneyDto;
+
+  /**
+   * The same predicate the list's "needs follow-up" filter applies, evaluated
+   * for this row — so a row and the filter that returned it cannot disagree.
+   */
+  @ApiPropertyOptional({
+    description:
+      'An open site, or a site-less lead, with no pending followup (list responses only)',
+  })
+  @Expose()
+  needsFollowup?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Pending followups on this customer and its non-deleted sites (list responses only)',
+  })
+  @Expose()
+  pendingFollowupCount?: number;
+
+  @ApiPropertyOptional({
+    type: () => NextFollowupDto,
+    nullable: true,
+    description: 'The earliest of those; null when nothing is pending (list responses only)',
+  })
+  @Expose()
+  @Type(() => NextFollowupDto)
+  nextFollowup?: NextFollowupDto | null;
 
   @ApiPropertyOptional({
     type: [String],

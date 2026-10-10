@@ -18,6 +18,7 @@ import {
   type PropertyDocument,
   PropertyStatus,
   QuoteStatus,
+  type SiteJourney,
   SiteStatus,
   type TaskRuleSyncResult,
 } from '@tejas96/shared/types';
@@ -54,6 +55,7 @@ import {
   type FollowupAssignee,
   type FollowupAssigneeRow,
 } from '../repositories/followup.repository';
+import type { NextFollowupRow } from '../sql/next-followup.sql';
 import {
   mergeChangeRequestsForUpdate,
   normalizeChangeRequestsForStorage,
@@ -108,7 +110,9 @@ type PropertyWithQuoteInfo = CustomerPropertyEntity & {
   changeOrderValue?: number;
   nextFollowupAt?: Date;
   needsFollowup?: boolean;
-};
+  /** The follow-up `nextFollowupAt` belongs to; null when nothing is pending. */
+  nextFollowup?: NextFollowupRow | null;
+} & Partial<SiteJourney>;
 
 /**
  * Customer Property Service
@@ -432,6 +436,10 @@ export class CustomerPropertyService {
     const projectMap = await this.propertyRepository.findProjectsByPropertyIds(propertyIds);
     const followupStateMap =
       await this.propertyRepository.findFollowupStateByPropertyIds(propertyIds);
+    // The stage each site has reached. Computed by the one SQL rule, never from
+    // the quote and project fields above — the customer list rolls up these
+    // same rows, and a second derivation is how the two would drift apart.
+    const journeyMap = await this.propertyRepository.findSiteJourneyByPropertyIds(propertyIds);
 
     // Enrich properties with quote data
     // One query for the whole expanded row, not one per site.
@@ -448,6 +456,8 @@ export class CustomerPropertyService {
     return properties.map((property) => {
       const quoteInfo = quoteMap.get(property.id);
       const contract = contractMap.get(property.id);
+      const followupState = followupStateMap.get(property.id);
+      const journey = journeyMap.get(property.id);
       return {
         ...property,
         projectId: projectMap.get(property.id)?.id,
@@ -468,8 +478,15 @@ export class CustomerPropertyService {
           totalWattageWp: quoteInfo?.totalWattageWp,
         }),
         followupAssignees: rollUpAssignees(assigneesByProperty.get(property.id) ?? []),
-        nextFollowupAt: followupStateMap.get(property.id)?.nextAt ?? undefined,
-        needsFollowup: followupStateMap.get(property.id)?.needsFollowup ?? false,
+        nextFollowupAt: followupState?.nextAt ?? undefined,
+        needsFollowup: followupState?.needsFollowup ?? false,
+        nextFollowup: followupState?.next ?? null,
+        stageIndex: journey?.stageIndex ?? 0,
+        lost: journey?.lost ?? false,
+        // Its own key: the entity's `lostReason` (what a person typed when
+        // closing the site) is an existing field and must keep its meaning.
+        journeyLostReason: journey?.lostReason ?? null,
+        meterInstalled: journey?.meterInstalled ?? false,
       };
     });
   }

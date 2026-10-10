@@ -18,6 +18,7 @@ import {
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { FollowupAssigneeDto } from './customer-response.dto';
+import { NextFollowupDto } from './next-followup.dto';
 import { PropertyDocumentDto } from './property-document.dto';
 import { toDto, toNum } from '../../../common/utils';
 import { DiscomResponseDto } from '../../discoms/dto/discom-response.dto';
@@ -569,4 +570,59 @@ export class CustomerPropertyResponseDto {
   @Expose()
   @ApiPropertyOptional({ description: 'Open site with no pending followup' })
   needsFollowup?: boolean;
+
+  /**
+   * The follow-up `nextFollowupAt` belongs to — what is due and who owes it.
+   * Null when nothing is pending; absent on endpoints that do not compute it
+   * (only the customer's site list does).
+   */
+  @Expose()
+  @ApiPropertyOptional({
+    type: () => NextFollowupDto,
+    nullable: true,
+    description: 'Earliest pending followup on this site (customer site list only)',
+  })
+  @Type(() => NextFollowupDto)
+  nextFollowup?: NextFollowupDto | null;
+
+  // ==================== Site Journey (one SQL rule — sql/site-journey.sql.ts) ====================
+
+  /**
+   * The four below are present on the customer's site list only. They come from
+   * the one SQL rule the customer list rolls up, so a client must read them and
+   * never work a stage out from the quote and project fields above.
+   */
+  @Expose()
+  @ApiPropertyOptional({
+    description:
+      'Step reached, 0–5: Lead captured, Survey done, Quote drafted, Quote sent, Won, Commissioned',
+    minimum: 0,
+    maximum: 5,
+  })
+  stageIndex?: number;
+
+  @Expose()
+  @ApiPropertyOptional({
+    description:
+      'Out of play: the site is lost, its project is cancelled, or its quote was rejected. ' +
+      'stageIndex still says where it stopped.',
+  })
+  lost?: boolean;
+
+  /**
+   * One line for "why". Not `lostReason` above, which is only what a person
+   * typed when closing the site: this also covers a cancelled project and a
+   * rejected quote, where the site itself was never closed.
+   */
+  @Expose()
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'Why the site is out of play; null when not lost or no reason was recorded',
+  })
+  journeyLostReason?: string | null;
+
+  @Expose()
+  @ApiPropertyOptional({ description: 'The site’s project has its net meter installed' })
+  meterInstalled?: boolean;
 }
