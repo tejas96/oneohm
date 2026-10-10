@@ -15,6 +15,7 @@ import {
   IsEnum,
   IsIn,
   IsInt,
+  IsISO8601,
   IsOptional,
   IsString,
   IsUUID,
@@ -26,9 +27,14 @@ import {
   ValidateIf,
 } from 'class-validator';
 
+/**
+ * Shape only. Each day filter also carries `@IsISO8601({ strict: true })`, which
+ * refuses a day that is not on the calendar (2026-13-45, 2026-02-30) — without
+ * it the value reaches `CAST(… AS date)` and the query fails with a 500.
+ */
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
-/** Deal facts compare against `lower(btrim(lead_source))`, so the filter value is normalised the same way. */
+/** Deal facts compare against the lower-cased, whitespace-trimmed lead source, so the filter value is normalised the same way. */
 const normaliseLeadSource = (v: unknown): unknown =>
   typeof v === 'string' ? v.trim().toLowerCase() : v;
 
@@ -205,31 +211,37 @@ export class QuoteQueryDto {
   })
   @IsOptional()
   @Matches(ISO_DAY)
+  @IsISO8601({ strict: true })
   newFrom?: string;
 
   @ApiPropertyOptional({ example: '2026-10-31' })
   @IsOptional()
   @Matches(ISO_DAY)
+  @IsISO8601({ strict: true })
   newTo?: string;
 
   @ApiPropertyOptional({ example: '2026-10-01', description: 'Accepted date, from (IST day)' })
   @IsOptional()
   @Matches(ISO_DAY)
+  @IsISO8601({ strict: true })
   wonFrom?: string;
 
   @ApiPropertyOptional({ example: '2026-10-31' })
   @IsOptional()
   @Matches(ISO_DAY)
+  @IsISO8601({ strict: true })
   wonTo?: string;
 
   @ApiPropertyOptional({ example: '2026-10-01', description: 'Lost date, from (IST day)' })
   @IsOptional()
   @Matches(ISO_DAY)
+  @IsISO8601({ strict: true })
   lostFrom?: string;
 
   @ApiPropertyOptional({ example: '2026-10-31' })
   @IsOptional()
   @Matches(ISO_DAY)
+  @IsISO8601({ strict: true })
   lostTo?: string;
 
   // ==================== Sorting ====================
