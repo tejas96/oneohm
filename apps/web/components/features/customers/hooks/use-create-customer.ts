@@ -1,6 +1,11 @@
 'use client';
 
-import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQueryClient,
+  type QueryClient,
+  type UseMutationResult,
+} from '@tanstack/react-query';
 import { LeadSource } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -19,7 +24,24 @@ export const customerKeys = {
   list: (filters: Record<string, unknown>) => [...customerKeys.lists(), filters] as const,
   details: () => [...customerKeys.all(), 'detail'] as const,
   detail: (id: string) => [...customerKeys.details(), id] as const,
+  /** Per-status counts (the ribbon). */
+  stats: () => [...customerKeys.all(), 'stats'] as const,
+  /** Company-wide roll-up: customers, sites, needs follow-up. */
+  overview: () => [...customerKeys.all(), 'overview'] as const,
 };
+
+/**
+ * Everything the customers list page shows that a change to a customer or one
+ * of its sites can move: the rows (journey, follow-up, value), the ribbon's
+ * status counts and the needs-follow-up count. Call it from every mutation
+ * that closes, reopens or deletes a site or deletes a customer — otherwise the
+ * row behind an open focus panel keeps saying what was true before.
+ */
+export function invalidateCustomerListData(queryClient: QueryClient): void {
+  void queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
+  void queryClient.invalidateQueries({ queryKey: customerKeys.stats() });
+  void queryClient.invalidateQueries({ queryKey: customerKeys.overview() });
+}
 
 // ============================================================================
 // Types
