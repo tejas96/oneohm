@@ -60,7 +60,10 @@ import { QuoteRepository } from '../repositories';
 import type { UploadedPdfFile } from '../types/uploaded-pdf-file.interface';
 
 /** A quote list row: the quote plus its deal stage, set when it is its property's deal quote. */
-type QuoteListEntity = QuoteEntity & { dealStage?: DealStage | null };
+type QuoteListEntity = QuoteEntity & {
+  dealStage?: DealStage | null;
+  createdByName?: string | null;
+};
 
 /**
  * Quote Service
@@ -218,8 +221,14 @@ export class QuoteService {
   async findAll(query: QuoteQueryDto): Promise<{ data: QuoteListEntity[]; total: number }> {
     const [quotes, total] = await this.quoteRepository.findWithFilters(query);
     const stages = await this.quoteRepository.findDealStages(quotes.map((q) => q.id));
+    const names = await this.quoteRepository.findUserNames([
+      ...new Set(quotes.map((q) => q.createdBy).filter(Boolean)),
+    ]);
     const data: QuoteListEntity[] = quotes.map((quote) =>
-      Object.assign(quote, { dealStage: stages.get(quote.id) ?? null }),
+      Object.assign(quote, {
+        dealStage: stages.get(quote.id) ?? null,
+        createdByName: names.get(quote.createdBy) ?? null,
+      }),
     );
     return { data, total };
   }

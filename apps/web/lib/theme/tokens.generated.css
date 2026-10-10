@@ -178,13 +178,13 @@
   --crm-col-followup-assignees: 108px;
   --crm-col-creator: minmax(122px,1fr);
   --crm-col-actions: 40px;
-  --crm-col-quote-number: 208px;
+  --crm-col-quote-customer: minmax(240px,1.6fr);
   --crm-col-quote-property: minmax(120px,1fr);
   --crm-col-quote-system: 88px;
   --crm-col-quote-value: 112px;
-  --crm-col-quote-stage: 112px;
-  --crm-col-quote-status: 136px;
-  --crm-col-quote-date: 108px;
+  --crm-col-quote-stage: 120px;
+  --crm-col-quote-made-by: minmax(120px,1fr);
+  --crm-col-quote-dates: 132px;
   --crm-col-approval-request: 152px;
   --crm-col-approval-date: 96px;
   --crm-col-approval-type: 124px;

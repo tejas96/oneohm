@@ -105,6 +105,8 @@ export interface QuoteListItem {
   createdAt: string;
   updatedAt: string;
   createdBy: string;
+  /** Name of the person who made the quote (list only). */
+  createdByName?: string | null;
   actualSystemSizeKw?: number;
   /** The deal's stage (list only); null when this quote is not its property's deal quote. */
   dealStage?: DealStage | null;

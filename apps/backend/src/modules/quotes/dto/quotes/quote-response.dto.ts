@@ -290,6 +290,14 @@ export class QuoteResponseDto {
   @Expose()
   dealStage?: DealStage | null;
 
+  @ApiPropertyOptional({
+    example: 'Asha Patil',
+    nullable: true,
+    description: 'Name of the person who made the quote (list only)',
+  })
+  @Expose()
+  createdByName?: string | null;
+
   @ApiPropertyOptional({ example: 'High priority customer' })
   @Expose()
   internalNotes?: string;

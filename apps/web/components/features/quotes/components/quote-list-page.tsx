@@ -6,16 +6,7 @@ import AlertIcon from '@mui/icons-material/ErrorOutline';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import UploadIcon from '@mui/icons-material/Upload';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import {
-  Box,
-  Button,
-  IconButton,
-  Link as MuiLink,
-  ListItemIcon,
-  Menu,
-  MenuItem,
-  Stack,
-} from '@mui/material';
+import { Box, Button, IconButton, ListItemIcon, Menu, MenuItem, Stack } from '@mui/material';
 import { type DealStage, QuoteStatus } from '@tejas96/shared/types';
 import {
   DEAL_ATTENTION_LABELS,
@@ -25,13 +16,12 @@ import {
   indiaToday,
   leadSourceLabel,
 } from '@tejas96/shared/utils';
-import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, type MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { QUOTE_STATUS_LABELS } from '../constants';
 import { useDeleteQuote, type QuoteListItem } from '../hooks';
-import { QuoteStatusDropdown } from './quote-status-dropdown';
+import { type BadgeVariant, QuoteStatusDropdown } from './quote-status-dropdown';
 import { VoidQuoteDialog } from './void-quote-dialog';
 
 import { useEmployees } from '@/components/features/projects/hooks/use-employees';
@@ -40,7 +30,6 @@ import { CrmTable, type CrmColumn } from '@/components/shared/crm-table';
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
 import { MUIDateRangePicker } from '@/components/ui';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
-import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { showToast } from '@/components/ui/sonner';
 import { SystemSizeDisplay } from '@/components/ui/system-size-display';
@@ -52,7 +41,7 @@ import {
   type QuoteListFilters,
 } from '@/lib/hooks/resources';
 import { useGatedAction } from '@/lib/rbac';
-import { crm } from '@/lib/theme/tokens';
+import { color, crm } from '@/lib/theme/tokens';
 import { formatBusinessDate, formatCurrency, formatLocalDate, getErrorMessage } from '@/lib/utils';
 
 // The filter panel's ColumnConfig requires TRow extends Record<string, unknown>.
@@ -331,31 +320,14 @@ function RowActionsMenu({ quote }: { quote: QuoteRow }): JSX.Element {
   );
 }
 
-// ============================================================================
-// Stage cell — a calm dot + label, the same colors as the dashboard's stage blocks
-// ============================================================================
-
-const STAGE_TONE: Record<DealStage, string> = {
-  drafting: 'var(--ds-neutral-300)',
-  waiting: 'var(--ds-primary-light)',
-  quiet: 'var(--ds-danger)',
-  won: 'var(--ds-primary)',
-  lost: 'var(--ds-neutral-300)',
+/** Badge color for each deal stage, matching the dashboard's stage blocks. */
+const STAGE_VARIANT: Record<DealStage, BadgeVariant> = {
+  drafting: 'muted',
+  waiting: 'info',
+  quiet: 'error',
+  won: 'success',
+  lost: 'muted',
 };
-
-function StageCell({ stage }: { stage: DealStage | null | undefined }): JSX.Element {
-  if (!stage) return <MUITypography variant="placeholder">-</MUITypography>;
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-foreground-secondary">
-      <span
-        aria-hidden="true"
-        className="inline-block size-2 rounded-full"
-        style={{ background: STAGE_TONE[stage] }}
-      />
-      {DEAL_STAGE_LABELS[stage]}
-    </span>
-  );
-}
 
 // ============================================================================
 // Column definitions (module-level — never recreated on render)
@@ -363,39 +335,30 @@ function StageCell({ stage }: { stage: DealStage | null | undefined }): JSX.Elem
 
 const CRM_COLUMNS: CrmColumn<QuoteRow>[] = [
   {
-    field: 'quoteNumber',
-    header: 'Quote #',
-    track: crm['col-quote-number'],
-    // Not sortable: the API has no quote-number sort, so the arrow would do nothing.
-    // A little left padding (header moves with it) so the code is not flush with the card edge.
-    cellSx: { ...CELL_GUTTER, pl: 0.5 },
-    renderCell: (row) => (
-      <MuiLink
-        component={NextLink}
-        href={buildRoute(ROUTES.QUOTES.DETAIL, { id: row.id })}
-        prefetch={false}
-        underline="hover"
-        onClick={(e) => e.stopPropagation()}
-        sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}
-      >
-        {row.quoteNumber}
-      </MuiLink>
-    ),
-  },
-  {
     field: 'customerName',
     header: 'Customer',
-    track: crm['col-customer'],
+    track: crm['col-quote-customer'],
     sortable: true,
-    cellSx: CELL_GUTTER,
+    // A little left padding (header moves with it) so the avatar is not flush with the card edge.
+    cellSx: { ...CELL_GUTTER, pl: 0.5 },
     renderCell: (row) => {
       const name = row.customerName ?? 'Unknown';
       return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
           <MUIAvatar name={name} size="sm" sx={{ flexShrink: 0 }} />
-          <MUITypography variant="bodyPrimary" noWrap sx={{ fontWeight: 500 }}>
-            {name}
-          </MUITypography>
+          <Box sx={{ minWidth: 0 }}>
+            <MUITypography variant="bodyPrimary" noWrap title={name} sx={{ fontWeight: 500 }}>
+              {name}
+            </MUITypography>
+            <MUITypography
+              variant="finePrint"
+              noWrap
+              title={row.quoteNumber}
+              sx={{ display: 'block', color: color['text-tertiary'] }}
+            >
+              {row.quoteNumber}
+            </MUITypography>
+          </Box>
         </Box>
       );
     },
@@ -435,13 +398,8 @@ const CRM_COLUMNS: CrmColumn<QuoteRow>[] = [
     field: 'dealStage',
     header: 'Stage',
     track: crm['col-quote-stage'],
-    renderCell: (row) => <StageCell stage={row.dealStage} />,
-  },
-  {
-    field: 'status',
-    header: 'Status',
-    track: crm['col-quote-status'],
     stopPropagation: true,
+    // The badge reads as the deal stage; the dropdown still changes the quote's status.
     renderCell: (row) => (
       <QuoteStatusDropdown
         quoteId={row.id}
@@ -449,37 +407,49 @@ const CRM_COLUMNS: CrmColumn<QuoteRow>[] = [
         voidedAt={row.voidedAt}
         voidReason={row.voidReason}
         size="xs"
+        label={row.dealStage ? DEAL_STAGE_LABELS[row.dealStage] : undefined}
+        variant={row.dealStage ? STAGE_VARIANT[row.dealStage] : undefined}
       />
     ),
   },
   {
-    field: 'createdAt',
-    header: 'Created',
-    track: crm['col-quote-date'],
-    sortable: true,
-    renderCell: (row) =>
-      row.createdAt ? (
-        <MUITypography variant="body" sx={{ whiteSpace: 'nowrap' }}>
-          {formatBusinessDate(row.createdAt)}
-        </MUITypography>
-      ) : (
-        <MUITypography variant="placeholder">-</MUITypography>
-      ),
+    field: 'createdByName',
+    header: 'Made by',
+    track: crm['col-quote-made-by'],
+    cellSx: CELL_GUTTER,
+    renderCell: (row) => (
+      <MUITypography variant="body" noWrap title={row.createdByName ?? undefined}>
+        {row.createdByName ?? '-'}
+      </MUITypography>
+    ),
   },
   {
-    field: 'validUntil',
-    header: 'Valid until',
-    track: crm['col-quote-date'],
+    field: 'createdAt',
+    header: 'Dates',
+    track: crm['col-quote-dates'],
     sortable: true,
     renderCell: (row) => {
-      if (!row.validUntil) return <MUITypography variant="placeholder">-</MUITypography>;
+      if (!row.createdAt) return <MUITypography variant="placeholder">-</MUITypography>;
       // Same rule as the deal stage: valid through the whole of its last IST day.
-      const isExpired = row.validUntil.slice(0, 10) < indiaToday();
+      const isExpired = Boolean(row.validUntil) && row.validUntil.slice(0, 10) < indiaToday();
       return (
-        <MUIStatusChip
-          label={formatBusinessDate(row.validUntil)}
-          color={isExpired ? 'error' : 'default'}
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <MUITypography variant="body" sx={{ whiteSpace: 'nowrap' }}>
+            {formatBusinessDate(row.createdAt)}
+          </MUITypography>
+          {row.validUntil && (
+            <MUITypography
+              variant="finePrint"
+              sx={{
+                display: 'block',
+                whiteSpace: 'nowrap',
+                color: isExpired ? 'error.main' : color['text-tertiary'],
+              }}
+            >
+              valid till {formatBusinessDate(row.validUntil)}
+            </MUITypography>
+          )}
+        </Box>
       );
     },
   },
@@ -922,6 +892,7 @@ export function QuoteListPage(): JSX.Element {
         onPageSizeChange={urlState.setPageSize}
         onRowClick={(row) => void router.push(buildRoute(ROUTES.QUOTES.DETAIL, { id: row.id }))}
         itemLabel="quotes"
+        gridMinWidth="1000px"
         renderEmptyState={renderEmptyState}
       />
     </Box>

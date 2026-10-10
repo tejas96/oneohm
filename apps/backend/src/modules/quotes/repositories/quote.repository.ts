@@ -294,6 +294,16 @@ export class QuoteRepository {
     );
   }
 
+  /** Display names for the given user ids; users with no name are absent. */
+  async findUserNames(ids: string[]): Promise<Map<string, string>> {
+    if (ids.length === 0) return new Map();
+    const rows: { id: string; name: string | null }[] = await this.repository.query(
+      `SELECT id, NULLIF(TRIM(regexp_replace(CONCAT_WS(' ', first_name, last_name), '\\s+', ' ', 'g')), '') AS name FROM users WHERE id = ANY($1::uuid[])`,
+      [ids],
+    );
+    return new Map(rows.flatMap((r) => (r.name ? [[r.id, r.name] as [string, string]] : [])));
+  }
+
   /**
    * Has this roof ever been quoted at all — voided quotes included.
    *
