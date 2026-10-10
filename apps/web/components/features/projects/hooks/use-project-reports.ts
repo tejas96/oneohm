@@ -9,13 +9,11 @@ import { projectKeys } from './use-projects';
 
 import { customerKeys } from '@/components/features/customers/hooks/use-create-customer';
 import { propertyKeys } from '@/components/features/properties/hooks/property-keys';
-import { getReportsPending, getReportWorkspace, updateReportFacts } from '@/lib/api/reports';
+import { getReportWorkspace, updateReportFacts } from '@/lib/api/reports';
 
 export const projectReportKeys = {
   all: () => ['project-reports'] as const,
   byProject: (projectId: string) => [...projectReportKeys.all(), projectId] as const,
-  pending: (projectIds: string[]) =>
-    [...projectReportKeys.all(), 'pending', [...projectIds].sort().join(',')] as const,
   saveFacts: (projectId: string) => [...projectReportKeys.all(), 'save-facts', projectId] as const,
 };
 
@@ -63,7 +61,6 @@ export function useUpdateReportFacts(projectId: string) {
       if (!overlapped.current) {
         queryClient.setQueryData(projectReportKeys.byProject(projectId), workspace);
       }
-      void queryClient.invalidateQueries({ queryKey: [...projectReportKeys.all(), 'pending'] });
 
       if (!Object.keys(facts).some((key) => getFact(key)?.edit)) return;
       void queryClient.invalidateQueries({ queryKey: customerKeys.detail(workspace.customerId) });
@@ -77,14 +74,5 @@ export function useUpdateReportFacts(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: projectReportKeys.byProject(projectId) });
       if (inFlight.current === 0) overlapped.current = false;
     },
-  });
-}
-
-export function useReportsPending(projectIds: string[]): UseQueryResult<Record<string, number>> {
-  return useQuery({
-    queryKey: projectReportKeys.pending(projectIds),
-    queryFn: () => getReportsPending(projectIds),
-    enabled: projectIds.length > 0,
-    staleTime: 60_000,
   });
 }

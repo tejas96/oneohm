@@ -47,8 +47,3 @@ export async function fileReport(
   );
   return data;
 }
-
-export async function getReportsPending(projectIds: string[]): Promise<Record<string, number>> {
-  const { data } = await apiClient.post<Record<string, number>>('/reports/pending', { projectIds });
-  return data;
-}

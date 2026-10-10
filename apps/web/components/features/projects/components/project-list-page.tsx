@@ -1,6 +1,7 @@
 'use client';
 
 import AddIcon from '@mui/icons-material/Add';
+import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -9,17 +10,20 @@ import {
   Box,
   Button,
   IconButton,
-  LinearProgress,
   Link as MuiLink,
   ListItemIcon,
   Menu,
   MenuItem,
-  Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { ProjectPriority, ProjectStatus } from '@tejas96/shared/types';
-import { SIDE_TRACK_PHASES, STAGE_GROUP_KEYS, STAGE_GROUPS } from '@tejas96/shared/utils';
+import {
+  indiaToday,
+  SIDE_TRACK_PHASES,
+  STAGE_GROUP_KEYS,
+  STAGE_GROUPS,
+} from '@tejas96/shared/utils';
 import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, type MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
@@ -31,14 +35,7 @@ import {
   PROJECT_TYPE_LABELS,
   PROJECT_TYPE_OPTIONS,
 } from '../constants';
-import {
-  type ProjectFilters,
-  type ProjectListItem,
-  useEmployees,
-  useProjects,
-  useReportsPending,
-} from '../hooks';
-import { ReportsPendingChip } from './reports-pending-chip';
+import { type ProjectFilters, type ProjectListItem, useEmployees, useProjects } from '../hooks';
 import { TeamAvatarGroup } from './team-avatar-group';
 
 import { ActiveTicketsChip } from '@/components/features/service-tickets';
@@ -55,9 +52,7 @@ import {
 } from '@/components/shared/crm-table';
 import { MUIDateRangePicker } from '@/components/ui';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
-import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
-import { SystemSizeDisplay } from '@/components/ui/system-size-display';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
 import { useAllActiveWorkflowSteps } from '@/lib/hooks/resources';
@@ -66,9 +61,8 @@ import { color, crm } from '@/lib/theme/tokens';
 import {
   formatBusinessDate,
   formatCurrency,
-  formatDate,
   formatLocalDate,
-  formatRelativeDate,
+  formatSystemSize,
   getErrorMessage,
   toTitleLabel,
 } from '@/lib/utils';
@@ -361,114 +355,262 @@ function ProjectRowActionsMenu({ project }: { project: ProjectListItem }): JSX.E
 }
 
 // ============================================================================
+// Row building blocks
+// ============================================================================
+
+/**
+ * Every cell is two lines on one rhythm — a 20px fact over a 16px note — so
+ * the eye can run along a row, or down a column, without re-finding the
+ * baseline in each cell.
+ */
+const LINE_1_BASE = 'block truncate text-base leading-5';
+const LINE_2_BASE = 'block truncate text-xs leading-4';
+const LINE_1 = `${LINE_1_BASE} text-foreground`;
+const LINE_2 = `${LINE_2_BASE} text-foreground-tertiary`;
+/** Line one with nothing to report: a dash or "Not planned", never as dark as a real value. */
+const LINE_1_EMPTY = `${LINE_1_BASE} text-foreground-muted`;
+/** Holds the second line open when a cell has nothing to say there, so line one never drops to the middle. */
+const EMPTY_LINE_2 = (
+  <span className={LINE_2} aria-hidden="true">
+    &nbsp;
+  </span>
+);
+
+/** The grid has no column gap, so each cell keeps its own right gutter. */
+const CELL_GUTTER = { pr: 2, minWidth: 0 } as const;
+
+const PILL_PALETTE: Record<CrmTone, { ink: string; bg: string }> = {
+  neutral: { ink: color.neutral, bg: color['neutral-bg'] },
+  accent: { ink: color['accent-ink'], bg: color['accent-subtle'] },
+  success: { ink: color.success, bg: color['success-bg'] },
+  info: { ink: color.info, bg: color['info-bg'] },
+  warning: { ink: color.warning, bg: color['warning-bg'] },
+  danger: { ink: color.danger, bg: color['danger-bg'] },
+};
+
+/** Only a priority that asks for something gets a colour; the usual ones stay grey. */
+const PRIORITY_TONE: Record<string, CrmTone> = {
+  [ProjectPriority.LOW]: 'neutral',
+  [ProjectPriority.NORMAL]: 'neutral',
+  [ProjectPriority.HIGH]: 'warning',
+  [ProjectPriority.URGENT]: 'danger',
+};
+
+/** Status and priority beside the name: present on every row, never louder than it. */
+function QuietPill({ label, tone }: { label: string; tone: CrmTone }): JSX.Element {
+  const palette = PILL_PALETTE[tone];
+  return (
+    <span
+      className="inline-flex h-[18px] shrink-0 items-center rounded-pill px-1.5 text-2xs font-medium leading-none whitespace-nowrap"
+      style={{ color: palette.ink, backgroundColor: palette.bg }}
+    >
+      {label}
+    </span>
+  );
+}
+
+const RING_SIZE = 36;
+const RING_STROKE = 3;
+const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
+const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
+
+/** Progress as a ring: the same fact the old bar carried, in a third of the width. */
+function ProgressRing({ percent }: { percent: number }): JSX.Element {
+  // Starts empty and fills on the first frame, so the arc draws itself once.
+  const [drawn, setDrawn] = useState(0);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setDrawn(percent));
+    return () => cancelAnimationFrame(frame);
+  }, [percent]);
+
+  const centre = RING_SIZE / 2;
+  return (
+    <svg
+      role="img"
+      aria-label={`${percent}% complete`}
+      width={RING_SIZE}
+      height={RING_SIZE}
+      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+      className="shrink-0"
+    >
+      <circle
+        cx={centre}
+        cy={centre}
+        r={RING_RADIUS}
+        fill="none"
+        stroke="var(--ds-neutral-300)"
+        strokeWidth={RING_STROKE}
+      />
+      <circle
+        cx={centre}
+        cy={centre}
+        r={RING_RADIUS}
+        fill="none"
+        stroke="var(--ds-primary)"
+        strokeWidth={RING_STROKE}
+        strokeLinecap="round"
+        strokeDasharray={RING_LENGTH}
+        strokeDashoffset={RING_LENGTH * (1 - drawn / 100)}
+        transform={`rotate(-90 ${centre} ${centre})`}
+        className="transition-[stroke-dashoffset] duration-700 ease-out motion-reduce:transition-none"
+      />
+      <text
+        x={centre}
+        y={centre}
+        textAnchor="middle"
+        dominantBaseline="central"
+        className="fill-foreground-secondary font-semibold tabular-nums"
+        fontSize={10}
+      >
+        {percent}
+        <tspan fontSize={7}>%</tspan>
+      </text>
+    </svg>
+  );
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** `2026-09-14` → "14 Sep"; the year is added only when it is not this one. */
+function shortDay(day: string | undefined, today: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(day ?? '');
+  if (!match) return '-';
+  const [, year = '', month = '', date = ''] = match;
+  const label = `${Number(date)} ${MONTHS[Number(month) - 1] ?? ''}`;
+  return year === today.slice(0, 4) ? label : `${label} ’${year.slice(2)}`;
+}
+
+/** Whole calendar days from one `YYYY-MM-DD` to another. */
+function daysBetween(from: string, to: string): number {
+  const utc = (day: string): number => {
+    const [y = 0, m = 1, d = 1] = day.slice(0, 10).split('-').map(Number);
+    return Date.UTC(y, m - 1, d);
+  };
+  return Math.round((utc(to) - utc(from)) / 86_400_000);
+}
+
+const plural = (count: number, noun: string): string => `${count} ${noun}${count === 1 ? '' : 's'}`;
+
+// ============================================================================
 // Columns
 // ============================================================================
 
 /**
- * The cells are the ones this list has always had — only the wrapper changed.
- * `CrmColumn` takes the row directly where `ColumnConfig` took `{ row }`, and
- * sizing moved from a `width` number to a `crm['col-project-*']` track, so the
- * column-visibility menu can rebuild the grid template from exactly the tracks
- * that survive.
+ * Seven columns, each answering one question about the project: whose it is,
+ * how far along, how big, what it is worth, when, and who is on it. Sizing is a
+ * `crm['col-project-*']` track so the column-visibility menu can rebuild the
+ * grid template from exactly the tracks that survive.
  */
 const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
   {
+    // Still `projectNumber`: the sort key (project name) and any bookmarked sort
+    // in the URL hang off this field.
     field: 'projectNumber',
-    header: 'Project',
-    track: crm['col-project-name'],
+    header: 'Customer',
+    track: crm['col-project-customer'],
     sortable: true,
-    stopPropagation: true,
     hideable: false,
+    cellSx: { ...CELL_GUTTER, pl: 1 },
     renderCell: (row): JSX.Element => {
       const project = row as ProjectListItem;
+      const name = project.property.customerName || project.name;
+      const place = project.property.city || project.property.address;
+      const address = [project.property.address, project.property.city].filter(Boolean).join(', ');
+      const tickets = project.activeTicketCount;
+      const ticketLabel = `${tickets} active ${tickets === 1 ? 'ticket' : 'tickets'}`;
+      const status = project.status;
+      const priority = project.priority;
 
       return (
-        <Box sx={{ minWidth: 0 }}>
-          <MuiLink
-            component={NextLink}
-            href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id })}
-            underline="hover"
-            sx={{ display: 'block', fontWeight: 500, whiteSpace: 'nowrap', mb: 0.5 }}
-          >
-            {project.projectNumber}
-          </MuiLink>
-          {/* Wraps: status + priority + the ticket chip overflow 210px on one line. */}
-          <Stack
-            direction="row"
-            spacing={0.5}
-            rowGap={0.5}
-            alignItems="center"
-            flexWrap="wrap"
-            useFlexGap
-          >
-            <MUIStatusChip
-              label={PROJECT_STATUS_LABELS[project.status] ?? toTitleLabel(project.status)}
-              colorSeed={project.status}
-            />
-            <MUIStatusChip
-              label={PROJECT_PRIORITY_LABELS[project.priority] ?? toTitleLabel(project.priority)}
-              colorSeed={project.priority}
-            />
-            {/* Same component the customers list renders — do not restyle here. */}
-            <ActiveTicketsChip count={project.activeTicketCount} />
-            <ReportsPendingChip count={(row.reportsPending as number | undefined) ?? 0} />
-          </Stack>
-        </Box>
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <MUIAvatar name={name} size="md" sx={{ flexShrink: 0 }} />
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span className={`${LINE_1} font-medium`} title={name}>
+                {name}
+              </span>
+              <QuietPill
+                label={PROJECT_STATUS_LABELS[status] ?? toTitleLabel(status)}
+                tone={STATUS_TONE[status] ?? 'neutral'}
+              />
+              <QuietPill
+                label={PROJECT_PRIORITY_LABELS[priority] ?? toTitleLabel(priority)}
+                tone={PRIORITY_TONE[priority] ?? 'neutral'}
+              />
+              {tickets > 0 ? (
+                <span
+                  role="img"
+                  aria-label={ticketLabel}
+                  title={ticketLabel}
+                  className="inline-flex shrink-0"
+                  style={{ color: color.warning }}
+                >
+                  <BuildOutlinedIcon sx={{ fontSize: 14 }} />
+                </span>
+              ) : null}
+            </div>
+            <span
+              className={LINE_2}
+              title={[project.projectNumber, address].filter(Boolean).join(' · ')}
+            >
+              <span className="tabular-nums">{project.projectNumber}</span>
+              {place ? ` · ${place}` : ''}
+            </span>
+          </div>
+        </div>
       );
     },
   },
   {
-    field: 'customer',
-    header: 'Customer',
-    track: crm['col-project-customer'],
+    field: 'progressPercentage',
+    header: 'Progress',
+    track: crm['col-project-progress'],
+    sortable: true,
+    cellSx: CELL_GUTTER,
     renderCell: (row): JSX.Element => {
       const project = row as ProjectListItem;
-      const name = project.property.customerName ?? '';
-      if (!name) return <MUITypography variant="placeholder">-</MUITypography>;
-      const address = [project.property.address, project.property.city].filter(Boolean).join(', ');
-      const tooltipText = address ? `${name}\n${address}` : name;
+      const percent = Math.round(Math.min(100, Math.max(0, project.progressPercentage)));
+      const completed = project.completedTasks ?? 0;
+      const total = project.totalTasks ?? 0;
+      // Every step done: the Phase filter only matches live projects, so the cell
+      // must not name a phase it cannot be filtered by. A cancelled project was
+      // stopped, not finished, so it keeps its phase.
+      const allDone =
+        project.status !== ProjectStatus.CANCELLED && total > 0 && completed === total;
+      const phase = allDone ? 'All phases done' : project.currentPhase;
+
       return (
-        <Tooltip
-          title={<span style={{ whiteSpace: 'pre-line' }}>{tooltipText}</span>}
-          placement="bottom-start"
-          enterDelay={500}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, minWidth: 0 }}>
-            <MUIAvatar name={name} size="sm" sx={{ mt: 0.25, flexShrink: 0 }} />
-            <Box sx={{ minWidth: 0 }}>
-              <MUITypography variant="bodyPrimary" noWrap sx={{ fontWeight: 500 }}>
-                {name}
-              </MUITypography>
-              {address && (
-                <MUITypography
-                  variant="timestamp"
-                  sx={{
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                    whiteSpace: 'normal',
-                    wordBreak: 'break-word',
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {address}
-                </MUITypography>
-              )}
-            </Box>
-          </Box>
-        </Tooltip>
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <ProgressRing percent={percent} />
+          <div className="min-w-0 flex-1">
+            <span className={phase ? LINE_1 : LINE_1_EMPTY} title={phase ?? undefined}>
+              {phase ?? '-'}
+            </span>
+            <span className={`${LINE_2} tabular-nums`}>
+              {total > 0 ? `${completed} of ${plural(total, 'step')}` : 'No steps yet'}
+            </span>
+          </div>
+        </div>
       );
     },
   },
   {
     field: 'systemSizeKw',
-    header: 'System Size',
+    header: 'System',
     track: crm['col-project-size'],
     sortable: true,
+    cellSx: CELL_GUTTER,
     renderCell: (row): JSX.Element => {
-      const project = row as ProjectListItem;
-      return <SystemSizeDisplay kw={project.systemSizeKw} layout="stacked" />;
+      const { systemSizeKw, projectType } = row as ProjectListItem;
+      const type = PROJECT_TYPE_LABELS[projectType] ?? toTitleLabel(projectType);
+      return (
+        <div className="min-w-0 flex-1">
+          <span className={`${LINE_1} tabular-nums`}>{formatSystemSize(systemSizeKw)} kW</span>
+          <span className={LINE_2} title={type}>
+            {type}
+          </span>
+        </div>
+      );
     },
   },
   {
@@ -476,7 +618,9 @@ const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
     header: 'Contract',
     track: crm['col-project-contract'],
     sortable: true,
+    align: 'right',
     stopPropagation: true,
+    cellSx: { ...CELL_GUTTER, pr: 3 },
     /**
      * One number, one word, one source — for worth *and* for collection.
      *
@@ -487,13 +631,11 @@ const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
      * either screen explaining the gap. It now reads the same ledger view the
      * Money tab does, and says so with the same word.
      *
-     * The separate Payment column had the same disease one level down: it
-     * derived what was due as `totalExpected - totalPaid` (against the payment
-     * *schedule*) while this cell showed `outstanding` (against the *contract*).
-     * Those two agree only when the schedule covers the whole contract, so a
-     * project mid-way through change orders showed two different "due" figures
-     * on one row. Collection now comes from `outstanding` only, and the
-     * schedule figures moved into the tooltip where they can be read together.
+     * Collection comes from `outstanding` only (against the *contract*), never
+     * from `totalExpected - totalPaid` (against the payment *schedule*): those
+     * agree only when the schedule covers the whole contract. The schedule
+     * figures and the quote-to-contract gap live in the tooltip — the cell
+     * itself carries each figure once.
      */
     renderCell: (row): JSX.Element => {
       const project = row as ProjectListItem;
@@ -506,216 +648,106 @@ const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
       const quoted = project.estimatedCost ?? null;
 
       if (!contract) {
-        return <MUITypography variant="placeholder">-</MUITypography>;
+        return (
+          <div className="min-w-0 text-right">
+            <span className={LINE_1_EMPTY}>-</span>
+            {EMPTY_LINE_2}
+          </div>
+        );
       }
 
       // Only worth mentioning when the contract has actually moved off the quote.
       const changeOrders = quoted != null ? contract - quoted : 0;
       const hasChangeOrders = Math.abs(changeOrders) >= 0.01;
       const projectHref = buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id });
+      // "Paid in full" only when money actually came in and none is left owing —
+      // a zero balance with nothing collected is not a paid project.
+      const paidInFull = outstanding <= 0 && totalPaid > 0;
 
       return (
         <Tooltip
           title={
             <span style={{ whiteSpace: 'pre-line' }}>
               {[
-                `Contract ${formatCurrency(contract)}`,
                 `Paid ${formatCurrency(totalPaid)} of ${formatCurrency(totalExpected)} invoiced`,
-                `Outstanding ${formatCurrency(outstanding)}`,
-              ].join('\n')}
+                hasChangeOrders
+                  ? `Quote ${formatCurrency(quoted ?? 0)} ${changeOrders > 0 ? '+' : '−'} ${formatCurrency(Math.abs(changeOrders))} change orders`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join('\n')}
             </span>
           }
           placement="top"
           enterDelay={400}
         >
-          <Box>
+          <div className="min-w-0 text-right">
             <MuiLink
               component={NextLink}
               href={`${projectHref}?tab=finance`}
               underline="hover"
+              color="inherit"
               onClick={(e: MouseEvent) => e.stopPropagation()}
-              sx={{ display: 'block', fontWeight: 500, fontSize: '0.875rem', whiteSpace: 'nowrap' }}
+              className={`${LINE_1} font-medium tabular-nums`}
             >
               {formatCurrency(contract)}
             </MuiLink>
-
-            {hasChangeOrders && (
-              <MUITypography
-                variant="timestamp"
-                sx={{ display: 'block', color: 'text.disabled', whiteSpace: 'nowrap' }}
-              >
-                {`quote ${formatCurrency(quoted ?? 0)} ${changeOrders > 0 ? '+' : '−'} ${formatCurrency(Math.abs(changeOrders))}`}
-              </MUITypography>
+            {outstanding > 0 ? (
+              <span className={`${LINE_2_BASE} tabular-nums`} style={{ color: color.warning }}>
+                {formatCurrency(outstanding)} due
+              </span>
+            ) : paidInFull ? (
+              <span className={LINE_2_BASE} style={{ color: color.success }}>
+                paid in full
+              </span>
+            ) : (
+              EMPTY_LINE_2
             )}
-
-            <MUITypography
-              variant="timestamp"
-              sx={{
-                display: 'block',
-                whiteSpace: 'nowrap',
-                fontWeight: 600,
-                color: outstanding > 0 ? 'warning.main' : 'success.main',
-              }}
-            >
-              {outstanding > 0 ? `${formatCurrency(outstanding)} due` : 'Paid in full'}
-            </MUITypography>
-          </Box>
+          </div>
         </Tooltip>
       );
     },
   },
   {
-    field: 'progressPercentage',
-    header: 'Progress',
-    track: crm['col-project-progress'],
-    sortable: true,
-    /**
-     * The bar is the only cell that paints edge to edge, so the grid's 16px
-     * gutter reads as nothing between it and the Phase chip next door — the two
-     * looked joined. Ending the bar short of the track boundary restores the
-     * gap without widening the column or touching the shared gutter.
-     */
-    cellSx: { pr: 2.5 },
-    renderCell: (row): JSX.Element => {
-      const project = row as ProjectListItem;
-      const pct = Math.min(100, Math.max(0, project.progressPercentage));
-      const completed = project.completedTasks ?? 0;
-      const total = project.totalTasks ?? 0;
-      return (
-        <Box sx={{ minWidth: 0, width: '100%' }}>
-          <LinearProgress
-            variant="determinate"
-            value={pct}
-            sx={{ height: 6, borderRadius: 3, mb: 0.5 }}
-          />
-          <MUITypography variant="timestamp" sx={{ color: 'text.secondary' }}>
-            {pct}% · {completed}/{total} tasks
-          </MUITypography>
-        </Box>
-      );
-    },
-  },
-  {
-    field: 'currentPhase',
-    header: 'Phase',
-    track: crm['col-project-phase'],
-    renderCell: (row): JSX.Element => {
-      const { currentPhase: phase, totalTasks, completedTasks, status } = row as ProjectListItem;
-      // Every step done: the Phase filter only matches live projects, so the column
-      // must not name a phase it cannot be filtered by. A cancelled project was
-      // stopped, not finished, so it keeps its phase.
-      if (
-        status !== ProjectStatus.CANCELLED &&
-        (totalTasks ?? 0) > 0 &&
-        completedTasks === totalTasks
-      ) {
-        return <MUIStatusChip label="All phases done" color="success" />;
-      }
-      if (!phase) return <MUITypography variant="placeholder">-</MUITypography>;
-      return (
-        <Tooltip title={phase} placement="top" enterDelay={400}>
-          <span>
-            <MUIStatusChip label={phase} colorSeed={phase} />
-          </span>
-        </Tooltip>
-      );
-    },
-  },
-  {
-    field: 'status',
-    header: 'Status',
-    track: crm['col-project-status'],
-    sortable: true,
-    defaultHidden: true,
-    renderCell: (row): JSX.Element => {
-      const status = (row as ProjectListItem).status;
-      return (
-        <MUIStatusChip
-          label={PROJECT_STATUS_LABELS[status] ?? toTitleLabel(status)}
-          colorSeed={status}
-        />
-      );
-    },
-  },
-  {
-    field: 'priority',
-    header: 'Priority',
-    track: crm['col-project-priority'],
-    defaultHidden: true,
-    renderCell: (row): JSX.Element => {
-      const priority = (row as ProjectListItem).priority;
-      return (
-        <MUIStatusChip
-          label={PROJECT_PRIORITY_LABELS[priority] ?? toTitleLabel(priority)}
-          colorSeed={priority}
-        />
-      );
-    },
-  },
-  {
-    field: 'projectType',
-    header: 'Type',
-    track: crm['col-project-type'],
-    renderCell: (row): JSX.Element => {
-      const pt = (row as ProjectListItem).projectType;
-      return <MUIStatusChip label={PROJECT_TYPE_LABELS[pt] ?? toTitleLabel(pt)} colorSeed={pt} />;
-    },
-  },
-  {
-    field: 'startDate',
-    header: 'Start Date',
-    track: crm['col-project-start'],
-    sortable: true,
-    renderCell: (row): JSX.Element => {
-      const project = row as ProjectListItem;
-      if (!project.startDate) return <MUITypography variant="placeholder">-</MUITypography>;
-      return (
-        <Box sx={{ minWidth: 0 }}>
-          <MUITypography variant="body" sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>
-            {formatDate(project.startDate, 'short')}
-          </MUITypography>
-          <MUITypography variant="timestamp" sx={{ color: 'text.disabled', whiteSpace: 'nowrap' }}>
-            {formatDate(project.startDate, 'long')}
-          </MUITypography>
-        </Box>
-      );
-    },
-  },
-  {
+    // One column for both dates; the header sorts by the due date, the one people
+    // chase. `startDate` stays in `SORT_FIELD_MAP` for links that already carry it.
     field: 'endDate',
-    header: 'Due Date',
-    track: crm['col-project-due'],
+    header: 'Dates',
+    track: crm['col-project-dates'],
     sortable: true,
+    cellSx: CELL_GUTTER,
     renderCell: (row): JSX.Element => {
-      const project = row as ProjectListItem;
-      if (project.status === ProjectStatus.ON_HOLD) {
+      const { startDate, endDate, status } = row as ProjectListItem;
+      if (!startDate && !endDate) {
         return (
-          <MUITypography variant="body" sx={{ color: 'text.secondary' }}>
-            On Hold
-          </MUITypography>
+          <div className="min-w-0 flex-1">
+            <span className={LINE_1_EMPTY}>Not planned</span>
+            {EMPTY_LINE_2}
+          </div>
         );
       }
-      if (!project.endDate) return <MUITypography variant="placeholder">-</MUITypography>;
-      const relative = formatRelativeDate(project.endDate);
-      const isOverdue = relative.startsWith('Overdue');
-      const displayText = isOverdue ? relative : formatDate(project.endDate, 'short');
-      const fullDate = formatDate(project.endDate, 'long');
+      const today = indiaToday();
+      const range = `${shortDay(startDate, today)} → ${shortDay(endDate, today)}`;
+      const open = status !== ProjectStatus.COMPLETED && status !== ProjectStatus.CANCELLED;
+      const daysLeft = endDate && open ? daysBetween(today, endDate) : null;
+
       return (
-        <Box sx={{ minWidth: 0 }}>
-          <MUITypography
-            variant="body"
-            sx={{
-              whiteSpace: 'nowrap',
-              color: isOverdue ? 'error.main' : 'text.secondary',
-              fontWeight: isOverdue ? 500 : 400,
-            }}
-          >
-            {displayText}
-          </MUITypography>
-          <MUITypography variant="timestamp" sx={{ color: 'text.disabled', whiteSpace: 'nowrap' }}>
-            {fullDate}
-          </MUITypography>
-        </Box>
+        <div className="min-w-0 flex-1">
+          <span className={`${LINE_1} tabular-nums`} title={range}>
+            {range}
+          </span>
+          {daysLeft == null ? (
+            EMPTY_LINE_2
+          ) : daysLeft < 0 ? (
+            <span className={`${LINE_2_BASE} tabular-nums text-error`}>
+              due {plural(-daysLeft, 'day')} ago
+            </span>
+          ) : (
+            <span className={`${LINE_2} tabular-nums`}>
+              {daysLeft === 0 ? 'due today' : `${plural(daysLeft, 'day')} left`}
+            </span>
+          )}
+        </div>
       );
     },
   },
@@ -1113,26 +1145,6 @@ export function ProjectListPage(): JSX.Element {
     [data?.data],
   );
 
-  // Paperwork is owed once work has started; planning, on-hold and cancelled
-  // projects would only add noise to a badge people are meant to act on.
-  const reportProjectIds = useMemo(
-    () =>
-      tableRows
-        .filter(
-          (row) => row.status === ProjectStatus.ACTIVE || row.status === ProjectStatus.COMPLETED,
-        )
-        .map((row) => row.id),
-    [tableRows],
-  );
-  const { data: reportsPending } = useReportsPending(reportProjectIds);
-  const rowsWithReports = useMemo<ProjectRow[]>(
-    () =>
-      reportsPending
-        ? tableRows.map((row) => ({ ...row, reportsPending: reportsPending[row.id] ?? 0 }))
-        : tableRows,
-    [tableRows, reportsPending],
-  );
-
   const getRowId = useCallback((row: ProjectRow) => row.id, []);
 
   /**
@@ -1388,7 +1400,7 @@ export function ProjectListPage(): JSX.Element {
       {/* ── Table ── */}
       <CrmTable<ProjectRow>
         columns={CRM_COLUMNS}
-        rows={rowsWithReports}
+        rows={tableRows}
         getRowId={getRowId}
         loading={isLoading}
         refetching={isFetching && !isLoading}
