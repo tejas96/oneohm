@@ -2,6 +2,7 @@
 
 import AddIcon from '@mui/icons-material/Add';
 import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined';
+import CheckIcon from '@mui/icons-material/Check';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -537,6 +538,7 @@ const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
                 label={PROJECT_PRIORITY_LABELS[priority] ?? toTitleLabel(priority)}
                 tone={PRIORITY_TONE[priority] ?? 'neutral'}
               />
+              {project.wantsLoan ? <QuietPill label="Loan" tone="info" /> : null}
               {tickets > 0 ? (
                 <span
                   role="img"
@@ -578,6 +580,11 @@ const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
       const allDone =
         project.status !== ProjectStatus.CANCELLED && total > 0 && completed === total;
       const phase = allDone ? 'All phases done' : project.currentPhase;
+      // The ring already says how far along; this line says what happens next and
+      // who holds it. A cancelled project has no next step, whatever is still open.
+      const nextStep = project.status === ProjectStatus.CANCELLED ? null : project.nextStep;
+      const owner = nextStep?.assigneeName?.trim() || null;
+      const ownerFirstName = owner?.split(/\s+/)[0];
 
       return (
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
@@ -586,9 +593,21 @@ const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
             <span className={phase ? LINE_1 : LINE_1_EMPTY} title={phase ?? undefined}>
               {phase ?? '-'}
             </span>
-            <span className={`${LINE_2} tabular-nums`}>
-              {total > 0 ? `${completed} of ${plural(total, 'step')}` : 'No steps yet'}
-            </span>
+            {nextStep ? (
+              // The step name gives way first: who holds it is never the part cut off.
+              <span
+                className="flex min-w-0 text-xs leading-4 text-foreground-tertiary"
+                title={`Next: ${nextStep.name} · ${owner ?? 'Unassigned'}`}
+              >
+                <span className="truncate">Next: {nextStep.name}</span>
+                <span className="shrink-0 whitespace-pre">
+                  {' · '}
+                  {owner ? ownerFirstName : <span className="text-error">Unassigned</span>}
+                </span>
+              </span>
+            ) : (
+              EMPTY_LINE_2
+            )}
           </div>
         </div>
       );
@@ -717,26 +736,37 @@ const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
     sortable: true,
     cellSx: CELL_GUTTER,
     renderCell: (row): JSX.Element => {
-      const { startDate, endDate, status } = row as ProjectListItem;
+      const { startDate, endDate, status, meterInstalled, meterInstalledOn } =
+        row as ProjectListItem;
+      const meterLine = meterInstalled ? (
+        <span className={`${LINE_2_BASE} tabular-nums`} style={{ color: color.success }}>
+          <CheckIcon sx={{ fontSize: 12, mr: 0.5, verticalAlign: '-2px' }} />
+          Meter in{meterInstalledOn ? ` · ${shortDay(meterInstalledOn, indiaToday())}` : ''}
+        </span>
+      ) : null;
       if (!startDate && !endDate) {
         return (
           <div className="min-w-0 flex-1">
             <span className={LINE_1_EMPTY}>Not planned</span>
-            {EMPTY_LINE_2}
+            {meterLine ?? EMPTY_LINE_2}
           </div>
         );
       }
       const today = indiaToday();
       const range = `${shortDay(startDate, today)} → ${shortDay(endDate, today)}`;
       const open = status !== ProjectStatus.COMPLETED && status !== ProjectStatus.CANCELLED;
-      const daysLeft = endDate && open ? daysBetween(today, endDate) : null;
+      // The meter going in is the job's key milestone: once it has, a countdown
+      // (or an overdue warning) to the planned end date would contradict it.
+      const daysLeft = endDate && open && !meterInstalled ? daysBetween(today, endDate) : null;
 
       return (
         <div className="min-w-0 flex-1">
           <span className={`${LINE_1} tabular-nums`} title={range}>
             {range}
           </span>
-          {daysLeft == null ? (
+          {meterLine ? (
+            meterLine
+          ) : daysLeft == null ? (
             EMPTY_LINE_2
           ) : daysLeft < 0 ? (
             <span className={`${LINE_2_BASE} tabular-nums text-error`}>

@@ -33,6 +33,17 @@ export interface ProjectPaymentSummary {
   outstanding: number;
 }
 
+/** What the project list reads from PROJECT_FACTS_CTE for one row. */
+export interface ProjectListFacts {
+  currentPhase: string | null;
+  wantsLoan: boolean;
+  meterInstalled: boolean;
+  /** The India day the meter went in, `YYYY-MM-DD`; null when installed but undated. */
+  meterInstalledOn: string | null;
+  /** The open step to do next and who holds it; null when nothing is open. */
+  nextStep: { name: string; assigneeName: string | null } | null;
+}
+
 /**
  * Project Repository
  * Handles database operations for projects
@@ -595,20 +606,57 @@ export class ProjectRepository {
   }
 
   /**
-   * Current phase for a page of projects in ONE query — the furthest-reached
-   * rule from PROJECT_FACTS_CTE. Replaces a per-row task fetch.
+   * Everything the list reads from PROJECT_FACTS_CTE for a page of projects, in
+   * ONE query narrowed to the page's ids: the current phase (furthest-reached
+   * rule), cash or loan, whether the meter is in and on which India day, and the
+   * next step with whoever holds it.
+   *
+   * "Next step" is one open step per project, picked in this order:
+   *  1. a main-line step in the project's current phase, before any other;
+   *  2. then any other main-line step, before side-track or unstaged ones — so a
+   *     project with open work never comes back with no next step;
+   *  3. earliest due date, undated last;
+   *  4. lowest workflow order (`workflow_steps.sequence_order`), then oldest.
    */
-  async getCurrentPhases(projectIds: string[]): Promise<Map<string, string | null>> {
+  async getListFacts(projectIds: string[]): Promise<Map<string, ProjectListFacts>> {
     if (projectIds.length === 0) return new Map();
-    const rows: Array<{ projectId: string; currentPhase: string | null }> =
-      await this.repository.query(
-        `WITH ${projectFactsCte({ projectIdsParam: '$1' })}
-         SELECT pf.project_id AS "projectId", pf.current_phase AS "currentPhase"
-         FROM project_facts pf
-         WHERE pf.project_id = ANY($1::uuid[])`,
-        [projectIds],
-      );
-    return new Map(rows.map((r) => [r.projectId, r.currentPhase]));
+    const rows: Array<{ projectId: string } & ProjectListFacts> = await this.repository.query(
+      `WITH ${projectFactsCte({ projectIdsParam: '$1' })},
+       next_step AS (
+         SELECT DISTINCT ON (r.project_id)
+           r.project_id,
+           r.step_name,
+           NULLIF(btrim(concat_ws(' ', u.first_name, u.last_name)), '') AS assignee_name
+         FROM pf_task_ranked r
+         JOIN project_facts f ON f.project_id = r.project_id
+         JOIN project_tasks t ON t.id = r.task_id
+         LEFT JOIN workflow_steps ws ON ws.id = t.workflow_step_id
+         LEFT JOIN users u ON u.id = r.assigned_to_user_id AND u.deleted_at IS NULL
+         WHERE NOT r.done
+         ORDER BY
+           r.project_id,
+           (r.main_line AND r.phase = f.current_phase) IS TRUE DESC,
+           r.main_line DESC,
+           r.end_date ASC NULLS LAST,
+           ws.sequence_order ASC NULLS LAST,
+           t.created_at ASC,
+           t.id ASC
+       )
+       SELECT
+         pf.project_id AS "projectId",
+         pf.current_phase AS "currentPhase",
+         pf.wants_loan AS "wantsLoan",
+         pf.meter_installed AS "meterInstalled",
+         to_char(pf.meter_completed_at AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD') AS "meterInstalledOn",
+         CASE WHEN ns.project_id IS NULL THEN NULL
+              ELSE json_build_object('name', ns.step_name, 'assigneeName', ns.assignee_name)
+         END AS "nextStep"
+       FROM project_facts pf
+       LEFT JOIN next_step ns ON ns.project_id = pf.project_id
+       WHERE pf.project_id = ANY($1::uuid[])`,
+      [projectIds],
+    );
+    return new Map(rows.map(({ projectId, ...facts }) => [projectId, facts]));
   }
 
   /**

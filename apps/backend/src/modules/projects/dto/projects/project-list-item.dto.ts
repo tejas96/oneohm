@@ -81,6 +81,16 @@ class ProjectListItemNextTaskDto {
   endDate?: Date;
 }
 
+class ProjectListNextStepDto {
+  @ApiProperty({ example: 'Site Survey' })
+  @Expose()
+  name!: string;
+
+  @ApiPropertyOptional({ example: 'Asha Patil', description: 'Null when nobody holds the step' })
+  @Expose()
+  assigneeName!: string | null;
+}
+
 /**
  * Lightweight DTO for the project list view.
  * Avoids loading full milestones/surveys/materials.
@@ -201,6 +211,30 @@ export class ProjectListItemDto {
   })
   @Expose()
   currentPhase!: string | null;
+
+  @ApiProperty({ description: 'The property wants a loan (cash otherwise)' })
+  @Expose()
+  wantsLoan!: boolean;
+
+  @ApiProperty({ description: 'A net-meter installation step is done' })
+  @Expose()
+  meterInstalled!: boolean;
+
+  @ApiPropertyOptional({
+    example: '2026-09-12',
+    description: 'India day the meter went in; null when installed but undated',
+  })
+  @Expose()
+  meterInstalledOn!: string | null;
+
+  @ApiPropertyOptional({
+    type: () => ProjectListNextStepDto,
+    description:
+      'The open step to do next (current phase first, then earliest due, then workflow order) and who holds it; null when nothing is open',
+  })
+  @Expose()
+  @Type(() => ProjectListNextStepDto)
+  nextStep!: ProjectListNextStepDto | null;
 
   @ApiPropertyOptional({
     example: 'on_track',
