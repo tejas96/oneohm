@@ -51,6 +51,15 @@ export class SiteDealQuoteDto {
   @Expose()
   status!: QuoteStatus;
 
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'The day printed on the quote, YYYY-MM-DD',
+    example: '2026-05-13',
+  })
+  @Expose()
+  quoteDate!: string | null;
+
   @ApiProperty({ description: 'Voided: history, not the current quote' })
   @Expose()
   voided!: boolean;

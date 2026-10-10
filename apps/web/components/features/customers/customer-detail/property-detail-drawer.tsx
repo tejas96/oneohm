@@ -273,11 +273,8 @@ export function PropertyDetailDrawer({
                     },
                     {
                       label: 'Quoted on',
-                      // The record only carries the newest live quote's date.
-                      value:
-                        property.latestQuoteDate && property.latestQuoteId === quote.id
-                          ? formatDate(property.latestQuoteDate)
-                          : '—',
+                      // The date of the quote named above, not of a newer draft.
+                      value: quote.quoteDate ? formatDate(quote.quoteDate) : '—',
                       mono: true,
                     },
                   ]}

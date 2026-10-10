@@ -139,6 +139,7 @@ export function siteJourneyCte(
       q.id,
       q.quote_number,
       q.status,
+      to_char(q.quote_date, 'YYYY-MM-DD') AS quote_date,
       (q.voided_at IS NULL) AS live,
       q.updated_at,
       NULLIF(btrim(q.rejection_reason), '') AS rejection_reason
@@ -193,6 +194,7 @@ export function siteJourneyCte(
       dq.id AS deal_quote_id,
       dq.quote_number AS deal_quote_number,
       dq.status AS deal_quote_status,
+      dq.quote_date AS deal_quote_date,
       (dq.id IS NOT NULL AND NOT dq.live) AS deal_quote_voided,
       qv.final_price::float AS deal_quote_final_price,
       (${systemSizeKwSqlRaw('qv')})::float AS deal_quote_system_size_kw
@@ -238,6 +240,7 @@ export function siteJourneyCte(
       f.deal_quote_id,
       f.deal_quote_number,
       f.deal_quote_status,
+      f.deal_quote_date,
       f.deal_quote_voided,
       f.deal_quote_final_price,
       f.deal_quote_system_size_kw
@@ -264,6 +267,8 @@ export interface SiteJourneyRow {
   dealQuoteId: string | null;
   dealQuoteNumber: string | null;
   dealQuoteStatus: QuoteStatus | null;
+  /** The day printed on the quote, `YYYY-MM-DD`. */
+  dealQuoteDate: string | null;
   dealQuoteVoided: boolean;
   dealQuoteFinalPrice: number | null;
   dealQuoteSystemSizeKw: number | null;
@@ -286,6 +291,7 @@ export const SITE_JOURNEY_COLUMNS = `
   sj.deal_quote_id               AS "dealQuoteId",
   sj.deal_quote_number           AS "dealQuoteNumber",
   sj.deal_quote_status           AS "dealQuoteStatus",
+  sj.deal_quote_date             AS "dealQuoteDate",
   sj.deal_quote_voided           AS "dealQuoteVoided",
   sj.deal_quote_final_price      AS "dealQuoteFinalPrice",
   sj.deal_quote_system_size_kw   AS "dealQuoteSystemSizeKw"
@@ -309,6 +315,7 @@ export function toDealQuote(row: SiteJourneyRow | undefined): SiteDealQuote | nu
     id: row.dealQuoteId,
     number: row.dealQuoteNumber,
     status: row.dealQuoteStatus,
+    quoteDate: row.dealQuoteDate,
     voided: row.dealQuoteVoided,
     finalPrice: row.dealQuoteFinalPrice,
     systemSizeKw: row.dealQuoteSystemSizeKw,

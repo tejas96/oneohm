@@ -36,6 +36,8 @@ export interface SiteDealQuote {
   id: string;
   number: string;
   status: QuoteStatus;
+  /** The day printed on the quote, `YYYY-MM-DD`; null when it carries none. */
+  quoteDate: string | null;
   /** Voided: it is history, not the roof's current quote. */
   voided: boolean;
   /** Final price of its latest version, in rupees; null when it has no version. */

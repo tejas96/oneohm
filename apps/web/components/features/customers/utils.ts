@@ -22,6 +22,8 @@ export interface SiteQuoteFacts {
   number?: string;
   /** Absent only on a legacy record whose one quote is voided. */
   status?: QuoteStatus;
+  /** The day printed on THIS quote; null when the record carries none. */
+  quoteDate: string | null;
   /** It is history, not the roof's current quote. */
   voided: boolean;
   finalPrice?: number | null;
@@ -49,6 +51,7 @@ export function siteQuoteFacts(
     | 'latestQuoteNumber'
     | 'latestQuoteStatus'
     | 'latestQuoteVoided'
+    | 'latestQuoteDate'
     | 'latestQuoteFinalPrice'
     | 'latestQuoteSystemSizeKw'
   >,
@@ -61,6 +64,7 @@ export function siteQuoteFacts(
       id: deal.id,
       number: deal.number,
       status: deal.status,
+      quoteDate: deal.quoteDate ?? null,
       voided: deal.voided,
       finalPrice: deal.finalPrice,
       systemSizeKw: deal.systemSizeKw,
@@ -77,6 +81,7 @@ export function siteQuoteFacts(
     id: property.latestQuoteId,
     number: property.latestQuoteNumber,
     status,
+    quoteDate: property.latestQuoteDate ?? null,
     voided: Boolean(property.latestQuoteVoided),
     finalPrice: property.latestQuoteFinalPrice,
     systemSizeKw: property.latestQuoteSystemSizeKw,
