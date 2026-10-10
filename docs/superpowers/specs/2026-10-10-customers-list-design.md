@@ -124,6 +124,20 @@ site nobody owes an action on. This is the single exception to hard rule 1: it
 moves the "Needs follow-up" count (900 → 906 on local data) and the follow-ups
 "gaps" total (934 → 940).
 
+**Search and name sort ignore stray white space — approved (2026-10-10).**
+Stored names carry stray spaces and tabs ("Hanmant " + "Kharade"; 297 of 1,230
+customers locally), so a typed full name found nobody and names typed with a
+leading space sorted first. Two more exceptions to hard rule 1, both in the
+query only (same API params, same URL keys):
+
+- Search also matches the first + last name with white space squeezed to
+  single spaces, against the typed term squeezed the same way. It only adds
+  matches; every other search clause is unchanged.
+- Name A–Z / Z–A orders by the first name without its leading white space.
+
+The shared filter panel (`TableFilters`) also closes on Esc while focus is
+still on the page; it opens without taking focus, so MUI never saw the key.
+
 ## Page
 
 **Header.** "Customers" + one sentence:

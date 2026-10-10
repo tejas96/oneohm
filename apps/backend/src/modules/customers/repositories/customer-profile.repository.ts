@@ -298,6 +298,24 @@ function siteSearchParams(search: string): { consumerNumberTerm: string } {
   return { consumerNumberTerm: `%${search.replace(/[\s-]/g, '').toLowerCase()}%` };
 }
 
+/**
+ * Stored names can carry stray white space ("Hanmant " + "Kharade", a tab after
+ * a surname), so a typed full name misses the plain first + ' ' + last match.
+ * This compares both sides with the white space squeezed to single spaces.
+ * Uses :nameTerm (nameSearchParams). It only adds matches.
+ */
+const NAME_MATCHES_SEARCH = `LOWER(btrim(regexp_replace(
+            concat_ws(' ', customer.first_name, customer.last_name), '\\s+', ' ', 'g'
+          ))) LIKE :nameTerm`;
+
+function nameSearchParams(search: string): { nameTerm: string } {
+  return { nameTerm: `%${search.trim().replace(/\s+/g, ' ').toLowerCase()}%` };
+}
+
+/** Name A-Z / Z-A ignores white space typed before the first name. */
+const NAME_SORT_ALIAS = 'customer_name_sort';
+const NAME_SORT_SQL = `regexp_replace(customer.first_name, '^\\s+', '')`;
+
 @Injectable()
 export class CustomerProfileRepository {
   constructor(
@@ -801,6 +819,7 @@ export class CustomerProfileRepository {
           LOWER(customer.first_name) LIKE :searchTerm OR
           LOWER(customer.last_name) LIKE :searchTerm OR
           LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm OR
+          ${NAME_MATCHES_SEARCH} OR
           customer.phone LIKE :searchTerm OR
           LOWER(customer.email) LIKE :searchTerm OR
           LOWER(customer.city) LIKE :searchTerm OR
@@ -808,7 +827,7 @@ export class CustomerProfileRepository {
           LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm OR
           ${SITE_MATCHES_SEARCH}
         )`,
-        { searchTerm, ...siteSearchParams(searchQuery) },
+        { searchTerm, ...nameSearchParams(searchQuery), ...siteSearchParams(searchQuery) },
       );
 
     // Filter by creator OR assignee (for field workers — covers both own-created and assigned)
@@ -885,6 +904,7 @@ export class CustomerProfileRepository {
           LOWER(customer.first_name) LIKE :searchTerm OR
           LOWER(customer.last_name) LIKE :searchTerm OR
           LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm OR
+          ${NAME_MATCHES_SEARCH} OR
           customer.phone LIKE :searchTerm OR
           LOWER(customer.email) LIKE :searchTerm OR
           LOWER(customer.city) LIKE :searchTerm OR
@@ -892,7 +912,7 @@ export class CustomerProfileRepository {
           LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm OR
           ${SITE_MATCHES_SEARCH}
         )`,
-        { searchTerm, ...siteSearchParams(query.search) },
+        { searchTerm, ...nameSearchParams(query.search), ...siteSearchParams(query.search) },
       );
     }
 
@@ -1073,7 +1093,15 @@ export class CustomerProfileRepository {
     // ===== Sorting (using safe field mapping) =====
     const sortColumn = SORT_FIELD_MAP[query.sortBy];
     const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
-    qb.orderBy(sortColumn, sortDirection);
+    if (query.sortBy === CustomerSortField.FIRST_NAME) {
+      // TypeORM pages with a DISTINCT sub-query, so an expression must be a
+      // selected alias before it can be sorted on. The raw column breaks ties.
+      qb.addSelect(NAME_SORT_SQL, NAME_SORT_ALIAS)
+        .orderBy(NAME_SORT_ALIAS, sortDirection)
+        .addOrderBy(sortColumn, sortDirection);
+    } else {
+      qb.orderBy(sortColumn, sortDirection);
+    }
 
     // Split getCount + getMany to avoid TypeORM getManyAndCount crash
     // when leftJoinAndSelect is combined with orderBy on a joined alias.
