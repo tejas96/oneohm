@@ -110,6 +110,12 @@ export function ListToolbar<TRow>({
   const closeFilters = useRef((): void => setFilterAnchor(null)).current;
   // A view with nothing to filter by (a worklist with its own fixed rule) gets no button.
   const hasFilters = filterColumns.some((column) => column.filterable);
+  // Moving to such a view closes the panel. Left "open" it would vanish with
+  // its button and then open by itself, tied to a button that is gone, when
+  // the filters came back.
+  useEffect(() => {
+    if (!hasFilters) setFilterAnchor(null);
+  }, [hasFilters]);
 
   return (
     <div>

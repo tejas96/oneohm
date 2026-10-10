@@ -24,6 +24,8 @@ interface FollowupReassignDialogProps {
   /** Followups to move; empty closes the dialog. Handles one or many. */
   followups: FollowupResponse[];
   onClose: () => void;
+  /** The move went through (called before `onClose`); not called on Cancel. */
+  onReassigned?: () => void;
 }
 
 /**
@@ -35,6 +37,7 @@ interface FollowupReassignDialogProps {
 export function FollowupReassignDialog({
   followups,
   onClose,
+  onReassigned,
 }: FollowupReassignDialogProps): JSX.Element {
   const save = useGatedAction('followups.manage', () => handleSubmit(), 'Reassign follow-up');
   const open = followups.length > 0;
@@ -53,6 +56,7 @@ export function FollowupReassignDialog({
       {
         onSuccess: (result) => {
           showToast.success(`Moved ${result.updated} follow-up(s)`);
+          onReassigned?.();
           onClose();
         },
         onError: (error) => showToast.error(getErrorMessage(error)),

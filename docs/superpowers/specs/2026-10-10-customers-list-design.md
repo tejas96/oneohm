@@ -203,6 +203,13 @@ follow-ups share the frame. Per list, what the kit does not decide:
   narrows it by name in the browser.
 - Sort: empty values (no due date, no city) sort last in both directions, and
   every sort ends in a unique key so pages do not shuffle.
+- Follow-ups keeps its whole view in the address bar (`scope`, `owner`,
+  `followups_search`, `followups_filters`, `followups_page`), so Back from a
+  lead, a refresh and a link all return to the same list. Values a link carries
+  that the list does not understand are dropped, not sent.
+- Cancelling a follow-up asks first (the shared row menu, so the customer and
+  site tabs too). A successful bulk reassign clears the ticks; Cancel keeps
+  them. The filter panel closes when a view without filters is chosen.
 
 **Header.** "Customers" + one sentence:
 `<customers> customers · <sites> sites · <₹> in open quotes · <N> follow-ups overdue`

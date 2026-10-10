@@ -9,6 +9,13 @@ import { useState, type JSX } from 'react';
 import { type FollowupResponse } from '../hooks/use-followups';
 
 import { GatedMenuItem } from '@/components/shared/guards';
+import {
+  MUIDialog,
+  MUIDialogDescription,
+  MUIDialogFooter,
+  MUIDialogHeader,
+  MUIDialogTitle,
+} from '@/components/ui';
 import { useGatedAction } from '@/lib/rbac';
 
 export interface FollowupRowActionsProps {
@@ -41,6 +48,7 @@ export function FollowupRowActions({
   onCancel,
 }: FollowupRowActionsProps): JSX.Element {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
   const complete = useGatedAction(
     'followups.manage',
     () => onComplete(followup),
@@ -117,13 +125,46 @@ export function FollowupRowActions({
           subject="Cancel follow-up"
           disabled={!isPending}
           onAction={() => {
-            onCancel(followup);
+            setConfirmingCancel(true);
             close();
           }}
         >
           Cancel
         </GatedMenuItem>
       </Menu>
+
+      {/* Cancelling leaves the lead with nothing planned and cannot be undone
+          from here, so it is asked for twice, like a delete. */}
+      <MUIDialog
+        open={confirmingCancel}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setConfirmingCancel(false);
+        }}
+        size="sm"
+      >
+        <MUIDialogHeader>
+          <MUIDialogTitle>Cancel this follow-up?</MUIDialogTitle>
+          <MUIDialogDescription>
+            &ldquo;{followup.subject}&rdquo; will be cancelled and the lead will need a new
+            follow-up. This cannot be undone.
+          </MUIDialogDescription>
+        </MUIDialogHeader>
+        <MUIDialogFooter>
+          <Button variant="outlined" onClick={() => setConfirmingCancel(false)}>
+            Keep it
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => {
+              setConfirmingCancel(false);
+              onCancel(followup);
+            }}
+          >
+            Cancel follow-up
+          </Button>
+        </MUIDialogFooter>
+      </MUIDialog>
     </Stack>
   );
 }

@@ -1,9 +1,8 @@
 'use client';
 
 import { Button } from '@mui/material';
-import { FollowupStatus, type FollowupType, type LeadTemperature } from '@tejas96/shared/types';
+import { FollowupStatus, FollowupType, LeadTemperature } from '@tejas96/shared/types';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 
 import { dayBoundaries, SCOPE_LABELS, type FollowupScope } from '../constants';
@@ -27,6 +26,7 @@ import { FollowupReassignDialog } from './followup-reassign-dialog';
 import { FollowupRescheduleDialog } from './followup-reschedule-dialog';
 import { FOLLOWUP_ROWS_STYLE, FollowupRow, FollowupRowSkeleton } from './followup-row';
 import { followupRecordHref } from '../lib/followup-href';
+import { useUrlChoice } from '../lib/use-url-choice';
 
 import type { ColumnConfig, FilterState } from '@/components/shared/advanced-table';
 import {
@@ -46,6 +46,7 @@ import {
   useListEntrance,
 } from '@/components/shared/calm-list';
 import { showToast } from '@/components/ui';
+import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
 import { useGatedAction } from '@/lib/rbac';
 import { cn, formatNumber, getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
@@ -55,6 +56,38 @@ const SCOPES: FollowupScope[] = ['overdue', 'today', 'upcoming', 'gaps'];
 const PAGE_SIZE = 50;
 
 const FOLLOWUP_NOUN = { one: 'follow-up', many: 'follow-ups' };
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** `?scope=` as a window the page has, else null. */
+const acceptScope = (raw: string): FollowupScope | null =>
+  (SCOPES as string[]).includes(raw) ? (raw as FollowupScope) : null;
+
+/** `?owner=` as "me", "all" or a user id, else null. */
+const acceptOwner = (raw: string): FollowupOwner | null =>
+  raw === 'me' || raw === 'all' || UUID.test(raw) ? raw : null;
+
+const oneOf = (value: unknown, allowed: readonly string[]): string | undefined =>
+  typeof value === 'string' && allowed.includes(value) ? value : undefined;
+
+/**
+ * The filter record from the URL with everything the list would not understand
+ * taken out, so a hand-edited link cannot send the API a status it rejects or
+ * show a chip for a filter that is not applied.
+ */
+function sanitizeFilters(raw: TableUrlFilterRecord): FilterState {
+  const day = (value: unknown): string | undefined =>
+    typeof value === 'string' && DAY.test(value) ? value : undefined;
+  const kept: FilterState = {
+    status: oneOf(raw.status, Object.values(FollowupStatus)),
+    type: oneOf(raw.type, Object.values(FollowupType)),
+    leadTemperature: oneOf(raw.leadTemperature, Object.values(LeadTemperature)),
+    fromDate: day(raw.fromDate),
+    toDate: day(raw.toDate),
+  };
+  return Object.fromEntries(Object.entries(kept).filter(([, value]) => value !== undefined));
+}
 
 /** The gaps view has its own fixed rule, so it offers no filter panel. */
 const NO_FILTER_COLUMNS: ColumnConfig<FollowupResponse>[] = [];
@@ -101,26 +134,23 @@ function GatedScheduleButton({
 export function FollowupsPage(): JSX.Element {
   const { user } = useAuth();
   /**
-   * `?scope=overdue&owner=all` opens the page on that tab for that owner — how
-   * the customers list links its company-wide "follow-ups overdue" count to the
-   * rows behind it. Read once; the tabs and the owner picker take over from
-   * there (the page keeps no other state in the URL).
+   * The whole view lives in the address bar — the window (`scope`), the owner,
+   * the search, the panel filters and the page — so opening a lead and pressing
+   * Back returns to the list as it was, and a link opens it the same way.
+   * `?scope=overdue&owner=all` is how the customers list links its company-wide
+   * "follow-ups overdue" count to the rows behind it.
    */
-  const searchParams = useSearchParams();
-  const [scope, setScope] = useState<FollowupScope>(() => {
-    const requested = searchParams.get('scope') as FollowupScope | null;
-    return requested && SCOPES.includes(requested) ? requested : 'today';
-  });
-  const [owner, setOwner] = useState<FollowupOwner>(() =>
-    searchParams.get('owner') === 'all' ? 'all' : 'me',
-  );
+  const [scope, setScope] = useUrlChoice<FollowupScope>('scope', 'today', acceptScope);
+  const [owner, setOwner] = useUrlChoice<FollowupOwner>('owner', 'me', acceptOwner);
+  const urlState = useTableUrlState({ prefix: 'followups', defaultPageSize: PAGE_SIZE });
+  const { setFilters, setPage } = urlState;
   // Panel filters (status, type, site temperature, from/to). Empty = open work.
-  const [filters, setFilters] = useState<FilterState>({});
+  const filters = useMemo(() => sanitizeFilters(urlState.state.filters), [urlState.state.filters]);
   // As typed (the toolbar debounces it). Trimmed only where it is sent: trimming
   // it here would hand the box back a shorter value and eat the space mid-name.
-  const [searchText, setSearchText] = useState('');
+  const searchText = urlState.state.search;
   const search = searchText.trim();
-  const [page, setPage] = useState(0);
+  const page = urlState.state.page;
   const pick = <T extends string>(key: string): T | undefined =>
     typeof filters[key] === 'string' && filters[key] ? (filters[key] as T) : undefined;
   const status = pick<FollowupStatus>('status') ?? FollowupStatus.PENDING;
@@ -182,10 +212,8 @@ export function FollowupsPage(): JSX.Element {
   /** Any filter that narrows the list below what the tab counts measure. */
   const narrowed = !tabWindowActive || Boolean(search || type || leadTemperature);
 
-  const changeFilters = (next: FilterState): void => {
-    setFilters(next);
-    setPage(0);
-  };
+  // `setFilters` and `setSearch` go back to the first page themselves.
+  const changeFilters = (next: FilterState): void => setFilters(next);
 
   const { data: allGaps = [], isLoading: gapsLoading } = useFollowupGaps({
     enabled: showingGaps,
@@ -320,7 +348,7 @@ export function FollowupsPage(): JSX.Element {
                 currentUserId={user?.id}
                 onChange={(next) => {
                   setOwner(next);
-                  setPage(0);
+                  setPage(0, { replace: true });
                 }}
               />
             }
@@ -344,7 +372,7 @@ export function FollowupsPage(): JSX.Element {
                       ? {}
                       : { ...filters, status: undefined, fromDate: undefined, toDate: undefined },
                   );
-                  setPage(0);
+                  setPage(0, { replace: true });
                 }}
                 count={narrowed ? null : countFor(key)}
                 label={SCOPE_LABELS[key]}
@@ -357,10 +385,7 @@ export function FollowupsPage(): JSX.Element {
       toolbar={
         <ListToolbar
           search={searchText}
-          onSearchChange={(next) => {
-            setSearchText(next);
-            setPage(0);
-          }}
+          onSearchChange={urlState.setSearch}
           // The gaps view is narrowed in the browser, by the lead's name only.
           searchPlaceholder={showingGaps ? 'Search name' : 'Search name, site, phone'}
           searchLabel="Search follow-ups"
@@ -434,7 +459,12 @@ export function FollowupsPage(): JSX.Element {
 
           <FollowupRescheduleDialog followup={rescheduling} onClose={() => setRescheduling(null)} />
 
-          <FollowupReassignDialog followups={reassigning} onClose={() => setReassigning([])} />
+          <FollowupReassignDialog
+            followups={reassigning}
+            onClose={() => setReassigning([])}
+            // Moved: the ticks have done their job. (Cancelled: they stay.)
+            onReassigned={() => setTickedIds(new Set())}
+          />
 
           {schedulingGap && (
             <FollowupDrawer
