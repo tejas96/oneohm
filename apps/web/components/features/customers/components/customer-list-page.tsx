@@ -36,7 +36,7 @@ import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmatio
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { useGatedAction } from '@/lib/rbac';
-import { getErrorMessage } from '@/lib/utils';
+import { cn, getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 const EMPTY_ROWS: Customer[] = [];
@@ -46,6 +46,37 @@ const ENTRANCE_RISE_MS = 700;
 
 /** A screenful; a longer page does not need a longer placeholder. */
 const MAX_SKELETON_ROWS = 25;
+
+/**
+ * The header stays in view while the list scrolls.
+ *
+ * In a desktop-size window (1024 wide and 700 tall, or more) the whole block
+ * pins: title, numbers ribbon and search bar. In a smaller window that block
+ * would cover most of the screen, so it is `display: contents` there and only
+ * the search bar pins. Both pin under the global header, like the detail pages'
+ * tab rails. The page colour behind them hides the rows that scroll under, and
+ * the side bleed covers the rows' shadows.
+ */
+const PINNED_HEADER = cn(
+  'contents',
+  '[@media(min-width:1024px)_and_(min-height:700px)]:sticky',
+  '[@media(min-width:1024px)_and_(min-height:700px)]:top-[var(--header-height)]',
+  '[@media(min-width:1024px)_and_(min-height:700px)]:z-10',
+  '[@media(min-width:1024px)_and_(min-height:700px)]:-mx-7',
+  '[@media(min-width:1024px)_and_(min-height:700px)]:-mt-3',
+  '[@media(min-width:1024px)_and_(min-height:700px)]:block',
+  '[@media(min-width:1024px)_and_(min-height:700px)]:bg-surface-secondary',
+  '[@media(min-width:1024px)_and_(min-height:700px)]:px-7',
+  '[@media(min-width:1024px)_and_(min-height:700px)]:pt-3',
+);
+const PINNED_TOOLBAR =
+  'sticky top-[var(--header-height)] z-10 -mx-4 mt-2.5 bg-surface-secondary px-4 pb-2.5 pt-2 sm:-mx-7 sm:px-7';
+
+/** A link or button in a row that takes keyboard focus scrolls clear of the pinned header. */
+const ROW_FOCUS_CLEARS_PINNED = cn(
+  '[--row-scroll-mt:calc(var(--header-height)+var(--customers-pinned-h,0px)+12px)]',
+  '[&_a]:scroll-mt-[var(--row-scroll-mt)] [&_button]:scroll-mt-[var(--row-scroll-mt)]',
+);
 
 /**
  * /customers — one calm line per customer: who, how far along, the next
@@ -201,58 +232,92 @@ export function CustomerListPage(): JSX.Element {
     if (openId && !isFetching && !openCustomer) setOpenId(null);
   }, [openId, isFetching, openCustomer]);
 
+  // ── Pinned header: its height is published so a row that takes keyboard
+  // focus is scrolled clear of it, never underneath (ROW_FOCUS_CLEARS_PINNED). ──
+  const pageRef = useRef<HTMLDivElement>(null);
+  const pinnedHeaderRef = useRef<HTMLDivElement>(null);
+  const pinnedToolbarRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const pageEl = pageRef.current;
+    const headerEl = pinnedHeaderRef.current;
+    const toolbarEl = pinnedToolbarRef.current;
+    if (!pageEl || !headerEl || !toolbarEl) return undefined;
+    const publish = (): void => {
+      // The whole header is `display: contents` (height 0) when only the bar pins.
+      const pinned = headerEl.offsetHeight || toolbarEl.offsetHeight;
+      pageEl.style.setProperty('--customers-pinned-h', `${pinned}px`);
+    };
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(headerEl);
+    observer.observe(toolbarEl);
+    window.addEventListener('resize', publish);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', publish);
+    };
+  }, []);
+
   return (
-    <div className="-m-4 min-h-[calc(100vh-var(--header-height))] bg-surface-secondary text-[14px] leading-[1.45] text-foreground lg:-m-5">
+    <div
+      ref={pageRef}
+      className="-m-4 min-h-[calc(100vh-var(--header-height))] bg-surface-secondary text-[14px] leading-[1.45] text-foreground lg:-m-5"
+    >
       <div className="mx-auto max-w-[1180px] px-4 pb-20 pt-6 sm:px-7 sm:pt-9">
-        <ListHeader onAddCustomer={addCustomer.onGatedClick} canAddCustomer={addCustomer.allowed} />
-
-        <StatusRibbon
-          stats={statusStats}
-          needsFollowupCount={overviewStats?.needsFollowup}
-          activeTicketsCount={activeTicketCustomers?.meta?.total}
-          activeStatus={activeStatus}
-          activeWorklist={activeWorklist}
-          onStatusChange={handleStatusChange}
-          onWorklistChange={handleWorklistChange}
-        />
-
-        <div className="mb-2.5 mt-[18px]">
-          <ListToolbar
-            search={search}
-            onSearchChange={urlState.setSearch}
-            searchPlaceholder="Search name, phone, consumer no., site code"
-            filterColumns={filterColumns}
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            sortModel={sortModel}
-            onSortChange={urlState.setSortModel}
+        <div ref={pinnedHeaderRef} className={PINNED_HEADER}>
+          <ListHeader
+            onAddCustomer={addCustomer.onGatedClick}
+            canAddCustomer={addCustomer.allowed}
           />
+
+          <StatusRibbon
+            stats={statusStats}
+            needsFollowupCount={overviewStats?.needsFollowup}
+            activeTicketsCount={activeTicketCustomers?.meta?.total}
+            activeStatus={activeStatus}
+            activeWorklist={activeWorklist}
+            onStatusChange={handleStatusChange}
+            onWorklistChange={handleWorklistChange}
+          />
+
+          <div ref={pinnedToolbarRef} className={PINNED_TOOLBAR}>
+            <ListToolbar
+              search={search}
+              onSearchChange={urlState.setSearch}
+              searchPlaceholder="Search name, phone, consumer no., site code"
+              filterColumns={filterColumns}
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              sortModel={sortModel}
+              onSortChange={urlState.setSortModel}
+            />
+            {/* Background refetch: the rows stay; only this thin bar shows. Always
+                mounted so toggling it never moves the list. It rides on the pinned
+                bar, so it shows while the list is scrolled too. */}
+            <LinearProgress
+              aria-hidden={!(isFetching && !isLoading)}
+              sx={{
+                position: 'absolute',
+                insetInline: { xs: 24, sm: 36 },
+                bottom: 4,
+                height: 2,
+                borderRadius: 'var(--radius-pill)',
+                opacity: isFetching && !isLoading ? 1 : 0,
+                transition: 'opacity 200ms ease',
+                '@media (prefers-reduced-motion: reduce)': {
+                  transition: 'none',
+                  '& .MuiLinearProgress-bar': { animation: 'none' },
+                },
+              }}
+            />
+          </div>
         </div>
 
         {isError ? (
           <ListError message={getErrorMessage(error)} onRetry={() => void refetch()} />
         ) : null}
 
-        <div className="relative @container" aria-busy={isFetching}>
-          {/* Background refetch: the rows stay; only this thin bar shows. Always
-              mounted so toggling it never moves the list. */}
-          <LinearProgress
-            aria-hidden={!(isFetching && !isLoading)}
-            sx={{
-              position: 'absolute',
-              insetInline: 8,
-              top: -6,
-              height: 2,
-              borderRadius: 'var(--radius-pill)',
-              opacity: isFetching && !isLoading ? 1 : 0,
-              transition: 'opacity 200ms ease',
-              '@media (prefers-reduced-motion: reduce)': {
-                transition: 'none',
-                '& .MuiLinearProgress-bar': { animation: 'none' },
-              },
-            }}
-          />
-
+        <div className={cn('@container', ROW_FOCUS_CLEARS_PINNED)} aria-busy={isFetching}>
           {isLoading ? (
             <ListSkeleton rows={Math.min(pageSize, MAX_SKELETON_ROWS)} />
           ) : rows.length === 0 ? (

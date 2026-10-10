@@ -142,6 +142,13 @@ still on the page; it opens without taking focus, so MUI never saw the key.
 
 ## Page
 
+**The header stays in view while the list scrolls (owner request, 2026-10-10).**
+In a desktop-size window (1024 px wide and 700 px tall, or more) the title, the
+ribbon and the search bar pin under the global header as one block; the rows
+scroll under it. In a smaller window that block would cover most of the screen,
+so only the search bar pins. A row that takes keyboard focus scrolls clear of
+the pinned block. The refetch bar rides on the pinned search bar.
+
 **Header.** "Customers" + one sentence:
 `<customers> customers · <sites> sites · <₹> in open quotes · <N> follow-ups overdue`
 and "Add customer" (gated `customers.create`, → `/onboarding/new`).
