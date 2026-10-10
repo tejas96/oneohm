@@ -5,7 +5,13 @@
 export { CalmListPage, useListEntrance, type CalmListPageProps } from './list-page';
 export { ListTitle, PrimaryAction } from './list-title';
 export { ListToolbar, TOOLBAR_BUTTON, type ListToolbarProps } from './list-toolbar';
-export { SortMenu, matchSortOption, type SortMenuProps, type SortOption } from './sort-menu';
+export {
+  createSortIndex,
+  matchSortOption,
+  SortMenu,
+  type SortMenuProps,
+  type SortOption,
+} from './sort-menu';
 export { ListPager, type ListPagerProps } from './list-pager';
 export { ListEmpty, ListError } from './list-states';
 export { BONE, ListSkeleton, SKELETON_CARD } from './list-skeleton';

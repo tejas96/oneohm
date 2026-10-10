@@ -1,39 +1,40 @@
 'use client';
 
 import AddIcon from '@mui/icons-material/Add';
-import BlockIcon from '@mui/icons-material/Block';
-import AlertIcon from '@mui/icons-material/ErrorOutline';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import UploadIcon from '@mui/icons-material/Upload';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import { Box, Button, IconButton, ListItemIcon, Menu, MenuItem, Stack } from '@mui/material';
-import { type DealStage, QuoteStatus } from '@tejas96/shared/types';
+import { Button } from '@mui/material';
+import { QuoteStatus } from '@tejas96/shared/types';
 import {
   DEAL_ATTENTION_LABELS,
   DEAL_ATTENTIONS,
   DEAL_STAGE_FILTERS,
   DEAL_STAGE_LABELS,
-  indiaToday,
   leadSourceLabel,
 } from '@tejas96/shared/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { type JSX, type MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { type JSX, useEffect, useMemo } from 'react';
 
 import { QUOTE_STATUS_LABELS } from '../constants';
-import { useDeleteQuote, type QuoteListItem } from '../hooks';
-import { type BadgeVariant, QuoteStatusDropdown } from './quote-status-dropdown';
-import { VoidQuoteDialog } from './void-quote-dialog';
+import type { QuoteListItem } from '../hooks';
+import { QuoteRow, QuoteRowSkeleton } from './list/quote-row';
 
 import { useEmployees } from '@/components/features/projects/hooks/use-employees';
 import { FilterAutocomplete, type ColumnConfig } from '@/components/shared/advanced-table';
-import { CrmTable, type CrmColumn } from '@/components/shared/crm-table';
-import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
+import {
+  CalmListPage,
+  createSortIndex,
+  ListEmpty,
+  ListError,
+  ListPager,
+  ListSkeleton,
+  ListTitle,
+  ListToolbar,
+  PrimaryAction,
+  type SortOption,
+  useListEntrance,
+} from '@/components/shared/calm-list';
 import { MUIDateRangePicker } from '@/components/ui';
-import { MUIAvatar } from '@/components/ui/mui-avatar';
-import { MUITypography } from '@/components/ui/mui-typography';
-import { showToast } from '@/components/ui/sonner';
-import { SystemSizeDisplay } from '@/components/ui/system-size-display';
-import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { ROUTES } from '@/lib/config/routes';
 import { useTableUrlState, type TableUrlFilterRecord } from '@/lib/hooks';
 import {
   useQuoteLeadSources,
@@ -41,22 +42,18 @@ import {
   type QuoteListFilters,
 } from '@/lib/hooks/resources';
 import { useGatedAction } from '@/lib/rbac';
-import { color, crm } from '@/lib/theme/tokens';
-import { formatBusinessDate, formatCurrency, formatLocalDate, getErrorMessage } from '@/lib/utils';
+import { formatBusinessDate, formatLocalDate, formatNumber, getErrorMessage } from '@/lib/utils';
 
 // The filter panel's ColumnConfig requires TRow extends Record<string, unknown>.
-// QuoteListItem has explicit typed fields, so we widen it here for table usage only.
+// QuoteListItem has explicit typed fields, so we widen it here for the filter columns only.
 type QuoteRow = QuoteListItem & Record<string, unknown>;
 
-const EMPTY_ROWS: QuoteRow[] = [];
+const EMPTY_ROWS: QuoteListItem[] = [];
 
 const STATUS_OPTIONS = Object.values(QuoteStatus).map((value) => ({
   value,
   label: QUOTE_STATUS_LABELS[value],
 }));
-
-/** The grid has no column gap: text cells keep a right gutter so neighbours never touch. */
-const CELL_GUTTER = { pr: 2 } as const;
 
 /** One page large enough for every employee profile. */
 const EMPLOYEES_ALL = 1000;
@@ -190,279 +187,32 @@ function toQuoteFilters(filters: TableUrlFilterRecord): Partial<QuoteListFilters
 }
 
 // ============================================================================
-// Row Actions Menu (private sub-component)
+// Sort (what the table's column headers offered)
 // ============================================================================
 
-function RowActionsMenu({ quote }: { quote: QuoteRow }): JSX.Element {
-  const router = useRouter();
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [voidOpen, setVoidOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const deleteQuoteMutation = useDeleteQuote();
-
-  const handleClose = (): void => setAnchorEl(null);
-  const removeQuote = useGatedAction('quotes.delete', () => undefined, 'Delete quote');
-
-  const handleDelete = (): void => {
-    handleClose();
-    if (!removeQuote.allowed) {
-      removeQuote.onGatedClick();
-      return;
-    }
-    setDeleteOpen(true);
-  };
-
-  const confirmDelete = (): void => {
-    deleteQuoteMutation.mutate(quote.id, {
-      onSuccess: () => {
-        setDeleteOpen(false);
-        showToast.success('Quote deleted');
-      },
-      onError: (err) => showToast.error(getErrorMessage(err)),
-    });
-  };
-
-  const handleVoid = (): void => {
-    handleClose();
-    if (!removeQuote.allowed) {
-      removeQuote.onGatedClick();
-      return;
-    }
-    setVoidOpen(true);
-  };
-
-  /*
-    Same split as the quote detail header: a draft is deletable because nobody
-    outside the office has seen it, and anything already in front of the
-    customer is voidable instead - deleting it would leave them holding a PDF
-    and a notification pointing at a row that no longer answers.
-
-    Both sit behind `quotes.delete`. Void is the gentler of the two (it keeps
-    the quote), so it needs no permission of its own, and a new permission code
-    would start out granted to nobody and read as a missing button.
-  */
-  const isVoided = Boolean(quote.voidedAt);
-  const canDelete = !isVoided && quote.status === QuoteStatus.DRAFT;
-  const canVoid =
-    !isVoided && (quote.status === QuoteStatus.SENT || quote.status === QuoteStatus.VIEWED);
-
-  return (
-    <>
-      <IconButton
-        size="small"
-        onClick={(e: MouseEvent) => {
-          e.stopPropagation();
-          setAnchorEl(e.currentTarget as HTMLElement);
-        }}
-        aria-label="Row actions"
-      >
-        <MoreVertIcon fontSize="small" />
-      </IconButton>
-
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleClose}
-        onClick={(e) => e.stopPropagation()}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{ paper: { elevation: 2, sx: { minWidth: 180 } } }}
-      >
-        <MenuItem
-          onClick={() => {
-            handleClose();
-            void router.push(buildRoute(ROUTES.QUOTES.DETAIL, { id: quote.id }));
-          }}
-        >
-          <ListItemIcon>
-            <VisibilityIcon fontSize="small" />
-          </ListItemIcon>
-          View Details
-        </MenuItem>
-
-        {canDelete && (
-          <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
-            <ListItemIcon>
-              <AlertIcon fontSize="small" sx={{ color: 'error.main' }} />
-            </ListItemIcon>
-            Delete
-          </MenuItem>
-        )}
-
-        {canVoid && (
-          <MenuItem onClick={handleVoid} sx={{ color: 'error.main' }}>
-            <ListItemIcon>
-              <BlockIcon fontSize="small" sx={{ color: 'error.main' }} />
-            </ListItemIcon>
-            Void
-          </MenuItem>
-        )}
-      </Menu>
-
-      <DeleteConfirmationDialog
-        open={deleteOpen}
-        title="Delete quote"
-        itemName={quote.quoteNumber}
-        permanent={false}
-        isPending={deleteQuoteMutation.isPending}
-        onCancel={() => setDeleteOpen(false)}
-        onConfirm={confirmDelete}
-      />
-
-      <VoidQuoteDialog
-        open={voidOpen}
-        onOpenChange={setVoidOpen}
-        quoteId={quote.id}
-        quoteNumber={quote.quoteNumber}
-        customerName={quote.customerName}
-      />
-    </>
-  );
-}
-
-/** Badge color for each deal stage, matching the dashboard's stage blocks. */
-const STAGE_VARIANT: Record<DealStage, BadgeVariant> = {
-  drafting: 'muted',
-  waiting: 'info',
-  quiet: 'error',
-  won: 'success',
-  lost: 'muted',
-};
-
-// ============================================================================
-// Column definitions (module-level — never recreated on render)
-// ============================================================================
-
-const CRM_COLUMNS: CrmColumn<QuoteRow>[] = [
-  {
-    field: 'customerName',
-    header: 'Customer',
-    track: crm['col-quote-customer'],
-    sortable: true,
-    // A little left padding (header moves with it) so the avatar is not flush with the card edge.
-    cellSx: { ...CELL_GUTTER, pl: 0.5 },
-    renderCell: (row) => {
-      const name = row.customerName ?? 'Unknown';
-      return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
-          <MUIAvatar name={name} size="sm" sx={{ flexShrink: 0 }} />
-          <Box sx={{ minWidth: 0 }}>
-            <MUITypography variant="bodyPrimary" noWrap title={name} sx={{ fontWeight: 500 }}>
-              {name}
-            </MUITypography>
-            <MUITypography
-              variant="finePrint"
-              noWrap
-              title={row.quoteNumber}
-              sx={{ display: 'block', color: color['text-tertiary'] }}
-            >
-              {row.quoteNumber}
-            </MUITypography>
-          </Box>
-        </Box>
-      );
-    },
-  },
-  {
-    field: 'propertyName',
-    header: 'Property',
-    track: crm['col-quote-property'],
-    cellSx: CELL_GUTTER,
-    renderCell: (row) => (
-      <MUITypography variant="body" noWrap>
-        {row.propertyName ?? '-'}
-      </MUITypography>
-    ),
-  },
-  {
-    field: 'systemSizeKw',
-    header: 'System',
-    track: crm['col-quote-system'],
-    sortable: true,
-    renderCell: (row) => <SystemSizeDisplay kw={row.systemSizeKw} layout="stacked" />,
-  },
-  {
-    field: 'finalPrice',
-    header: 'Value',
-    track: crm['col-quote-value'],
-    sortable: true,
-    align: 'right',
-    cellSx: CELL_GUTTER,
-    renderCell: (row) => (
-      <MUITypography variant="bodyPrimary" sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}>
-        {row.finalPrice != null ? formatCurrency(row.finalPrice) : '-'}
-      </MUITypography>
-    ),
-  },
-  {
-    field: 'dealStage',
-    header: 'Stage',
-    track: crm['col-quote-stage'],
-    stopPropagation: true,
-    // The badge reads as the deal stage; the dropdown still changes the quote's status.
-    renderCell: (row) => (
-      <QuoteStatusDropdown
-        quoteId={row.id}
-        status={row.status}
-        voidedAt={row.voidedAt}
-        voidReason={row.voidReason}
-        size="xs"
-        label={row.dealStage ? DEAL_STAGE_LABELS[row.dealStage] : undefined}
-        variant={row.dealStage ? STAGE_VARIANT[row.dealStage] : undefined}
-      />
-    ),
-  },
-  {
-    field: 'createdByName',
-    header: 'Made by',
-    track: crm['col-quote-made-by'],
-    cellSx: CELL_GUTTER,
-    renderCell: (row) => (
-      <MUITypography variant="body" noWrap title={row.createdByName ?? undefined}>
-        {row.createdByName ?? '-'}
-      </MUITypography>
-    ),
-  },
-  {
-    field: 'createdAt',
-    header: 'Dates',
-    track: crm['col-quote-dates'],
-    sortable: true,
-    renderCell: (row) => {
-      if (!row.createdAt) return <MUITypography variant="placeholder">-</MUITypography>;
-      // Same rule as the deal stage: valid through the whole of its last IST day.
-      const isExpired = Boolean(row.validUntil) && row.validUntil.slice(0, 10) < indiaToday();
-      return (
-        <Box sx={{ minWidth: 0 }}>
-          <MUITypography variant="body" sx={{ whiteSpace: 'nowrap' }}>
-            {formatBusinessDate(row.createdAt)}
-          </MUITypography>
-          {row.validUntil && (
-            <MUITypography
-              variant="finePrint"
-              sx={{
-                display: 'block',
-                whiteSpace: 'nowrap',
-                color: isExpired ? 'error.main' : color['text-tertiary'],
-              }}
-            >
-              valid till {formatBusinessDate(row.validUntil)}
-            </MUITypography>
-          )}
-        </Box>
-      );
-    },
-  },
-  {
-    field: 'actions',
-    header: '',
-    track: crm['col-actions'],
-    align: 'right',
-    hideable: false,
-    stopPropagation: true,
-    renderCell: (row) => <RowActionsMenu quote={row} />,
-  },
+/**
+ * The four sortable columns of the old table, both directions. The models are
+ * the same `{ field, direction }` values the headers wrote, so a saved
+ * `quotes_sort` URL still means what it meant.
+ */
+const SORT_OPTIONS: SortOption[] = [
+  { label: 'Newest first', model: null },
+  { label: 'Oldest first', model: { field: 'createdAt', direction: 'asc' } },
+  { label: 'Customer A–Z', model: { field: 'customerName', direction: 'asc' } },
+  { label: 'Customer Z–A', model: { field: 'customerName', direction: 'desc' } },
+  { label: 'Value: high to low', model: { field: 'finalPrice', direction: 'desc' } },
+  { label: 'Value: low to high', model: { field: 'finalPrice', direction: 'asc' } },
+  { label: 'System: large to small', model: { field: 'systemSizeKw', direction: 'desc' } },
+  { label: 'System: small to large', model: { field: 'systemSizeKw', direction: 'asc' } },
 ];
+
+/** No sort, or a field the API does not know, is the created date (`toApiSortField`). */
+const sortIndex = createSortIndex(SORT_OPTIONS, 'createdAt');
+
+const QUOTE_NOUN = { one: 'quote', many: 'quotes' };
+
+/** A screenful; a longer page does not need a longer placeholder. */
+const MAX_SKELETON_ROWS = 25;
 
 // ============================================================================
 // Filter panel (filter-only fields — the dashboard's links land on these)
@@ -772,130 +522,119 @@ export function QuoteListPage(): JSX.Element {
     ...toQuoteFilters(filters),
   });
 
-  const tableRows = useMemo<QuoteRow[]>(
-    () => (quoteData?.data as QuoteRow[] | undefined) ?? EMPTY_ROWS,
-    [quoteData?.data],
-  );
+  const rows = quoteData?.data ?? EMPTY_ROWS;
+  const { page, pageSize, search, sortModel } = urlState.state;
 
-  const renderEmptyState = useCallback(
-    (hasActiveFilters: boolean): JSX.Element =>
-      hasActiveFilters ? (
-        <Box sx={{ py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-          <MUITypography variant="body">No quotes match your search and filters.</MUITypography>
-          <Button size="small" variant="outlined" onClick={urlState.resetAll}>
-            Clear all filters
-          </Button>
-        </Box>
-      ) : (
-        <Box sx={{ py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-          <MUITypography variant="body">
-            No quotes yet. Get started by creating your first quote.
-          </MUITypography>
-          <Button
-            size="small"
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={createQuote.onGatedClick}
-            aria-disabled={!createQuote.allowed}
-            sx={{ opacity: createQuote.allowed ? 1 : 0.5 }}
-          >
-            Create Quote
-          </Button>
-        </Box>
-      ),
-    [createQuote.allowed, createQuote.onGatedClick, urlState.resetAll],
-  );
+  const hasActiveFilters =
+    search.length > 0 || Object.values(filters).some((value) => value !== '' && value != null);
+
+  // Said in the filter panel, so the effect of a filter shows without looking away.
+  const total = quoteData?.meta.total;
+  const resultLabel =
+    total === undefined ? undefined : `${formatNumber(total)} ${total === 1 ? 'quote' : 'quotes'}`;
+
+  // Rows rise in once. Later changes swap in without replaying it.
+  const entering = useListEntrance(rows.length);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-      {/* ── Page Header ── */}
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', lg: 'row' },
-          alignItems: { lg: 'center' },
-          justifyContent: 'space-between',
-          gap: 1.5,
-        }}
-      >
-        <Box>
-          <MUITypography variant="drawerTitle" component="h1">
-            Quotations
-          </MUITypography>
-          <MUITypography variant="body" sx={{ mt: 0.25 }}>
-            Create and manage customer quotations
-          </MUITypography>
-        </Box>
-
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Button variant="outlined" size="small" startIcon={<UploadIcon />} disabled>
-            Export
-          </Button>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddIcon />}
-            onClick={createQuote.onGatedClick}
-            aria-disabled={!createQuote.allowed}
-            sx={{ opacity: createQuote.allowed ? 1 : 0.5 }}
-          >
-            Create Quote
-          </Button>
-        </Stack>
-      </Box>
-
-      {/* ── Error banner ── */}
-      {isError && (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            p: 2,
-            borderRadius: '6px',
-            border: '1px solid',
-            borderColor: 'error.light',
-            backgroundColor: 'rgba(220,38,38,0.06)',
-          }}
-        >
-          <AlertIcon color="error" />
-          <Box sx={{ flex: 1 }}>
-            <MUITypography variant="alertTitle" sx={{ color: 'error.main' }}>
-              Failed to load quotes
-            </MUITypography>
-            <MUITypography variant="finePrint">{getErrorMessage(error)}</MUITypography>
-          </Box>
-          <Button variant="outlined" color="error" size="small" onClick={() => void refetch()}>
-            Retry
-          </Button>
-        </Box>
+    <CalmListPage
+      header={
+        <ListTitle
+          title="Quotations"
+          sub="Create and manage customer quotations"
+          actions={
+            <>
+              <Button variant="outlined" size="small" startIcon={<UploadIcon />} disabled>
+                Export
+              </Button>
+              <PrimaryAction onClick={createQuote.onGatedClick} allowed={createQuote.allowed}>
+                + Create quote
+              </PrimaryAction>
+            </>
+          }
+        />
+      }
+      toolbar={
+        <ListToolbar
+          search={search}
+          onSearchChange={urlState.setSearch}
+          searchPlaceholder="Search quote, name, phone"
+          searchLabel="Search quotes"
+          filterColumns={filterColumns}
+          filters={filters}
+          onFilterChange={urlState.setFilters}
+          sortOptions={SORT_OPTIONS}
+          sortActiveIndex={sortIndex}
+          sortModel={sortModel}
+          onSortChange={urlState.setSortModel}
+          resultLabel={resultLabel}
+        />
+      }
+      error={
+        isError ? (
+          <ListError
+            title="Failed to load quotes"
+            message={getErrorMessage(error)}
+            onRetry={() => void refetch()}
+          />
+        ) : null
+      }
+      isFetching={isFetching}
+      isLoading={isLoading}
+      footer={
+        <ListPager
+          page={page}
+          pageSize={pageSize}
+          totalRowCount={quoteData?.meta.total ?? 0}
+          onPageChange={urlState.setPage}
+          onPageSizeChange={urlState.setPageSize}
+          noun={QUOTE_NOUN}
+          countUnknown={isError && !quoteData}
+        />
+      }
+    >
+      {isLoading ? (
+        <ListSkeleton
+          rows={Math.min(pageSize, MAX_SKELETON_ROWS)}
+          label="Loading quotes"
+          renderRow={() => <QuoteRowSkeleton />}
+        />
+      ) : rows.length === 0 ? (
+        isError ? null : hasActiveFilters ? (
+          <ListEmpty
+            title="No quotes match"
+            hint="Try another quote number, name or filter."
+            action={
+              <Button size="small" variant="outlined" onClick={urlState.resetAll} sx={{ mt: 0.5 }}>
+                Clear all filters
+              </Button>
+            }
+          />
+        ) : (
+          <ListEmpty
+            title="No quotes yet"
+            hint="Get started by creating your first quote."
+            action={
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={createQuote.onGatedClick}
+                aria-disabled={!createQuote.allowed}
+                sx={{ mt: 0.5, opacity: createQuote.allowed ? 1 : 0.5 }}
+              >
+                Create Quote
+              </Button>
+            }
+          />
+        )
+      ) : (
+        <div className="flex flex-col gap-2">
+          {rows.map((quote, index) => (
+            <QuoteRow key={quote.id} quote={quote} index={index} entering={entering} />
+          ))}
+        </div>
       )}
-
-      {/* ── Table ── */}
-      <CrmTable<QuoteRow>
-        columns={CRM_COLUMNS}
-        rows={tableRows}
-        getRowId={(row) => row.id}
-        loading={isLoading}
-        refetching={isFetching && !isLoading}
-        initialSearch={urlState.state.search}
-        onSearchChange={urlState.setSearch}
-        searchPlaceholder="Search quote, name, phone"
-        filterColumns={filterColumns}
-        filterModel={filters}
-        onFilterChange={urlState.setFilters}
-        sortModel={urlState.state.sortModel}
-        onSortChange={urlState.setSortModel}
-        page={urlState.state.page}
-        pageSize={urlState.state.pageSize}
-        totalRowCount={quoteData?.meta.total ?? 0}
-        onPageChange={urlState.setPage}
-        onPageSizeChange={urlState.setPageSize}
-        onRowClick={(row) => void router.push(buildRoute(ROUTES.QUOTES.DETAIL, { id: row.id }))}
-        itemLabel="quotes"
-        gridMinWidth="1000px"
-        renderEmptyState={renderEmptyState}
-      />
-    </Box>
+    </CalmListPage>
   );
 }

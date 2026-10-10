@@ -26,6 +26,32 @@ export function matchSortOption(options: SortOption[], model: TableUrlSortModel 
   return index === -1 ? 0 : index;
 }
 
+/**
+ * For a list whose first option is "`fallbackField`, newest first" and whose
+ * API sorts by `fallbackField` whenever it is handed a field it does not know
+ * (while still honouring the direction). The option a model reads as is then
+ * always the one whose request is the one actually sent: a hand-edited
+ * `{"field":"bogus","direction":"asc"}` goes out as `fallbackField` ascending
+ * and reads as that option, not as the default.
+ */
+export function createSortIndex(
+  options: SortOption[],
+  fallbackField: string,
+): (model: TableUrlSortModel | null) => number {
+  const known = new Set([fallbackField]);
+  for (const option of options) if (option.model) known.add(option.model.field);
+  return (model) => {
+    if (!model) return 0;
+    const field = known.has(model.field) ? model.field : fallbackField;
+    const direction = model.direction === 'asc' ? 'asc' : 'desc';
+    if (field === fallbackField && direction === 'desc') return 0;
+    const index = options.findIndex(
+      (option) => option.model?.field === field && option.model.direction === direction,
+    );
+    return index === -1 ? 0 : index;
+  };
+}
+
 export interface SortMenuProps {
   /** What the column headers of the old table offered, as one menu. */
   options: SortOption[];

@@ -397,14 +397,6 @@ const root = {
     'col-status': '106px',
     'col-onboarded': '102px',
     'col-actions': '40px',
-    // Quote list grid. Customer also carries the quote number on a second line.
-    'col-quote-customer': 'minmax(240px,1.6fr)',
-    'col-quote-property': 'minmax(120px,1fr)',
-    'col-quote-system': '88px',
-    'col-quote-value': '112px',
-    'col-quote-stage': '120px',
-    'col-quote-made-by': 'minmax(120px,1fr)',
-    'col-quote-dates': '132px',
     // Payment approval queue (design min-width 1180px)
     'col-approval-request': '152px',
     'col-approval-date': '96px',
