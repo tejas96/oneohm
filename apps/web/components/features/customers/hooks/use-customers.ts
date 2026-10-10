@@ -152,8 +152,8 @@ export interface Customer {
   assigneeId?: string;
   assigneeName?: string;
   /**
-   * List responses only: the assignee's user account is archived. The name is
-   * still sent — show it as archived; the customer is not unassigned.
+   * The assignee's user account is archived. The name is still sent — show it
+   * as archived; the customer is not unassigned.
    */
   assigneeArchived?: boolean;
   /**

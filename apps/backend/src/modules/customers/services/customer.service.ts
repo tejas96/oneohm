@@ -84,9 +84,9 @@ type CustomerWithDeleteInfo = CustomerProfileEntity & {
    */
   journey?: CustomerJourney;
   /**
-   * The assignee's name when their user account is archived (list only). The
-   * ORM join drops an archived user, so `assignee` is empty for them; this
-   * keeps the customer from reading as unassigned.
+   * The assignee's name when their user account is archived. The ORM join
+   * drops an archived user, so `assignee` is empty for them; this keeps the
+   * customer from reading as unassigned — on the list and on its own page.
    */
   archivedAssigneeName?: string;
   /** Follow-up state for the list row: the shared predicate, the count, the next one. */
@@ -214,9 +214,30 @@ export class CustomerService {
       throw new NotFoundException(`Customer with ID ${id} not found`);
     }
 
-    const deleteBlockReasons = await this.customerRepository.getCustomerDeleteBlockers(id);
+    const [deleteBlockReasons, withAssignee] = await Promise.all([
+      this.customerRepository.getCustomerDeleteBlockers(id),
+      this.withArchivedAssignee(customer),
+    ]);
 
-    return { ...customer, deleteBlockReasons };
+    return { ...withAssignee, deleteBlockReasons };
+  }
+
+  /**
+   * Put the assignee's name back on a single customer whose assignee is an
+   * archived user — the same lookup the list does for a page (`enrichListPage`).
+   * Costs a query only for a customer in that state; every other customer is
+   * returned as it came.
+   *
+   * Every single-customer response the web writes into its detail cache goes
+   * through this (the read, and the two updates that return the record), so
+   * the name does not disappear from the page after an edit.
+   */
+  async withArchivedAssignee<T extends CustomerProfileEntity>(
+    customer: T,
+  ): Promise<T & { archivedAssigneeName?: string }> {
+    if (!customer.assigneeId || customer.assignee) return customer;
+    const names = await this.customerRepository.getArchivedUserNames([customer.assigneeId]);
+    return { ...customer, archivedAssigneeName: names.get(customer.assigneeId) };
   }
 
   /**

@@ -441,13 +441,13 @@ export class CustomerResponseDto {
 
   @ApiPropertyOptional({
     description:
-      'Full name of the assigned user. On list responses this is also set when that ' +
-      'user is archived (see assigneeArchived) — the customer is still assigned.',
+      'Full name of the assigned user. Also set when that user is archived ' +
+      '(see assigneeArchived) — the customer is still assigned.',
   })
   @Expose()
   @Transform(({ obj }) => {
     if (!obj.assigneeId) return undefined;
-    // An archived user is left out of the join; the list supplies the name.
+    // An archived user is left out of the join; the service supplies the name.
     if (!obj.assignee) return obj.archivedAssigneeName || undefined;
     const firstName = obj.assignee.firstName || '';
     const lastName = obj.assignee.lastName || '';
@@ -457,8 +457,8 @@ export class CustomerResponseDto {
 
   @ApiPropertyOptional({
     description:
-      'The assigned user is archived (list responses only). Show the name as archived; ' +
-      'do not treat the customer as unassigned.',
+      'The assigned user is archived. Show the name as archived; do not treat the ' +
+      'customer as unassigned.',
   })
   @Expose()
   @Transform(({ obj }) => Boolean(obj.assigneeId && !obj.assignee && obj.archivedAssigneeName))

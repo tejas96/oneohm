@@ -9,6 +9,7 @@ import { Box, Button, Skeleton, Stack, Tooltip, Typography } from '@mui/material
 import { FollowupStatus, PropertyStatus } from '@tejas96/shared/types';
 import { type JSX, useMemo, useState } from 'react';
 
+import { handledBy } from '../../components/list/format';
 import { LEAD_SOURCE_LABELS, getSiteLifecycle, type CustomerDetailTab } from '../../constants';
 import {
   type Customer,
@@ -77,10 +78,16 @@ function AssigneeField({ customer }: { customer: Customer }): JSX.Element {
   );
   const { data: employees = [], isLoading } = useEmployees({ enabled: pickerActive });
 
+  // Active employees only: an archived user is never one of the choices.
   const options = employees.map((employee) => ({
     id: employee.userId,
     displayName: [employee.user?.firstName, employee.user?.lastName].filter(Boolean).join(' '),
   }));
+  /*
+   * Still assigned to someone whose account is archived: the name is shown,
+   * marked "(archived)", and cannot be picked. The customer is not unassigned.
+   */
+  const handler = handledBy(customer);
 
   if (!pickerActive) {
     return (
@@ -96,6 +103,14 @@ function AssigneeField({ customer }: { customer: Customer }): JSX.Element {
               : []
           }
         />
+        {handler.archived && (
+          <Typography
+            component="span"
+            sx={{ fontSize: '0.8125rem', color: 'var(--ds-text-secondary)', flexShrink: 0 }}
+          >
+            (archived)
+          </Typography>
+        )}
         <Button
           size="small"
           variant="text"
@@ -120,7 +135,9 @@ function AssigneeField({ customer }: { customer: Customer }): JSX.Element {
       optionsLoading={isLoading}
       loading={assignMutation.isPending}
       allowUnassign
-      placeholder="Unassigned"
+      // The archived assignee is not among `options`, so the trigger falls back
+      // to this text: their name stays on screen while a replacement is chosen.
+      placeholder={handler.archived && handler.label ? handler.label : 'Unassigned'}
       triggerMinWidth={0}
     />
   );
