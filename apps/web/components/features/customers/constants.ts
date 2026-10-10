@@ -117,61 +117,6 @@ export const PROPERTY_TYPE_TONE: Record<PropertyType, CrmTone> = {
 };
 
 // ============================================================================
-// Detail pages: site pipeline stage (legacy, client-derived)
-// ============================================================================
-
-/**
- * The stage rail on the customer and property DETAIL pages (`SiteStageBar`).
- *
- * The customers list no longer uses this: it reads the server's journey
- * (`stageIndex` / `lost`, named by `SITE_JOURNEY_STEPS` in the shared package),
- * which is computed by one SQL rule. This older client-side rule stays only
- * because `GET /customer-properties/:id` — what the property page loads — does
- * not carry `stageIndex` yet. Do not add new callers.
- */
-export const SITE_STAGES = [
-  'Lead captured',
-  'Survey done',
-  'Design ready',
-  'Quote sent',
-  'Converted',
-  'Commissioned',
-] as const;
-
-/** Quote states that mean the quote has actually gone out to the customer. */
-const QUOTE_SENT_STATUSES: readonly string[] = ['sent', 'viewed', 'accepted', 'rejected'];
-
-/**
- * Derive a site's stage index from the facts already on the property record.
- *
- * There is no `stage` column — the stage IS the highest milestone the site has
- * reached, so it is computed from the linked project, converted status, quote
- * state and survey completion rather than stored and risked going stale.
- * Checked highest-first: a converted site is converted regardless of what its
- * quote says, and a commissioned one regardless of both.
- */
-export function getSiteStageIndex(property: {
-  status?: string;
-  projectStatus?: string;
-  latestQuoteId?: string;
-  latestQuoteStatus?: string;
-  surveyDone?: boolean;
-  siteVisitDone?: boolean;
-}): number {
-  // Conversion is not the end of the journey — handover is. Only a finished
-  // project fills the rail; a cancelled one stops where it stopped rather than
-  // reading as progress, and the status pill carries the bad news.
-  if (property.projectStatus === ProjectStatus.COMPLETED) return 5;
-  if (property.status === PropertyStatus.CONVERTED) return 4;
-  if (property.latestQuoteStatus && QUOTE_SENT_STATUSES.includes(property.latestQuoteStatus)) {
-    return 3;
-  }
-  if (property.latestQuoteId) return 2;
-  if (property.surveyDone || property.siteVisitDone) return 1;
-  return 0;
-}
-
-// ============================================================================
 // CRM list: what a site is actually doing
 // ============================================================================
 

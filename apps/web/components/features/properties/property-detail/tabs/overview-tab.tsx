@@ -61,9 +61,9 @@ import { formatCurrency, formatDate, formatFollowupWhen, toTitleLabel } from '@/
 
 export interface OverviewTabProps {
   /**
-   * Enriched by the page with the `latestQuote*` fields — the single-site
-   * endpoint omits them, and `SiteStageBar` reads them to place the site on
-   * its rail.
+   * Enriched by the page with the `latestQuote*` fields the single-site
+   * endpoint omits. The journey rail does not need them: it reads the
+   * server's `stageIndex` / `lost` on the record.
    */
   property: CustomerPropertyResponse;
   enabled: boolean;

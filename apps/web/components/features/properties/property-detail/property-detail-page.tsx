@@ -199,11 +199,11 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
   /**
    * The property record with those fields put back on it.
    *
-   * Shared components — `SiteStageBar` above all — read `latestQuoteId` and
-   * `latestQuoteStatus` to decide how far a site has travelled. Handed the raw
-   * detail payload they saw neither, so a site with an accepted quote and a
-   * live project sat on "Lead captured". Enriching once here means every tab
-   * below gets the same, complete record.
+   * The tiles and menus below read `latestQuoteId`, `latestQuoteStatus` and the
+   * quote's value from the record; the raw detail payload has none of them.
+   * Enriching once here means every tab gets the same, complete record. (How
+   * far the site has travelled is NOT read from these: `SiteStageBar` uses the
+   * server's `stageIndex` / `lost`, which this endpoint carries.)
    */
   const enrichedProperty = useMemo(() => {
     if (!property || !headlineQuote) return property;
