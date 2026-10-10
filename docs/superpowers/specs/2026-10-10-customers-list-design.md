@@ -11,6 +11,11 @@ Each customer becomes one calm line: who, how far along (a 6-step journey
 track), the next follow-up, the value. A click opens a focus panel with the
 sites and details. No table of small text, no table inside a table.
 
+**Deploy backend before web.** The page reads `journey`, `nextFollowup`,
+`needsFollowup` and `sitePortfolio` from `GET /customers`; against a backend
+that does not send `journey` a row with sites shows no stage (an empty track),
+not "No site yet".
+
 ## Hard rules
 
 1. **Search, chips, filter panel, sorting, pagination and URL state keep their
@@ -78,8 +83,13 @@ site page — reads `stageIndex` / `lost` and names the step from
 Small line under the stage name: `N site(s) · X kW` then, when there is more
 than one site, what the others are doing in words, e.g. `· 1 at quote sent`,
 `· 1 lost`. A lost customer reads `stopped at <step> · <lostReason>`. kW and ₹
-are the existing `sitePortfolio.totalSystemSizeKw` and `totalPortfolioAmount`
-(unchanged definitions).
+are `sitePortfolio.totalSystemSizeKw` and `totalPortfolioAmount`. Each site is
+read at its DEAL quote (live accepted → newest live → newest voided — the quote
+the stage is read from and the site panel prints); a site with a live project
+still counts ₹ at its contract. So a row's ₹ and kW are the sum of its site
+blocks, never the value of a later draft or of a voided quote beside a live
+one. (Changed 2026-10-10: these used the newest quote, voided or not. The
+overview statistics and every filter, search and sort are untouched.)
 
 ## Next follow-up — new display fields
 
@@ -162,7 +172,9 @@ that is no status highlights no ribbon button (as before the rebuild).
 5. **Handled by**: a small avatar of `assigneeName` (title "Handled by
    <name>"), at the right of the row before ⋮; when unassigned, a dashed empty
    avatar with title "Not assigned · created by <creatorName>". Never show
-   the creator as if they were the owner.
+   the creator as if they were the owner. An assignee whose account is
+   archived is still the assignee: the list sends the name with
+   `assigneeArchived: true` and the row and panel read "<name> (archived)".
 6. **⋮** menu — unchanged items, gates and delete-block rules.
 
 The row is not a button wrapping links: a real "open details" button covers
@@ -193,8 +205,11 @@ shade close it; focus returns to the row; URL not changed).
   `latestQuote*`); DISCOM · sanctioned load · connection type; next
   follow-up (date, assignee), else red "No follow-up planned", "Closed" or
   "Nothing due" (the row's order);
-  lifecycle status (`getSiteLifecycle`); added date; project link
-  (`/projects/[id]`) when converted; the existing site ⋮ menu
+  lifecycle status (`getSiteLifecycle`; "Meter installed · project still open"
+  when the meter is in and the project is not completed, so it cannot argue
+  with a "Commissioned" stage); added date; project link (`/projects/[id]`) for
+  a live project only — a lost site may link its "Cancelled project", a
+  reopened site shows none; the existing site ⋮ menu
   (`PropertyRowActionsMenu`, all items/gates). Clicking the block →
   `/properties/[id]`. "Add site" (gated `properties.create`).
 - Details: handled by / created by, onboarded date, value, follow-up people
