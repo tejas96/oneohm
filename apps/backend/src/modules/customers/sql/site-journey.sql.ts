@@ -327,6 +327,7 @@ const NO_STEPS: JourneySteps = {
 
 type RollUpSite = Pick<
   SiteJourneyRow,
+  | 'propertyId'
   | 'stageIndex'
   | 'lost'
   | 'lostReason'
@@ -339,6 +340,23 @@ type RollUpSite = Pick<
 >;
 
 /**
+ * Whether `a` was lost more recently than `b`: `lost_at` DESC, undated last,
+ * then the site id — a fixed order, so two sites lost at the same moment (or
+ * with no moment recorded) always yield the same reason, whatever order the
+ * query returned them in.
+ */
+function lostMoreRecently(a: RollUpSite, b: RollUpSite): boolean {
+  const at = a.lostAt ? new Date(a.lostAt).getTime() : null;
+  const bt = b.lostAt ? new Date(b.lostAt).getTime() : null;
+  if (at !== bt) {
+    if (at === null) return false;
+    if (bt === null) return true;
+    return at > bt;
+  }
+  return a.propertyId < b.propertyId;
+}
+
+/**
  * One customer's sites as one journey.
  *
  * The stage is the furthest any site still in play has got. When nothing is in
@@ -349,7 +367,8 @@ type RollUpSite = Pick<
  * `steps` is each step fact OR-ed over the same sites the stage was read from
  * (the sites in play; every site when the journey is lost), so the customer's
  * checklist ticks a step exactly when one of those sites did it.
- * `lostReason` is the reason on the site that was lost most recently.
+ * `lostReason` is the reason on the site that was lost most recently
+ * (`lostMoreRecently`: `lost_at` DESC, undated last, then the site id).
  */
 export function rollUpCustomerJourney(
   sites: ReadonlyArray<RollUpSite>,
@@ -376,10 +395,7 @@ export function rollUpCustomerJourney(
     furthestReached = Math.max(furthestReached, site.stageIndex);
     if (site.lost) {
       lostSites += 1;
-      // A site with no recorded moment sorts before every dated one.
-      const at = site.lostAt ? new Date(site.lostAt).getTime() : -Infinity;
-      const best = lastLost?.lostAt ? new Date(lastLost.lostAt).getTime() : -Infinity;
-      if (lastLost === null || at > best) lastLost = site;
+      if (lastLost === null || lostMoreRecently(site, lastLost)) lastLost = site;
       continue;
     }
     stageCounts[site.stageIndex] = (stageCounts[site.stageIndex] ?? 0) + 1;
