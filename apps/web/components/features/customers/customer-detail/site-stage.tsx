@@ -10,14 +10,16 @@ import type { CustomerPropertyResponse } from '../hooks';
 /**
  * How far a site has travelled, drawn as a segmented rail.
  *
- * Reuses `SITE_STAGES` / `getSiteStageIndex` — the same stage model the
- * customer **list**'s expanded row runs on — rather than the chip chain in
+ * Uses `SITE_STAGES` / `getSiteStageIndex` rather than the chip chain in
  * `PropertyPipelineStrip`. Two reasons: that component is shared with the
  * property detail page and repainting it would restyle a page outside this
  * work, and its chips ("No quote → No project yet") spend a full row of width
  * telling you what has *not* happened. A rail shows the same thing in a
- * glance, and a site now reads identically whether you meet it in the list or
- * here.
+ * glance.
+ *
+ * Note: the customers LIST now reads the server-computed journey instead
+ * (`SITE_JOURNEY_STEPS`, with "lost"); this rail still derives its stage on
+ * the client — see the note on `SITE_STAGES`.
  */
 
 const STAGE_TONE: DetailTone = 'success';

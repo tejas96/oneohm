@@ -1,12 +1,12 @@
 /**
- * Guards for the derived values behind the CRM customer list.
+ * Guards for derived values in the customers feature.
  *
- * The list renders three things that are computed rather than read: a site's
- * pipeline stage, a semantic tone per enum value, and the site-status
- * distribution bar. Each fails *silently* when it goes wrong — a wrong stage
- * still renders a plausible bar, a missing tone still renders a grey pill, and
- * a missing bar segment still renders a bar that just doesn't add up. These
- * tests make each of those loud instead.
+ * `getSiteStageIndex` (the detail pages' stage rail) and the semantic tone maps
+ * are computed rather than read, and each fails *silently* when it goes wrong —
+ * a wrong stage still renders a plausible bar and a missing tone still renders
+ * a grey pill. These tests make those loud instead.
+ *
+ * The customers LIST no longer derives a stage: it reads the server's journey.
  */
 
 import { CustomerStatus, PropertyStatus, PropertyType, QuoteStatus } from '@tejas96/shared/types';
@@ -14,8 +14,6 @@ import { CustomerStatus, PropertyStatus, PropertyType, QuoteStatus } from '@teja
 import {
   CUSTOMER_STATUS_TONE,
   getSiteStageIndex,
-  LEAD_SOURCE_TONE,
-  PROPERTY_STATUS_BAR_ORDER,
   PROPERTY_STATUS_TONE,
   PROPERTY_TYPE_TONE,
   QUOTE_STATUS_TONE,
@@ -93,84 +91,23 @@ describe('tone maps are exhaustive over their enums', () => {
       expect((map as Record<string, string>)[value]).toBeDefined();
     }
   });
-
-  it('covers every lead source the enum defines', () => {
-    // LeadSource permits free-text values under `other`, so this checks the
-    // enumerated members only — unknown strings legitimately fall back.
-    for (const source of [
-      'website',
-      'referral',
-      'reseller',
-      'walk_in',
-      'social_media',
-      'advertisement',
-      'exhibition',
-      'cold_call',
-      'other',
-    ]) {
-      expect(LEAD_SOURCE_TONE[source]).toBeDefined();
-    }
-  });
-});
-
-describe('site-status distribution bar', () => {
-  it('renders a segment for every possible site status', () => {
-    // The bar widths are `count / siteCount`. A status missing from the order
-    // is dropped from the bar entirely, so the segments quietly stop summing
-    // to 100% and the row under-reports its own portfolio.
-    expect([...PROPERTY_STATUS_BAR_ORDER].sort()).toEqual(Object.values(PropertyStatus).sort());
-  });
-
-  it('lists no status twice', () => {
-    expect(new Set(PROPERTY_STATUS_BAR_ORDER).size).toBe(PROPERTY_STATUS_BAR_ORDER.length);
-  });
-
-  it('sums to the full width for any status distribution', () => {
-    const statusCounts: Record<string, number> = {
-      [PropertyStatus.CONVERTED]: 4,
-      [PropertyStatus.ACTIVE]: 2,
-      [PropertyStatus.PENDING_VERIFICATION]: 1,
-      [PropertyStatus.INACTIVE]: 3,
-    };
-    const siteCount = Object.values(statusCounts).reduce((a, b) => a + b, 0);
-    const total = PROPERTY_STATUS_BAR_ORDER.reduce(
-      (sum, status) => sum + ((statusCounts[status] ?? 0) / siteCount) * 100,
-      0,
-    );
-    expect(total).toBeCloseTo(100, 10);
-  });
 });
 
 describe('CRM grid tokens', () => {
-  const CUSTOMER_TRACKS = [
+  // The tracks other CrmTable pages still borrow. (The customers list is no
+  // longer a grid, so its own tracks and the sites sub-grid's are gone.)
+  const SHARED_TRACKS = [
     crm['col-select'],
     crm['col-caret'],
     crm['col-customer'],
-    crm['col-contact'],
-    crm['col-location'],
-    crm['col-source'],
     crm['col-portfolio'],
     crm['col-status'],
     crm['col-onboarded'],
-    crm['col-owner'],
-    crm['col-creator'],
     crm['col-actions'],
   ];
 
-  const SITE_TRACKS = [
-    crm['sites-col-site'],
-    crm['sites-col-type'],
-    crm['sites-col-stage'],
-    crm['sites-col-quote'],
-    crm['sites-col-cost'],
-    crm['sites-col-discom'],
-    crm['sites-col-status'],
-    crm['sites-col-added'],
-    crm['sites-col-actions'],
-  ];
-
   it('defines every column track', () => {
-    for (const track of [...CUSTOMER_TRACKS, ...SITE_TRACKS]) {
+    for (const track of SHARED_TRACKS) {
       expect(track).toBeTruthy();
     }
   });
@@ -179,14 +116,10 @@ describe('CRM grid tokens', () => {
     // CrmTable joins visible tracks with a space to build
     // `grid-template-columns`. A token holding two tracks would silently shift
     // every column after it by one, misaligning header from body.
-    for (const track of [...CUSTOMER_TRACKS, ...SITE_TRACKS]) {
+    for (const track of SHARED_TRACKS) {
       // Strip minmax(...) — its internal comma and space are part of one track.
       const collapsed = track.replace(/minmax\([^)]*\)/g, 'X');
       expect(collapsed.trim()).not.toMatch(/\s/);
     }
-  });
-
-  it('gives the sites sub-grid one track per header', () => {
-    expect(SITE_TRACKS).toHaveLength(9);
   });
 });

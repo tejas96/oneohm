@@ -23,6 +23,7 @@
   --radius-input-functional: 10px;
   --radius-input-expressive: 14px;
   --radius-sheet-top: 32px;
+  --radius-card-calm: 18px;
   --radius-pill: 999px;
 
   /* shadow */
@@ -32,12 +33,17 @@
   --shadow-e3: 0 8px 24px rgba(16,24,40,0.06);
   --shadow-e4: 0 16px 48px rgba(16,24,40,0.08);
   --shadow-e5: 0 24px 72px rgba(16,24,40,0.10);
+  --shadow-calm: 0 1px 2px rgba(16,24,40,0.04),0 4px 16px rgba(16,24,40,0.05);
+  --shadow-calm-drawer: -24px 0 60px rgba(16,24,40,0.18);
+  --shadow-calm-cta: 0 2px 8px rgba(118,192,68,0.35);
+  --shadow-calm-pin: 0 2px 6px rgba(77,124,15,0.35);
 
   /* ease */
   --ease-standard: cubic-bezier(0.4,0,0.2,1);
   --ease-enter: cubic-bezier(0,0,0.2,1);
   --ease-exit: cubic-bezier(0.4,0,1,1);
   --ease-spring: cubic-bezier(0.34,1.56,0.64,1);
+  --ease-calm: cubic-bezier(0.2,0.8,0.2,1);
 }
 
 :root {
@@ -66,6 +72,7 @@
   --ds-primary: #76C044;
   --ds-primary-dark: #4D7C0F;
   --ds-primary-light: #8FD35F;
+  --ds-primary-soft: #CFEBB8;
   --ds-primary-contrast: #FFFFFF;
   --ds-secondary: #0D74B8;
   --ds-secondary-dark: #0A5C92;
@@ -86,9 +93,13 @@
   --ds-danger: #DC2626;
   --ds-danger-hover: #B91C1C;
   --ds-danger-bg: #FDECEC;
+  --ds-danger-soft: #FCA5A5;
+  --ds-danger-glow: rgba(220,38,38,0.25);
+  --ds-danger-glow-fade: rgba(220,38,38,0);
   --ds-info: #0369A1;
   --ds-info-main: #0EA5E9;
   --ds-info-bg: #E8F4FB;
+  --ds-info-soft: #93C5FD;
   --ds-neutral: #57534E;
   --ds-neutral-bg: #F5F5F4;
   --ds-chart-1: #76C044;
@@ -168,15 +179,9 @@
   --crm-col-select: 38px;
   --crm-col-caret: 30px;
   --crm-col-customer: minmax(196px,1.6fr);
-  --crm-col-contact: 148px;
-  --crm-col-location: minmax(102px,0.9fr);
-  --crm-col-source: 116px;
   --crm-col-portfolio: 178px;
   --crm-col-status: 106px;
   --crm-col-onboarded: 102px;
-  --crm-col-owner: minmax(122px,1fr);
-  --crm-col-followup-assignees: 108px;
-  --crm-col-creator: minmax(122px,1fr);
   --crm-col-actions: 40px;
   --crm-col-quote-customer: minmax(240px,1.6fr);
   --crm-col-quote-property: minmax(120px,1fr);
@@ -268,13 +273,6 @@
   --crm-spine-width: 3px;
   --crm-spine-radius: 0 3px 3px 0;
   --crm-caret-size: 24px;
-  --crm-avatar-size: 34px;
-  --crm-owner-avatar-size: 22px;
-  --crm-row-action-size: 30px;
-  --crm-group-chip-height: 18px;
-  --crm-group-chip-max-width: 150px;
-  --crm-whatsapp-size: 22px;
-  --crm-portfolio-bar-height: 4px;
   --crm-status-pill-height: 23px;
   --crm-status-dot-size: 5px;
   --crm-toolbar-pad-y: 12px;
@@ -289,30 +287,8 @@
   --crm-footer-page-min-width: 84px;
   --crm-selection-bar-offset: 62px;
   --crm-selection-bar-pad: 7px 8px 7px 18px;
-  --crm-sites-indent: 68px;
-  --crm-sites-col-site: minmax(252px,1.7fr);
-  --crm-sites-col-type: 112px;
-  --crm-sites-col-stage: 128px;
-  --crm-sites-col-quote: 112px;
-  --crm-sites-col-cost: 118px;
-  --crm-sites-col-discom: minmax(132px,1fr);
-  --crm-sites-col-followups: 96px;
-  --crm-sites-col-status: 100px;
-  --crm-sites-col-added: 88px;
-  --crm-sites-col-actions: 34px;
-  --crm-sites-gutter: 12px;
-  --crm-sites-head-height: 34px;
-  --crm-sites-row-height: 46px;
-  --crm-sites-row-pad-y: 9px;
-  --crm-sites-panel-pad: 11px 12px 12px;
-  --crm-sites-icon-size: 26px;
-  --crm-sites-primary-chip-height: 15px;
-  --crm-sites-summary-pill-height: 24px;
   --crm-sites-quote-pill-height: 22px;
   --crm-sites-status-pill-height: 21px;
-  --crm-sites-stage-bar-height: 3px;
-  --crm-sites-action-size: 26px;
-  --crm-sites-glow-size: 300px;
   --crm-page-pad-x: 24px;
   --crm-page-pad-top: 22px;
   --crm-kpi-min-width: 196px;
@@ -324,9 +300,5 @@
   --crm-text-row: 12.5px;
   --crm-text-row-sm: 11.5px;
   --crm-text-row-xs: 11px;
-  --crm-text-row-2xs: 10.5px;
-  --crm-text-overline-sm: 10px;
-  --crm-text-overline-xs: 9px;
   --crm-text-overline-sm-track: 0.1em;
-  --crm-text-overline-xs-track: 0.06em;
 }

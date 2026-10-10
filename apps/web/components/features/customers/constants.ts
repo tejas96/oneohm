@@ -87,25 +87,6 @@ export const CUSTOMER_STATUS_TONE: Record<CustomerStatus, CrmTone> = {
   lost: 'danger',
 };
 
-/**
- * Lead source → DS tone.
- *
- * Grouped by how the lead reached us: inbound (info), earned (accent), paid
- * (warning), and everything else neutral. Sources not listed — the enum allows
- * free-text values under `other` — fall back to neutral.
- */
-export const LEAD_SOURCE_TONE: Record<string, CrmTone> = {
-  website: 'info',
-  social_media: 'info',
-  referral: 'accent',
-  advertisement: 'warning',
-  exhibition: 'warning',
-  cold_call: 'warning',
-  walk_in: 'neutral',
-  reseller: 'neutral',
-  other: 'neutral',
-};
-
 /** Site (property) status → DS tone. */
 export const PROPERTY_STATUS_TONE: Record<PropertyStatus, CrmTone> = {
   [PropertyStatus.ACTIVE]: 'info',
@@ -114,19 +95,6 @@ export const PROPERTY_STATUS_TONE: Record<PropertyStatus, CrmTone> = {
   [PropertyStatus.INACTIVE]: 'danger',
   [PropertyStatus.LOST]: 'danger',
 };
-
-/**
- * Order the site-status segments are stacked in the portfolio distribution bar.
- * Fixed rather than derived from object key order so the bar's reading — won
- * on the left, lost on the right — is stable across rows.
- */
-export const PROPERTY_STATUS_BAR_ORDER: readonly PropertyStatus[] = [
-  PropertyStatus.CONVERTED,
-  PropertyStatus.ACTIVE,
-  PropertyStatus.PENDING_VERIFICATION,
-  PropertyStatus.INACTIVE,
-  PropertyStatus.LOST,
-];
 
 /** Latest-quote status → DS tone. */
 export const QUOTE_STATUS_TONE: Record<QuoteStatus, CrmTone> = {
@@ -149,12 +117,17 @@ export const PROPERTY_TYPE_TONE: Record<PropertyType, CrmTone> = {
 };
 
 // ============================================================================
-// CRM list: site pipeline stage
+// Detail pages: site pipeline stage (legacy, client-derived)
 // ============================================================================
 
 /**
- * The site journey, in order. The expanded row shows the current rung plus a
- * progress bar of `(index + 1) / length`.
+ * The stage rail on the customer and property DETAIL pages (`SiteStageBar`).
+ *
+ * The customers list no longer uses this: it reads the server's journey
+ * (`stageIndex` / `lost`, named by `SITE_JOURNEY_STEPS` in the shared package),
+ * which is computed by one SQL rule. This older client-side rule stays only
+ * because `GET /customer-properties/:id` — what the property page loads — does
+ * not carry `stageIndex` yet. Do not add new callers.
  */
 export const SITE_STAGES = [
   'Lead captured',
