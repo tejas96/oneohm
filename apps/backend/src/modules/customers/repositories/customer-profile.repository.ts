@@ -19,6 +19,7 @@ import { IsNull, Repository, type EntityManager, type SelectQueryBuilder } from 
 
 import { CUSTOMER_NEEDS_FOLLOWUP } from './followup-predicates';
 import { systemSizeKwSqlRaw } from '../../../common/utils/transform.util';
+import { dealQuoteOrderSql } from '../../quotes/sql/deal-facts.sql';
 import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
 import {
@@ -86,11 +87,14 @@ const AWAITING_AGEING_DAYS = 7;
  * and that quote's current version (`cv`), for a query whose driving table is
  * aliased `prop`.
  *
- * Shared verbatim by the portfolio roll-up and the overview stats so both read
- * the same "latest quote" as the property list
- * (`CustomerPropertyRepository.findWithFilters`) — three places computing
- * "latest" differently is exactly how a KPI drifts from the table beneath it.
+ * Used by the overview stats, which read the same "latest quote" as the
+ * property list (`CustomerPropertyRepository.findWithFilters`).
  *
+ * The site-portfolio roll-up does NOT use this any more — it reads each site's
+ * DEAL quote (`dealQuoteJoins` below), the quote the journey and the site panel
+ * show. "Latest" is simply the newest quote, voided or not, so a roof with an
+ * accepted quote and a newer draft (or a newer voided one) reported a value on
+ * the customer's row that its own sites did not add up to.
  */
 function latestQuoteJoins(): string {
   return `
@@ -99,6 +103,30 @@ function latestQuoteJoins(): string {
       WHERE q2.property_id = prop.id
         AND q2.deleted_at IS NULL
       ORDER BY q2.created_at DESC, q2.id DESC
+      LIMIT 1
+    )
+    LEFT JOIN quote_versions cv ON cv.id = (
+      SELECT qv.id FROM quote_versions qv
+      WHERE qv.quote_id = latest_quote.id
+      ORDER BY qv.created_at DESC, qv.version_number DESC, qv.id DESC
+      LIMIT 1
+    )
+  `;
+}
+
+/**
+ * The same two joins — same aliases, `latest_quote` and `cv` — but resolving
+ * each property's DEAL quote: a live accepted quote, else the newest live one,
+ * else the newest voided one (`dealQuoteOrderSql`, the ordering the quote list
+ * and the site journey rank with). For the site-portfolio roll-up only.
+ */
+function dealQuoteJoins(): string {
+  return `
+    LEFT JOIN quotes latest_quote ON latest_quote.id = (
+      SELECT q2.id FROM quotes q2
+      WHERE q2.property_id = prop.id
+        AND q2.deleted_at IS NULL
+      ORDER BY ${dealQuoteOrderSql('q2')}
       LIMIT 1
     )
     LEFT JOIN quote_versions cv ON cv.id = (
@@ -463,6 +491,13 @@ export class CustomerProfileRepository {
    * customer with sites but no quotes reports real counts and a zero value
    * rather than dropping out.
    *
+   * Each site is read at its DEAL quote (`dealQuoteJoins`): a live accepted
+   * quote, else the newest live one, else the newest voided one — the quote
+   * the journey stage is read from and the one the site panel prints. So the
+   * row's ₹ and kW are the sum of what its site blocks show (a converted site
+   * still counts at its contract, below), and never the value of a later draft
+   * or of a voided quote while a live one exists.
+   *
    * System size prefers `total_wattage_wp / 1000` over `system_size_kw`: the
    * former is derived from the modules actually selected during quote
    * calculation (the real installed capacity); the latter is a user-entered
@@ -532,7 +567,7 @@ export class CustomerProfileRepository {
       LEFT JOIN projects pj ON pj.property_id = prop.id AND pj.deleted_at IS NULL
         AND pj.status <> 'cancelled'
       LEFT JOIN v_project_balance bal ON bal.project_id = pj.id
-      ${latestQuoteJoins()} WHERE prop.customer_id = ANY($1::uuid[])
+      ${dealQuoteJoins()} WHERE prop.customer_id = ANY($1::uuid[])
         AND prop.deleted_at IS NULL
       GROUP BY prop.customer_id, prop.status
       `,
@@ -561,6 +596,33 @@ export class CustomerProfileRepository {
     }
 
     return summaries;
+  }
+
+  /**
+   * Names of assignees whose user account has been archived (soft-deleted).
+   *
+   * The list query joins `customer.assignee` the ORM's way, which leaves out a
+   * soft-deleted user — so a customer still assigned to someone who has left
+   * came back with an `assigneeId` and no assignee, and read "Not assigned".
+   * It is assigned; the person is archived. Looked up separately, and only for
+   * the ids the join came back empty for, so the list query itself is untouched.
+   */
+  async getArchivedUserNames(userIds: string[]): Promise<Map<string, string>> {
+    const names = new Map<string, string>();
+    if (userIds.length === 0) return names;
+
+    const rows = await this.repository.manager.query<{ id: string; name: string | null }[]>(
+      `SELECT u.id,
+              NULLIF(btrim(concat_ws(' ', u.first_name, u.last_name)), '') AS name
+         FROM users u
+        WHERE u.id = ANY($1::uuid[])
+          AND u.deleted_at IS NOT NULL`,
+      [userIds],
+    );
+    for (const row of rows) {
+      if (row.name) names.set(row.id, row.name);
+    }
+    return names;
   }
 
   /**

@@ -83,6 +83,12 @@ type CustomerWithDeleteInfo = CustomerProfileEntity & {
    * from the same per-site rows the customer's site list publishes.
    */
   journey?: CustomerJourney;
+  /**
+   * The assignee's name when their user account is archived (list only). The
+   * ORM join drops an archived user, so `assignee` is empty for them; this
+   * keeps the customer from reading as unassigned.
+   */
+  archivedAssigneeName?: string;
   /** Follow-up state for the list row: the shared predicate, the count, the next one. */
   needsFollowup?: CustomerFollowupState['needsFollowup'];
   pendingFollowupCount?: CustomerFollowupState['pendingFollowupCount'];
@@ -273,14 +279,30 @@ export class CustomerService {
   ): Promise<{ data: CustomerWithDeleteInfo[]; total: number }> {
     const customerIds = data.map((customer) => customer.id);
 
-    const [blockerMap, portfolioMap, assigneeRows, journeyMap, followupStateMap] =
-      await Promise.all([
-        this.customerRepository.getCustomerDeleteBlockersBatch(customerIds),
-        this.customerRepository.getSitePortfolioSummaries(customerIds),
-        this.followupRepository.findAssigneesForCustomers(customerIds),
-        this.customerRepository.getSiteJourneysByCustomerIds(customerIds),
-        this.customerRepository.getFollowupStateByCustomerIds(customerIds),
-      ]);
+    // Assigned, but the join found no user: that user is archived. Usually none.
+    const archivedAssigneeIds = [
+      ...new Set(
+        data
+          .filter((customer) => customer.assigneeId && !customer.assignee)
+          .map((customer) => customer.assigneeId as string),
+      ),
+    ];
+
+    const [
+      blockerMap,
+      portfolioMap,
+      assigneeRows,
+      journeyMap,
+      followupStateMap,
+      archivedAssigneeNames,
+    ] = await Promise.all([
+      this.customerRepository.getCustomerDeleteBlockersBatch(customerIds),
+      this.customerRepository.getSitePortfolioSummaries(customerIds),
+      this.followupRepository.findAssigneesForCustomers(customerIds),
+      this.customerRepository.getSiteJourneysByCustomerIds(customerIds),
+      this.customerRepository.getFollowupStateByCustomerIds(customerIds),
+      this.customerRepository.getArchivedUserNames(archivedAssigneeIds),
+    ]);
 
     const assigneesByCustomer = new Map<string, FollowupAssigneeRow[]>();
     for (const row of assigneeRows) {
@@ -301,6 +323,10 @@ export class CustomerService {
             (assigneesByCustomer.get(customer.id) ?? []).filter((row) => row.propertyId === null),
           ),
           journey: rollUpCustomerJourney(journeyMap.get(customer.id) ?? [], customer.status),
+          archivedAssigneeName:
+            customer.assigneeId && !customer.assignee
+              ? archivedAssigneeNames.get(customer.assigneeId)
+              : undefined,
           needsFollowup: followupState?.needsFollowup ?? false,
           pendingFollowupCount: followupState?.pendingFollowupCount ?? 0,
           nextFollowup: followupState?.nextFollowup ?? null,

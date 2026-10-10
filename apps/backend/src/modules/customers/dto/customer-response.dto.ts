@@ -38,8 +38,10 @@ export class SitePortfolioDto {
 
   @ApiProperty({
     description:
-      'Total system size (kW) across each site’s current quote version. Prefers the ' +
-      'modules actually selected during quote calculation over the quote’s declared size.',
+      'Total system size (kW) across each site’s DEAL quote (live accepted, else newest ' +
+      'live, else newest voided — the quote the journey and the site panel show), at its ' +
+      'current version. Prefers the modules actually selected during quote calculation ' +
+      'over the quote’s declared size.',
     example: 27.5,
   })
   @Expose()
@@ -48,8 +50,9 @@ export class SitePortfolioDto {
 
   @ApiProperty({
     description:
-      'What the customer’s sites are worth: a converted site at its contract, ' +
-      'everything else at its current quote version',
+      'What the customer’s sites are worth: a site with a live project at its contract, ' +
+      'everything else at its DEAL quote (live accepted, else newest live, else newest ' +
+      'voided) at its current version',
     example: 1845200,
   })
   @Expose()
@@ -436,13 +439,28 @@ export class CustomerResponseDto {
   @Expose()
   assigneeId?: string;
 
-  @ApiPropertyOptional({ description: 'Full name of the assigned user' })
+  @ApiPropertyOptional({
+    description:
+      'Full name of the assigned user. On list responses this is also set when that ' +
+      'user is archived (see assigneeArchived) — the customer is still assigned.',
+  })
   @Expose()
   @Transform(({ obj }) => {
-    if (!obj.assigneeId || !obj.assignee) return undefined;
+    if (!obj.assigneeId) return undefined;
+    // An archived user is left out of the join; the list supplies the name.
+    if (!obj.assignee) return obj.archivedAssigneeName || undefined;
     const firstName = obj.assignee.firstName || '';
     const lastName = obj.assignee.lastName || '';
     return `${firstName} ${lastName}`.trim() || undefined;
   })
   assigneeName?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'The assigned user is archived (list responses only). Show the name as archived; ' +
+      'do not treat the customer as unassigned.',
+  })
+  @Expose()
+  @Transform(({ obj }) => Boolean(obj.assigneeId && !obj.assignee && obj.archivedAssigneeName))
+  assigneeArchived?: boolean;
 }
