@@ -18,7 +18,14 @@ import {
 import type { ProjectListItem } from '../../hooks';
 import { TeamAvatarGroup } from '../team-avatar-group';
 
-import { ABOVE, BONE, CalmRow, SKELETON_CARD, stopRowClick } from '@/components/shared/calm-list';
+import {
+  ABOVE,
+  BONE,
+  CalmRow,
+  QuietPill,
+  SKELETON_CARD,
+  stopRowClick,
+} from '@/components/shared/calm-list';
 import type { CrmTone } from '@/components/shared/crm-table';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
@@ -57,15 +64,6 @@ export const STATUS_TONE: Record<string, CrmTone> = {
   [ProjectStatus.CANCELLED]: 'neutral',
 };
 
-const PILL_PALETTE: Record<CrmTone, { ink: string; bg: string }> = {
-  neutral: { ink: color.neutral, bg: color['neutral-bg'] },
-  accent: { ink: color['accent-ink'], bg: color['accent-subtle'] },
-  success: { ink: color.success, bg: color['success-bg'] },
-  info: { ink: color.info, bg: color['info-bg'] },
-  warning: { ink: color.warning, bg: color['warning-bg'] },
-  danger: { ink: color.danger, bg: color['danger-bg'] },
-};
-
 /** Only a priority that asks for something gets a colour; the usual ones stay grey. */
 const PRIORITY_TONE: Record<string, CrmTone> = {
   [ProjectPriority.LOW]: 'neutral',
@@ -73,21 +71,6 @@ const PRIORITY_TONE: Record<string, CrmTone> = {
   [ProjectPriority.HIGH]: 'warning',
   [ProjectPriority.URGENT]: 'danger',
 };
-
-/** Status and priority beside the name: present on every row, never louder than it. */
-function QuietPill({ label, tone }: { label: string; tone: CrmTone }): JSX.Element {
-  const palette = PILL_PALETTE[tone];
-  return (
-    <span
-      title={label}
-      // Gives way long before the name does (the name shrinks 1 for its 999).
-      className="block min-w-7 shrink-[999] truncate rounded-pill px-2 py-0.5 text-[11px] font-medium leading-[13px]"
-      style={{ color: palette.ink, backgroundColor: palette.bg }}
-    >
-      {label}
-    </span>
-  );
-}
 
 const RING_SIZE = 36;
 const RING_STROKE = 3;

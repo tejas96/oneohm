@@ -1,26 +1,23 @@
 'use client';
 
 import AddIcon from '@mui/icons-material/Add';
-import { Box, Button, Link as MuiLink, Stack, Tab, Tabs } from '@mui/material';
+import { Button } from '@mui/material';
 import {
   ServiceTicketKind,
   ServiceTicketPriority,
   ServiceTicketStatus,
 } from '@tejas96/shared/types';
-import NextLink from 'next/link';
-import { type JSX, type SyntheticEvent, useCallback, useMemo, useState } from 'react';
+import { type JSX, useCallback, useMemo, useState } from 'react';
 
 import {
-  isTicketOverdue,
   SERVICE_TICKET_PRIORITY_LABELS,
-  SERVICE_TICKET_PRIORITY_TONE,
   SERVICE_TICKET_SORT_FIELD_MAP,
   SERVICE_TICKET_STATUS_LABELS,
   SERVICE_TICKET_STATUS_TONE,
   TICKET_FILTER_KEYS,
 } from '../constants';
 import { ServiceTicketFormDialog } from './service-ticket-form-dialog';
-import { ServiceTicketStatTiles, type TicketTileKey } from './service-ticket-stat-tiles';
+import { ServiceTicketRow, ServiceTicketRowSkeleton } from './service-ticket-row';
 import {
   useServiceTickets,
   useServiceTicketStats,
@@ -35,31 +32,31 @@ import {
   type FilterState,
 } from '@/components/shared/advanced-table';
 import {
-  CrmStatusPill,
-  CrmTable,
-  type CrmColumn,
-  type CrmQuickFilter,
-} from '@/components/shared/crm-table';
-import { MUIAvatar } from '@/components/ui/mui-avatar';
-import { MUITypography } from '@/components/ui/mui-typography';
+  CalmListPage,
+  createSortIndex,
+  ListEmpty,
+  ListError,
+  ListPager,
+  ListSkeleton,
+  ListTitle,
+  ListToolbar,
+  PrimaryAction,
+  Segment,
+  SegmentCard,
+  type SortOption,
+  useKeepPageInRange,
+  useListEntrance,
+} from '@/components/shared/calm-list';
+import type { CrmTone } from '@/components/shared/crm-table';
 import {
   MUIUserAssigneeSelector,
   type AssigneeOption,
 } from '@/components/ui/mui-user-assignee-selector';
-import { ROUTES, buildRoute } from '@/lib/config/routes';
 import { useTableUrlState } from '@/lib/hooks';
 import { useGatedAction } from '@/lib/rbac';
-import { color, crm } from '@/lib/theme/tokens';
-import {
-  formatBusinessDate,
-  formatDate,
-  formatDueDatePendingLabel,
-  getDueDateMuiColor,
-} from '@/lib/utils';
+import { cn, formatNumber, getErrorMessage } from '@/lib/utils';
 
-type TicketRow = ServiceTicket & Record<string, unknown>;
-
-const EMPTY_ROWS: TicketRow[] = [];
+const EMPTY_ROWS: ServiceTicket[] = [];
 
 const STATUS_FILTER_KEY = TICKET_FILTER_KEYS.status;
 const PRIORITY_FILTER_KEY = TICKET_FILTER_KEYS.priority;
@@ -77,212 +74,90 @@ const STATUS_ORDER: ServiceTicketStatus[] = [
   ServiceTicketStatus.CLOSED,
 ];
 
-function ticketDetailHref(id: string): string {
-  return buildRoute(ROUTES.SERVICE.DETAIL, { id });
-}
+/**
+ * The six sortable columns of the old table, both directions. The models are
+ * the same `{ field, direction }` values the headers wrote, so a saved
+ * `tkt_sort` URL still means what it meant. Priority and status sort by their
+ * stored word, which is what "A–Z" says.
+ */
+const SORT_OPTIONS: SortOption[] = [
+  { label: 'Newest first', model: null },
+  { label: 'Oldest first', model: { field: 'createdAt', direction: 'asc' } },
+  { label: 'Due date: soonest first', model: { field: 'dueDate', direction: 'asc' } },
+  { label: 'Due date: latest first', model: { field: 'dueDate', direction: 'desc' } },
+  { label: 'Priority A–Z', model: { field: 'priority', direction: 'asc' } },
+  { label: 'Priority Z–A', model: { field: 'priority', direction: 'desc' } },
+  { label: 'Status A–Z', model: { field: 'status', direction: 'asc' } },
+  { label: 'Status Z–A', model: { field: 'status', direction: 'desc' } },
+  { label: 'Issue A–Z', model: { field: 'title', direction: 'asc' } },
+  { label: 'Issue Z–A', model: { field: 'title', direction: 'desc' } },
+  { label: 'Ticket number: low to high', model: { field: 'ticketNumber', direction: 'asc' } },
+  { label: 'Ticket number: high to low', model: { field: 'ticketNumber', direction: 'desc' } },
+];
+
+/** No sort, or a field `SERVICE_TICKET_SORT_FIELD_MAP` does not know, is the raised date. */
+const sortIndex = createSortIndex(SORT_OPTIONS, 'createdAt');
+
+const TICKET_NOUN = { one: 'ticket', many: 'tickets' };
+
+/** A screenful; a longer page does not need a longer placeholder. */
+const MAX_SKELETON_ROWS = 25;
+
+/** The dot beside a quick view, by the tone its chip had. */
+const TONE_DOT: Record<CrmTone, string> = {
+  neutral: 'var(--ds-neutral-400)',
+  accent: 'var(--ds-primary)',
+  success: 'var(--ds-primary)',
+  info: 'var(--ds-info-soft)',
+  warning: 'var(--ds-warning)',
+  danger: 'var(--ds-danger)',
+};
+
+const KINDS: ReadonlyArray<{ value: ServiceTicketKind; label: string }> = [
+  { value: ServiceTicketKind.ISSUE, label: 'Issues' },
+  { value: ServiceTicketKind.MAINTENANCE, label: 'Routine maintenance' },
+];
 
 /**
- * CrmTable's grid has no column gap, so cells sit flush and a long value runs
- * straight into its neighbour — the project number was colliding with the
- * priority pill. Applied per column here rather than as a grid gap, which would
- * reflow the customers and discom tables too.
+ * Which of the two lists the page shows. `role="tablist"`: it selects between
+ * two views of one page, which is what tabs mean.
  */
-const CELL_GUTTER = { pr: 2 } as const;
-
-/** Truncate with an ellipsis instead of overflowing into the next column. */
-const ellipsisSx = {
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-} as const;
-
-const COLUMNS: CrmColumn<TicketRow>[] = [
-  {
-    field: 'ticketNumber',
-    header: 'Ticket',
-    track: crm['col-ticket-number'],
-    sortable: true,
-    stopPropagation: true,
-    cellSx: CELL_GUTTER,
-    renderCell: (row) => (
-      <MuiLink
-        component={NextLink}
-        href={ticketDetailHref(row.id)}
-        underline="hover"
-        title={row.ticketNumber}
-        sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}
-      >
-        {row.ticketNumber}
-      </MuiLink>
-    ),
-  },
-  {
-    field: 'title',
-    header: 'Issue',
-    track: crm['col-ticket-title'],
-    sortable: true,
-    cellSx: CELL_GUTTER,
-    renderCell: (row) => (
-      <MUITypography variant="bodyPrimary" noWrap title={row.title} sx={{ fontWeight: 500 }}>
-        {row.title}
-      </MUITypography>
-    ),
-  },
-  {
-    field: 'customerName',
-    header: 'Customer',
-    track: crm['col-ticket-customer'],
-    cellSx: CELL_GUTTER,
-    renderCell: (row) =>
-      row.customerName ? (
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          title={row.customerName}
-          sx={{ minWidth: 0 }}
-        >
-          <MUIAvatar name={row.customerName} size="sm" sx={{ flexShrink: 0 }} />
-          <MUITypography variant="bodyPrimary" noWrap>
-            {row.customerName}
-          </MUITypography>
-        </Stack>
-      ) : (
-        <MUITypography variant="placeholder">-</MUITypography>
-      ),
-  },
-  {
-    field: 'projectNumber',
-    header: 'Project',
-    track: crm['col-ticket-project'],
-    stopPropagation: true,
-    cellSx: CELL_GUTTER,
-    renderCell: (row) => (
-      <MuiLink
-        component={NextLink}
-        href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: row.projectId })}
-        underline="hover"
-        // Project name is not in the list payload, so the number is the fullest
-        // label available; the tooltip still helps when the column is narrowed.
-        title={row.projectNumber}
-        sx={{ display: 'block', ...ellipsisSx }}
-      >
-        {row.projectNumber}
-      </MuiLink>
-    ),
-  },
-  {
-    field: 'priority',
-    header: 'Priority',
-    track: crm['col-ticket-priority'],
-    sortable: true,
-    cellSx: CELL_GUTTER,
-    renderCell: (row) => (
-      <CrmStatusPill
-        label={SERVICE_TICKET_PRIORITY_LABELS[row.priority]}
-        tone={SERVICE_TICKET_PRIORITY_TONE[row.priority]}
-        dot
-      />
-    ),
-  },
-  {
-    field: 'status',
-    header: 'Status',
-    track: crm['col-ticket-status'],
-    sortable: true,
-    cellSx: CELL_GUTTER,
-    renderCell: (row) => (
-      <CrmStatusPill
-        label={SERVICE_TICKET_STATUS_LABELS[row.status]}
-        tone={SERVICE_TICKET_STATUS_TONE[row.status]}
-      />
-    ),
-  },
-  {
-    field: 'assigneeName',
-    header: 'Assignee',
-    track: crm['col-ticket-assignee'],
-    cellSx: CELL_GUTTER,
-    renderCell: (row) =>
-      row.assigneeName ? (
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          title={row.assigneeName}
-          sx={{ minWidth: 0 }}
-        >
-          <MUIAvatar name={row.assigneeName} size="sm" sx={{ flexShrink: 0 }} />
-          <MUITypography variant="bodyPrimary" noWrap>
-            {row.assigneeName}
-          </MUITypography>
-        </Stack>
-      ) : (
-        <MUITypography variant="placeholder">Unassigned</MUITypography>
-      ),
-  },
-  {
-    field: 'dueDate',
-    header: 'Due',
-    track: crm['col-ticket-due'],
-    sortable: true,
-    cellSx: CELL_GUTTER,
-    renderCell: (row) =>
-      row.dueDate ? (
-        <Stack spacing={0.25}>
-          <MUITypography
-            variant="bodyPrimary"
-            noWrap
-            sx={{ color: getDueDateMuiColor(row.dueDate) }}
-            title={isTicketOverdue(row) ? 'Overdue' : undefined}
+function TicketKindSwitch({
+  value,
+  onChange,
+}: {
+  value: ServiceTicketKind;
+  onChange: (kind: ServiceTicketKind) => void;
+}): JSX.Element {
+  return (
+    <div
+      role="tablist"
+      aria-label="Ticket type"
+      className="inline-flex h-10 items-center gap-1 rounded-pill bg-background-tertiary p-1"
+    >
+      {KINDS.map((kind) => {
+        const selected = kind.value === value;
+        return (
+          <button
+            key={kind.value}
+            type="button"
+            role="tab"
+            aria-selected={selected}
+            onClick={() => onChange(kind.value)}
+            className={cn(
+              'h-8 whitespace-nowrap rounded-pill px-3.5 text-[13px] font-medium tracking-[-0.01em] transition-colors motion-reduce:transition-none',
+              selected
+                ? 'bg-surface text-foreground shadow-e1'
+                : 'text-foreground-secondary hover:text-foreground',
+            )}
           >
-            {formatBusinessDate(row.dueDate)}
-          </MUITypography>
-          {isTicketOverdue(row) && (
-            <MUITypography variant="finePrint" sx={{ color: 'error.main' }}>
-              {formatDueDatePendingLabel(row.dueDate)}
-            </MUITypography>
-          )}
-        </Stack>
-      ) : (
-        <MUITypography variant="placeholder">—</MUITypography>
-      ),
-  },
-  {
-    field: 'createdByName',
-    header: 'Raised by',
-    track: crm['col-ticket-raised-by'],
-    cellSx: CELL_GUTTER,
-    renderCell: (row) =>
-      row.createdByName ? (
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          title={row.createdByName}
-          sx={{ minWidth: 0 }}
-        >
-          <MUIAvatar name={row.createdByName} size="sm" sx={{ flexShrink: 0 }} />
-          <MUITypography variant="bodyPrimary" noWrap>
-            {row.createdByName}
-          </MUITypography>
-        </Stack>
-      ) : (
-        <MUITypography variant="placeholder">—</MUITypography>
-      ),
-  },
-  {
-    field: 'createdAt',
-    header: 'Raised',
-    track: crm['col-ticket-created'],
-    sortable: true,
-    renderCell: (row) => (
-      <MUITypography variant="bodyPrimary" noWrap>
-        {formatDate(row.createdAt)}
-      </MUITypography>
-    ),
-  },
-];
+            {kind.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export function ServiceTicketsPage(): JSX.Element {
   const newTicket = useGatedAction('service.manage', () => setFormOpen(true), 'New ticket');
@@ -303,7 +178,7 @@ export function ServiceTicketsPage(): JSX.Element {
       : ServiceTicketKind.ISSUE;
 
   const handleKindChange = useCallback(
-    (_: SyntheticEvent, next: ServiceTicketKind) => {
+    (next: ServiceTicketKind) => {
       const filters: FilterState = { ...urlState.state.filters };
       if (next === ServiceTicketKind.MAINTENANCE) filters[KIND_FILTER_KEY] = next;
       else delete filters[KIND_FILTER_KEY];
@@ -313,7 +188,7 @@ export function ServiceTicketsPage(): JSX.Element {
   );
 
   const { data: employees } = useEmployees();
-  const { data: stats, isLoading: statsLoading } = useServiceTicketStats(kind);
+  const { data: stats } = useServiceTicketStats(kind);
 
   const params = useMemo<ServiceTicketListParams>(
     () => ({
@@ -345,49 +220,23 @@ export function ServiceTicketsPage(): JSX.Element {
     ],
   );
 
-  const { data, isLoading, isFetching } = useServiceTickets(params);
+  const { data, isLoading, isFetching, isError, error, refetch } = useServiceTickets(params);
 
-  const rows = useMemo<TicketRow[]>(
-    () => (data?.items ?? []).map((ticket) => ticket as TicketRow),
-    [data?.items],
-  );
+  const rows = data?.items ?? EMPTY_ROWS;
+  const total = data?.meta.total;
+  const { page, pageSize, search, sortModel } = urlState.state;
 
-  /**
-   * Which tile reads as selected. Urgent wins when the priority filter is set,
-   * because that is the only filter the urgent tile writes.
-   */
-  const activeTileKey = useMemo<TicketTileKey | null>(() => {
-    // priorityFilter is a raw URL string, so compare against the enum's value.
-    if (priorityFilter === String(ServiceTicketPriority.URGENT)) return 'urgent';
-    if (statusFilter) return statusFilter as TicketTileKey;
-    return null;
-  }, [statusFilter, priorityFilter]);
+  // priorityFilter is a raw URL string, so compare against the enum's value.
+  const urgentActive = priorityFilter === String(ServiceTicketPriority.URGENT);
 
-  /**
-   * Tiles and chips write to the SAME filter fields, so selecting "Open" from
-   * either control leaves both in the same visible state.
-   */
-  const handleTileSelect = useCallback(
-    (key: TicketTileKey): void => {
-      const isAlreadyActive = activeTileKey === key;
-
-      if (key === 'urgent') {
-        urlState.setFilters({
-          ...urlState.state.filters,
-          [STATUS_FILTER_KEY]: '',
-          [PRIORITY_FILTER_KEY]: isAlreadyActive ? '' : ServiceTicketPriority.URGENT,
-        });
-        return;
-      }
-
-      urlState.setFilters({
-        ...urlState.state.filters,
-        [STATUS_FILTER_KEY]: isAlreadyActive ? '' : key,
-        [PRIORITY_FILTER_KEY]: '',
-      });
-    },
-    [activeTileKey, urlState],
-  );
+  /** Urgent is a toggle: it drops the status, and a second click drops itself. */
+  const handleUrgentToggle = useCallback((): void => {
+    urlState.setFilters({
+      ...urlState.state.filters,
+      [STATUS_FILTER_KEY]: '',
+      [PRIORITY_FILTER_KEY]: urgentActive ? '' : ServiceTicketPriority.URGENT,
+    });
+  }, [urgentActive, urlState]);
 
   const handleQuickFilterChange = useCallback(
     (key: string): void => {
@@ -467,7 +316,7 @@ export function ServiceTicketsPage(): JSX.Element {
     return list;
   }, [employees]);
 
-  const filterColumns = useMemo<ColumnConfig<TicketRow>[]>(() => {
+  const filterColumns = useMemo<ColumnConfig<ServiceTicket>[]>(() => {
     const statusOptions = STATUS_ORDER.map((status) => ({
       label: SERVICE_TICKET_STATUS_LABELS[status],
       value: status,
@@ -552,141 +401,188 @@ export function ServiceTicketsPage(): JSX.Element {
     [kind, urlState],
   );
 
-  const secondaryQuickFilters = useMemo<CrmQuickFilter[]>(
-    () => [
-      {
-        key: 'unassigned',
-        label: 'Unassigned',
-        count: stats?.unassigned,
-        tone: 'warning',
-        dot: true,
-      },
-      {
-        key: 'overdue',
-        label: 'Overdue',
-        count: stats?.overdue,
-        tone: 'danger',
-        dot: true,
-      },
-    ],
-    [stats],
-  );
+  const statusCount = (status: ServiceTicketStatus): number | undefined => {
+    if (!stats) return undefined;
+    if (status === ServiceTicketStatus.OPEN) return stats.open;
+    if (status === ServiceTicketStatus.IN_PROGRESS) return stats.inProgress;
+    if (status === ServiceTicketStatus.RESOLVED) return stats.resolved;
+    return stats.closed;
+  };
 
-  const quickFilters = useMemo<CrmQuickFilter[]>(() => {
-    const countFor = (status: ServiceTicketStatus): number | undefined => {
-      if (!stats) return undefined;
-      if (status === ServiceTicketStatus.OPEN) return stats.open;
-      if (status === ServiceTicketStatus.IN_PROGRESS) return stats.inProgress;
-      if (status === ServiceTicketStatus.RESOLVED) return stats.resolved;
-      return stats.closed;
-    };
+  // The tab is not a filter (see `tableFilterModel`), so it is not what "filtered" means here.
+  const narrowed =
+    search.length > 0 || Object.values(tableFilterModel).some((v) => v !== '' && v != null);
 
-    return [
-      { key: '', label: 'All' },
-      ...STATUS_ORDER.map((status) => ({
-        key: status,
-        label: SERVICE_TICKET_STATUS_LABELS[status],
-        count: countFor(status),
-        tone: SERVICE_TICKET_STATUS_TONE[status],
-        dot: true,
-      })),
-    ];
-  }, [stats]);
+  /** Back to the whole list of this tab: no search, no filters, the default order. */
+  const handleClearAll = useCallback((): void => {
+    urlState.resetAll();
+    if (kind === ServiceTicketKind.MAINTENANCE) urlState.setFilters({ [KIND_FILTER_KEY]: kind });
+  }, [kind, urlState]);
+
+  // Said in the filter panel, so the effect of a filter shows without looking away.
+  const resultLabel =
+    total === undefined
+      ? undefined
+      : `${formatNumber(total)} ${total === 1 ? 'ticket' : 'tickets'}`;
+
+  // Rows rise in once. Later changes swap in without replaying it.
+  const entering = useListEntrance(rows.length);
+
+  useKeepPageInRange({ page, pageSize, total, isFetching, onPageChange: urlState.setPage });
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2,
-        p: 2,
-        height: '100%',
-        minHeight: 0,
-      }}
+    <CalmListPage
+      header={
+        <>
+          <ListTitle
+            title="Service Tickets"
+            sub="Complaints, AMC queries and issues raised after handover."
+            actions={
+              <>
+                <TicketKindSwitch value={kind} onChange={handleKindChange} />
+                {kind === ServiceTicketKind.ISSUE ? (
+                  <PrimaryAction onClick={newTicket.onGatedClick} allowed={newTicket.allowed}>
+                    + New ticket
+                  </PrimaryAction>
+                ) : null}
+              </>
+            }
+          />
+
+          {/* The quick views of this tab. A status and Urgent replace each other
+              (urgent is a priority, so it writes the priority filter and drops
+              the status); Unassigned and Overdue are switches on top. The
+              numbers are the whole tab's, whatever the search and filters say —
+              the frame you filter from. */}
+          <SegmentCard label="Tickets by status">
+            <Segment
+              pressed={statusFilter === '' && !urgentActive}
+              onClick={() => handleQuickFilterChange('')}
+              count={null}
+              label="All"
+            />
+            {STATUS_ORDER.map((status) => (
+              <Segment
+                key={status}
+                // statusFilter is a raw URL string, so compare against the enum's value.
+                pressed={statusFilter === String(status)}
+                onClick={() => handleQuickFilterChange(status)}
+                count={statusCount(status)}
+                label={SERVICE_TICKET_STATUS_LABELS[status]}
+                dot={TONE_DOT[SERVICE_TICKET_STATUS_TONE[status]]}
+              />
+            ))}
+            <span className="flex-1" />
+            <Segment
+              pressed={urgentActive}
+              onClick={handleUrgentToggle}
+              count={stats?.urgent}
+              label="Urgent"
+              warn={(stats?.urgent ?? 0) > 0}
+            />
+            <Segment
+              pressed={activeSecondaryQuickFilter === 'unassigned'}
+              onClick={() => handleSecondaryQuickFilterChange('unassigned')}
+              count={stats?.unassigned}
+              label="Unassigned"
+            />
+            <Segment
+              pressed={activeSecondaryQuickFilter === 'overdue'}
+              onClick={() => handleSecondaryQuickFilterChange('overdue')}
+              count={stats?.overdue}
+              label="Overdue"
+              warn={(stats?.overdue ?? 0) > 0}
+            />
+          </SegmentCard>
+        </>
+      }
+      toolbar={
+        <ListToolbar
+          search={search}
+          onSearchChange={urlState.setSearch}
+          searchPlaceholder="Search ticket number or issue"
+          searchLabel="Search tickets"
+          // The tickets API searches on any length.
+          searchMinLength={1}
+          filterColumns={filterColumns}
+          filters={tableFilterModel}
+          onFilterChange={handleTableFilterChange}
+          sortOptions={SORT_OPTIONS}
+          sortActiveIndex={sortIndex}
+          sortModel={sortModel}
+          onSortChange={urlState.setSortModel}
+          resultLabel={resultLabel}
+        />
+      }
+      error={
+        isError ? (
+          <ListError
+            title="Couldn’t load tickets"
+            message={getErrorMessage(error)}
+            onRetry={() => void refetch()}
+          />
+        ) : null
+      }
+      isFetching={isFetching}
+      isLoading={isLoading}
+      page={page}
+      footer={
+        <ListPager
+          page={page}
+          pageSize={pageSize}
+          totalRowCount={total ?? 0}
+          onPageChange={urlState.setPage}
+          onPageSizeChange={urlState.setPageSize}
+          noun={TICKET_NOUN}
+          countUnknown={isError && !data}
+        />
+      }
+      overlays={<ServiceTicketFormDialog open={formOpen} onClose={() => setFormOpen(false)} />}
     >
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-        <Box>
-          <Box
-            component="h1"
-            sx={{
-              m: 0,
-              mb: '3px',
-              fontSize: crm['text-page-title'],
-              fontWeight: 700,
-              letterSpacing: crm['text-page-title-track'],
-            }}
-          >
-            Service Tickets
-          </Box>
-          <Box
-            component="p"
-            sx={{ m: 0, fontSize: crm['text-row-title'], color: color['text-secondary'] }}
-          >
-            Complaints, AMC queries and issues raised after handover.
-          </Box>
-        </Box>
-
-        {kind === ServiceTicketKind.ISSUE && (
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={newTicket.onGatedClick}
-            aria-disabled={!newTicket.allowed}
-            sx={{ flexShrink: 0 }}
-          >
-            New Ticket
-          </Button>
-        )}
-      </Stack>
-
-      <Tabs value={kind} onChange={handleKindChange} aria-label="Ticket type">
-        <Tab value={ServiceTicketKind.ISSUE} label="Issues" />
-        <Tab value={ServiceTicketKind.MAINTENANCE} label="Routine Maintenance" />
-      </Tabs>
-
-      <ServiceTicketStatTiles
-        stats={stats}
-        loading={statsLoading}
-        activeKey={activeTileKey}
-        onSelect={handleTileSelect}
-      />
-
-      <CrmTable<TicketRow>
-        columns={COLUMNS}
-        rows={rows.length ? rows : EMPTY_ROWS}
-        getRowId={(row) => row.id}
-        loading={isLoading}
-        refetching={isFetching && !isLoading}
-        initialSearch={urlState.state.search}
-        onSearchChange={urlState.setSearch}
-        searchPlaceholder="Search ticket number or issue"
-        quickFilters={quickFilters}
-        activeQuickFilter={statusFilter}
-        onQuickFilterChange={handleQuickFilterChange}
-        secondaryQuickFilters={secondaryQuickFilters}
-        activeSecondaryQuickFilter={activeSecondaryQuickFilter}
-        onSecondaryQuickFilterChange={handleSecondaryQuickFilterChange}
-        filterColumns={filterColumns}
-        filterModel={tableFilterModel}
-        onFilterChange={handleTableFilterChange}
-        sortModel={urlState.state.sortModel}
-        onSortChange={urlState.setSortModel}
-        page={urlState.state.page}
-        pageSize={urlState.state.pageSize}
-        totalRowCount={data?.meta.total ?? 0}
-        onPageChange={urlState.setPage}
-        onPageSizeChange={urlState.setPageSize}
-        itemLabel="tickets"
-        emptyMessage={
-          kind === ServiceTicketKind.MAINTENANCE
-            ? 'No routine checkups yet.'
-            : 'No service tickets yet.'
-        }
-        gridMinWidth={crm['grid-min-width-ticket']}
-        pageSizeOptions={[10, 20, 25, 50, 100]}
-      />
-
-      <ServiceTicketFormDialog open={formOpen} onClose={() => setFormOpen(false)} />
-    </Box>
+      {isLoading ? (
+        <ListSkeleton
+          rows={Math.min(pageSize, MAX_SKELETON_ROWS)}
+          label="Loading tickets"
+          renderRow={() => <ServiceTicketRowSkeleton />}
+        />
+      ) : rows.length === 0 ? (
+        isError ? null : narrowed ? (
+          <ListEmpty
+            title="No tickets match"
+            hint="Try another ticket number or issue, or remove a filter."
+            action={
+              <Button size="small" variant="outlined" onClick={handleClearAll} sx={{ mt: 0.5 }}>
+                Clear filters
+              </Button>
+            }
+          />
+        ) : kind === ServiceTicketKind.MAINTENANCE ? (
+          <ListEmpty title="No routine checkups yet." />
+        ) : (
+          <ListEmpty
+            title="No service tickets yet."
+            action={
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<AddIcon />}
+                // The same gate the header button uses.
+                sx={{ mt: 0.5, opacity: newTicket.allowed ? 1 : 0.5 }}
+                onClick={newTicket.onGatedClick}
+                aria-disabled={!newTicket.allowed}
+              >
+                New ticket
+              </Button>
+            }
+          />
+        )
+      ) : (
+        <div className="flex flex-col gap-2">
+          {rows.map((ticket, index) => (
+            <ServiceTicketRow key={ticket.id} ticket={ticket} index={index} entering={entering} />
+          ))}
+        </div>
+      )}
+    </CalmListPage>
   );
 }
