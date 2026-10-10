@@ -19,11 +19,16 @@ function buildQueryString(searchParams: SearchParams): string {
   return qs.toString();
 }
 
-export default function PropertiesRedirectPage({
+/**
+ * `/properties` moved into the customers list; old links land there with
+ * their query intact. `searchParams` is a promise in this Next version — read
+ * synchronously it has no entries, and every redirect silently lost its query.
+ */
+export default async function PropertiesRedirectPage({
   searchParams,
 }: {
-  searchParams: SearchParams;
-}): never {
-  const query = buildQueryString(searchParams);
+  searchParams: Promise<SearchParams>;
+}): Promise<never> {
+  const query = buildQueryString(await searchParams);
   redirect(query ? `${ROUTES.CUSTOMERS.LIST}?${query}` : ROUTES.CUSTOMERS.LIST);
 }
