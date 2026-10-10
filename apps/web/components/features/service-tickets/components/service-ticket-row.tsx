@@ -30,19 +30,22 @@ import { cn, formatBusinessDate, formatDate, formatDueDatePendingLabel } from '@
  * Wide: what · project · assignee · due · raised on one line. The project
  * track holds a 24-character number (`PRJ-ONEOHM_EPC-2026-0220`) unclipped:
  * its last digits are the part that tells two projects apart.
+ *
  * Narrow (the list itself under 960px, so an open side panel counts): what,
  * then project beside the due date, then assignee beside the raised date.
+ * Phone (under 460px): the project number needs the whole line, so it gets
+ * one; the due date moves beside the assignee and the raised date goes last.
  */
 const ROW_GRID =
   'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 @[960px]:grid-cols-[minmax(0,2fr)_208px_minmax(0,1fr)_112px_128px] @[960px]:gap-5';
 
-const WIDE = '@[960px]:col-auto @[960px]:row-auto';
+const WIDE = '@[960px]:col-auto @[960px]:row-auto @[960px]:text-left';
 const CELL = {
   what: `col-span-2 col-start-1 row-start-1 ${WIDE}`,
-  project: `col-start-1 row-start-2 ${WIDE}`,
-  due: `col-start-2 row-start-2 text-right @[960px]:text-left ${WIDE}`,
+  project: `col-span-2 col-start-1 row-start-2 @[460px]:col-span-1 ${WIDE}`,
+  due: `col-start-2 row-start-3 text-right @[460px]:row-start-2 ${WIDE}`,
   assignee: `col-start-1 row-start-3 ${WIDE}`,
-  raised: `col-start-2 row-start-3 text-right @[960px]:text-left ${WIDE}`,
+  raised: `col-span-2 col-start-1 row-start-4 @[460px]:col-span-1 @[460px]:col-start-2 @[460px]:row-start-3 @[460px]:text-right ${WIDE}`,
 } as const;
 
 /** A cell is two lines on one rhythm: a fact over a note. */
@@ -95,10 +98,12 @@ function ServiceTicketRowInner({ ticket, index, entering }: ServiceTicketRowProp
           <QuietPill
             label={SERVICE_TICKET_STATUS_LABELS[ticket.status]}
             tone={SERVICE_TICKET_STATUS_TONE[ticket.status]}
+            whole
           />
           <QuietPill
             label={SERVICE_TICKET_PRIORITY_LABELS[ticket.priority]}
             tone={PRIORITY_TONE[ticket.priority]}
+            whole
           />
         </div>
         <div
@@ -198,7 +203,9 @@ export function ServiceTicketRowSkeleton(): JSX.Element {
         <span className={cn(BONE, 'h-3.5 w-20')} />
         <span className={cn(BONE, 'h-3 w-10')} />
       </div>
-      <div className={cn(CELL.raised, 'flex flex-col items-end gap-2 @[960px]:items-start')}>
+      <div
+        className={cn(CELL.raised, 'flex flex-col gap-2 @[460px]:items-end @[960px]:items-start')}
+      >
         <span className={cn(BONE, 'h-3.5 w-20')} />
         <span className={cn(BONE, 'h-3 w-16')} />
       </div>

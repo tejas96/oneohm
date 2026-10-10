@@ -473,26 +473,29 @@ export function ServiceTicketsPage(): JSX.Element {
               />
             ))}
             <span className="flex-1" />
-            <Segment
-              pressed={urgentActive}
-              onClick={handleUrgentToggle}
-              count={stats?.urgent}
-              label="Urgent"
-              warn={(stats?.urgent ?? 0) > 0}
-            />
-            <Segment
-              pressed={activeSecondaryQuickFilter === 'unassigned'}
-              onClick={() => handleSecondaryQuickFilterChange('unassigned')}
-              count={stats?.unassigned}
-              label="Unassigned"
-            />
-            <Segment
-              pressed={activeSecondaryQuickFilter === 'overdue'}
-              onClick={() => handleSecondaryQuickFilterChange('overdue')}
-              count={stats?.overdue}
-              label="Overdue"
-              warn={(stats?.overdue ?? 0) > 0}
-            />
+            {/* One group, so on a narrow screen the three wrap to the next line together. */}
+            <div className="flex flex-wrap items-center gap-1">
+              <Segment
+                pressed={urgentActive}
+                onClick={handleUrgentToggle}
+                count={stats?.urgent}
+                label="Urgent"
+                warn={(stats?.urgent ?? 0) > 0}
+              />
+              <Segment
+                pressed={activeSecondaryQuickFilter === 'unassigned'}
+                onClick={() => handleSecondaryQuickFilterChange('unassigned')}
+                count={stats?.unassigned}
+                label="Unassigned"
+              />
+              <Segment
+                pressed={activeSecondaryQuickFilter === 'overdue'}
+                onClick={() => handleSecondaryQuickFilterChange('overdue')}
+                count={stats?.overdue}
+                label="Overdue"
+                warn={(stats?.overdue ?? 0) > 0}
+              />
+            </div>
           </SegmentCard>
         </>
       }

@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 
 import type { CrmTone } from '@/components/shared/crm-table';
 import { color } from '@/lib/theme/tokens';
+import { cn } from '@/lib/utils';
 
 const PILL_PALETTE: Record<CrmTone, { ink: string; bg: string }> = {
   neutral: { ink: color.neutral, bg: color['neutral-bg'] },
@@ -13,13 +14,28 @@ const PILL_PALETTE: Record<CrmTone, { ink: string; bg: string }> = {
 };
 
 /** A status or priority beside a row's name: present on every row, never louder than it. */
-export function QuietPill({ label, tone }: { label: string; tone: CrmTone }): JSX.Element {
+export function QuietPill({
+  label,
+  tone,
+  whole = false,
+}: {
+  label: string;
+  tone: CrmTone;
+  /**
+   * Keep the whole word and let the name beside it be cut instead — for a row
+   * whose pill is the fact people scan for (a ticket's status).
+   */
+  whole?: boolean;
+}): JSX.Element {
   const palette = PILL_PALETTE[tone];
   return (
     <span
       title={label}
-      // Gives way long before the name does (the name shrinks 1 for its 999).
-      className="block min-w-7 shrink-[999] truncate rounded-pill px-2 py-0.5 text-[11px] font-medium leading-[13px]"
+      className={cn(
+        'block rounded-pill px-2 py-0.5 text-[11px] font-medium leading-[13px]',
+        // Otherwise it gives way long before the name does (the name shrinks 1 for its 999).
+        whole ? 'shrink-0 whitespace-nowrap' : 'min-w-7 shrink-[999] truncate',
+      )}
       style={{ color: palette.ink, backgroundColor: palette.bg }}
     >
       {label}
