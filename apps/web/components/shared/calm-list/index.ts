@@ -24,12 +24,12 @@ export { Segment, SegmentCard, type SegmentProps } from './segments';
 export {
   ABOVE,
   CalmRow,
-  clickSelectedText,
   ENTRANCE_RISE_MS,
   MAX_STAGGER_STEPS,
   ROW_TAG,
   STAGGER_MS,
   stopRowClick,
+  useDragGuard,
   type CalmRowProps,
 } from './row';
 export * from './icons';

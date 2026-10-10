@@ -18,12 +18,37 @@ export const ABOVE = 'relative z-[1]';
 /** For a link or button inside a row: its click is its own, not the row's. */
 export const stopRowClick = (event: MouseEvent): void => event.stopPropagation();
 
+/** How far the pointer may travel between press and release and still be a click. */
+const DRAG_SLOP_PX = 4;
+
 /**
- * True when the click that just happened ended a text selection — the user
- * dragged across a name or a number to copy it. That is not "open this row".
+ * Tells a click from a drag. Dragging across a name or a number selects it to
+ * copy, and the browser still fires `click` when the button comes up — that
+ * must not open the row. (Asking "is any text selected?" instead is wrong the
+ * other way: a plain click on text selected earlier would then do nothing.)
+ *
+ * Spread `onMouseDown` on the row; call `wasDrag(event)` in its click handler.
  */
-export function clickSelectedText(): boolean {
-  return Boolean(window.getSelection()?.toString());
+export function useDragGuard(): {
+  onMouseDown: (event: MouseEvent) => void;
+  wasDrag: (event: MouseEvent) => boolean;
+} {
+  const pressedAt = useRef<{ x: number; y: number } | null>(null);
+  return {
+    onMouseDown: (event) => {
+      pressedAt.current = { x: event.clientX, y: event.clientY };
+    },
+    wasDrag: (event) => {
+      const start = pressedAt.current;
+      pressedAt.current = null;
+      // No recorded press (a keyboard or scripted click) is never a drag.
+      if (!start) return false;
+      return (
+        Math.abs(event.clientX - start.x) > DRAG_SLOP_PX ||
+        Math.abs(event.clientY - start.y) > DRAG_SLOP_PX
+      );
+    },
+  };
 }
 
 /** A small pill after a name: a status, a group, "Loan". */
@@ -78,9 +103,10 @@ export function CalmRow({
 }: CalmRowProps): JSX.Element {
   const router = useRouter();
   const cover = useRef<HTMLButtonElement>(null);
+  const drag = useDragGuard();
 
   const open = (event: MouseEvent): void => {
-    if (clickSelectedText()) return;
+    if (drag.wasDrag(event)) return;
     if (href) {
       // Keep the browser's own "open in a new tab" for a modified click.
       if (event.metaKey || event.ctrlKey || event.shiftKey) window.open(href, '_blank');
@@ -94,6 +120,7 @@ export function CalmRow({
   return (
     <div
       data-list-row={rowId}
+      onMouseDown={drag.onMouseDown}
       onClick={open}
       style={
         entering

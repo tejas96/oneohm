@@ -23,10 +23,10 @@ import { ROW_CELL, ROW_GRID } from './row-layout';
 import type { Customer } from '../../hooks/use-customers';
 
 import {
-  clickSelectedText,
   MAX_STAGGER_STEPS,
   STAGGER_MS,
   TicketIcon,
+  useDragGuard,
 } from '@/components/shared/calm-list';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { cn, formatCurrency, toTitleLabel } from '@/lib/utils';
@@ -84,6 +84,7 @@ function CustomerRowInner({
   onRequestDelete,
 }: CustomerRowProps): JSX.Element {
   const openButton = useRef<HTMLButtonElement>(null);
+  const drag = useDragGuard();
   const name = fullName(customer);
   const group = groupLabel(customer);
   const meta = metaLine(customer, resellerName);
@@ -104,8 +105,8 @@ function CustomerRowInner({
   );
   const followupSpoken = [followup.title, followup.sub].filter(Boolean).join(', ');
 
-  const open = (): void => {
-    if (clickSelectedText()) return;
+  const open = (event: MouseEvent): void => {
+    if (drag.wasDrag(event)) return;
     openButton.current?.focus({ preventScroll: true });
     onOpen(customer);
   };
@@ -115,6 +116,7 @@ function CustomerRowInner({
     // handler only lets a mouse click on the text between the links do the same.
     <div
       data-customer-row={customer.id}
+      onMouseDown={drag.onMouseDown}
       onClick={open}
       style={
         entering

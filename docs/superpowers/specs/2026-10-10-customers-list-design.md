@@ -179,8 +179,8 @@ the customers and quote lists run on it (projects and follow-ups to follow).
 Rules every list on the kit gets:
 - A page past the end (the last row of the last page was deleted, an old link)
   steps back to the last page that has rows, replacing the URL.
-- A click that ends a text selection does not open the row, so a number can be
-  copied.
+- A drag across a row (to select a number and copy it) does not open the row;
+  a click does, including a click on text that is already selected.
 - A page change scrolls back to the top.
 - A search term shorter than the API's minimum (2) shows "Type 2 or more
   letters to search." instead of an unfiltered list with no explanation.
