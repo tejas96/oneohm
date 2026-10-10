@@ -4,11 +4,15 @@ import type { DashboardFinancing, ProjectsDashboard, StageGroupKey } from '@teja
 import Link from 'next/link';
 import * as React from 'react';
 
-import { AnimatedNumber } from './animated-number';
-import { formatKw, plural } from './format';
 import { dashboardLinks } from './links';
-import { ENTER, enterDelay } from './motion';
 
+import {
+  AnimatedNumber,
+  ENTER,
+  enterDelay,
+  formatKw,
+  plural,
+} from '@/components/features/dashboard/kit';
 import { cn } from '@/lib/utils';
 
 /**

@@ -1,18 +1,51 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { QuoteSortField, QuoteStatus, SortOrder } from '@tejas96/shared/types';
+import {
+  QuoteSortField,
+  QuoteStatus,
+  SortOrder,
+  type DealAttention,
+  type DealStageFilter,
+} from '@tejas96/shared/types';
+import { DEAL_ATTENTIONS, DEAL_STAGE_FILTERS } from '@tejas96/shared/utils';
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
+  IsISO8601,
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   Max,
+  MaxLength,
   Min,
   MinLength,
   ValidateIf,
 } from 'class-validator';
+
+/**
+ * Shape only. Each day filter also carries `@IsISO8601({ strict: true })`, which
+ * refuses a day that is not on the calendar (2026-13-45, 2026-02-30) — without
+ * it the value reaches `CAST(… AS date)` and the query fails with a 500.
+ */
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Deal facts compare against the lower-cased, whitespace-trimmed lead source, so the filter value is normalised the same way. */
+const normaliseLeadSource = (v: unknown): unknown =>
+  typeof v === 'string' ? v.trim().toLowerCase() : v;
+
+/**
+ * `?leadSourceNotIn=a&leadSourceNotIn=b` arrives as an array, a single one as a
+ * string. Never split on commas: real lead sources contain them.
+ */
+const toLeadSourceList = (v: unknown): unknown => {
+  const list = typeof v === 'string' ? [v] : v;
+  return Array.isArray(list) ? list.map(normaliseLeadSource) : list;
+};
 
 /**
  * Query DTO for quote list endpoint
@@ -125,6 +158,91 @@ export class QuoteQueryDto {
   @ValidateIf((o: QuoteQueryDto) => !!o.toDate)
   @IsDateString({}, { message: 'toDate must be a valid ISO 8601 date (e.g., 2025-12-31)' })
   toDate?: string;
+
+  // ==================== Deal filters (dashboard drill-downs) ====================
+  // Applied through DEAL_FACTS_CTE, so they pin each property to its deal quote.
+
+  @ApiPropertyOptional({ enum: DEAL_STAGE_FILTERS })
+  @IsOptional()
+  @IsIn(DEAL_STAGE_FILTERS)
+  stage?: DealStageFilter;
+
+  @ApiPropertyOptional({ description: 'User who made the deal quote (quotes.created_by)' })
+  @IsOptional()
+  @IsUUID()
+  person?: string;
+
+  @ApiPropertyOptional({ enum: ['cash', 'loan'] })
+  @IsOptional()
+  @IsIn(['cash', 'loan'])
+  financing?: 'cash' | 'loan';
+
+  @ApiPropertyOptional({ enum: DEAL_ATTENTIONS })
+  @IsOptional()
+  @IsIn(DEAL_ATTENTIONS)
+  attention?: DealAttention;
+
+  @ApiPropertyOptional({
+    example: 'referral',
+    description: "A lead source, compared lower-cased and trimmed, or 'not_set'",
+  })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) => normaliseLeadSource(value))
+  @IsString()
+  @MaxLength(50)
+  leadSource?: string;
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['referral', 'advertisement'],
+    description: 'Lead sources to exclude; repeat the parameter for each one',
+  })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) => toLeadSourceList(value))
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(200, { each: true })
+  leadSourceNotIn?: string[];
+
+  @ApiPropertyOptional({
+    example: '2026-10-01',
+    description: 'First quote on the property, from (IST day)',
+  })
+  @IsOptional()
+  @Matches(ISO_DAY)
+  @IsISO8601({ strict: true })
+  newFrom?: string;
+
+  @ApiPropertyOptional({ example: '2026-10-31' })
+  @IsOptional()
+  @Matches(ISO_DAY)
+  @IsISO8601({ strict: true })
+  newTo?: string;
+
+  @ApiPropertyOptional({ example: '2026-10-01', description: 'Accepted date, from (IST day)' })
+  @IsOptional()
+  @Matches(ISO_DAY)
+  @IsISO8601({ strict: true })
+  wonFrom?: string;
+
+  @ApiPropertyOptional({ example: '2026-10-31' })
+  @IsOptional()
+  @Matches(ISO_DAY)
+  @IsISO8601({ strict: true })
+  wonTo?: string;
+
+  @ApiPropertyOptional({ example: '2026-10-01', description: 'Lost date, from (IST day)' })
+  @IsOptional()
+  @Matches(ISO_DAY)
+  @IsISO8601({ strict: true })
+  lostFrom?: string;
+
+  @ApiPropertyOptional({ example: '2026-10-31' })
+  @IsOptional()
+  @Matches(ISO_DAY)
+  @IsISO8601({ strict: true })
+  lostTo?: string;
 
   // ==================== Sorting ====================
 

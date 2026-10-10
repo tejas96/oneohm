@@ -21,7 +21,6 @@ export function useSaveQuote() {
     },
     onSuccess: (_data, request) => {
       void queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.statusCounts() });
       // A saved quote changes latestQuoteId/Status/SystemSizeKw/FinalPrice on
       // the property it belongs to. Every surface that embeds that info —
       // this customer's nested sites panel, their detail page's Properties

@@ -5,8 +5,8 @@ import Link from 'next/link';
 import * as React from 'react';
 
 import { dashboardLinks } from './links';
-import { ENTER, enterDelay } from './motion';
 
+import { ENTER, enterDelay } from '@/components/features/dashboard/kit';
 import { cn } from '@/lib/utils';
 
 /**

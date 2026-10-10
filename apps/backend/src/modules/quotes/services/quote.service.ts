@@ -12,6 +12,7 @@ import {
   type CalculatorInputs,
   DocumentCategory,
   IntegrationProvider,
+  type DealStage,
   type ITemplateMessage,
   LossReason,
   PaymentMilestone,
@@ -57,6 +58,12 @@ import { QuoteVersionEntity } from '../entities/quote-version.entity';
 import { QuoteEntity } from '../entities/quote.entity';
 import { QuoteRepository } from '../repositories';
 import type { UploadedPdfFile } from '../types/uploaded-pdf-file.interface';
+
+/** A quote list row: the quote plus its deal stage, set when it is its property's deal quote. */
+type QuoteListEntity = QuoteEntity & {
+  dealStage?: DealStage | null;
+  createdByName?: string | null;
+};
 
 /**
  * Quote Service
@@ -211,9 +218,24 @@ export class QuoteService {
   /**
    * Find all quotes with filters, sorting, and pagination
    */
-  async findAll(query: QuoteQueryDto): Promise<{ data: QuoteEntity[]; total: number }> {
-    const [data, total] = await this.quoteRepository.findWithFilters(query);
+  async findAll(query: QuoteQueryDto): Promise<{ data: QuoteListEntity[]; total: number }> {
+    const [quotes, total] = await this.quoteRepository.findWithFilters(query);
+    const stages = await this.quoteRepository.findDealStages(quotes.map((q) => q.id));
+    const names = await this.quoteRepository.findUserNames([
+      ...new Set(quotes.map((q) => q.createdBy).filter(Boolean)),
+    ]);
+    const data: QuoteListEntity[] = quotes.map((quote) =>
+      Object.assign(quote, {
+        dealStage: stages.get(quote.id) ?? null,
+        createdByName: names.get(quote.createdBy) ?? null,
+      }),
+    );
     return { data, total };
+  }
+
+  /** Normalised lead sources that have a deal, most deals first (list filter options). */
+  async findDealLeadSources(): Promise<string[]> {
+    return this.quoteRepository.findDealLeadSources();
   }
 
   /**
@@ -287,10 +309,9 @@ export class QuoteService {
       Past its validity date.
 
       Keyed on the DATE, not on the status, because nothing in this system ever
-      writes `expired`: `markExpiredQuotes` exists and no scheduler calls it. A
-      quote eight months dead still reads `sent`, so a status check alone stops
-      nothing. Without this, that quote goes to the customer looking current
-      and they can hold us to the price on it.
+      writes `expired`. A quote eight months dead still reads `sent`, so a
+      status check alone stops nothing. Without this, that quote goes to the
+      customer looking current and they can hold us to the price on it.
 
       Both sides are IST business dates (`YYYY-MM-DD`). `validUntil` is a
       postgres `date`: TypeORM may hand it back as a string or as a local-midnight
@@ -919,20 +940,6 @@ export class QuoteService {
       locked: !!accepted,
       acceptedQuoteNumber: accepted?.quoteNumber,
     };
-  }
-
-  /**
-   * Mark expired quotes (for cron job)
-   */
-  async markExpiredQuotes(): Promise<number> {
-    const expiredQuotes = await this.quoteRepository.findExpiredQuotes();
-
-    if (expiredQuotes.length > 0) {
-      const quoteIds = expiredQuotes.map((q) => q.id);
-      await this.quoteRepository.bulkUpdateStatus(quoteIds, QuoteStatus.EXPIRED);
-    }
-
-    return expiredQuotes.length;
   }
 
   /**

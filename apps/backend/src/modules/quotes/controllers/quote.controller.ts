@@ -116,6 +116,22 @@ export class QuoteController {
   }
 
   /**
+   * The quote list's "Lead source" filter options. Declared before `:id`.
+   * No @ResellerAllowed(): it lists sources across every customer.
+   */
+  @Get('lead-sources')
+  @ApiOperation({
+    summary: 'Lead sources with deals',
+    description:
+      'Distinct lead sources (lower-cased, trimmed; empty = not_set) over deals, most deals first. ' +
+      'The same values the quotes dashboard groups by and the leadSource filter takes.',
+  })
+  @ApiResponse({ status: HttpStatus.OK, type: [String] })
+  async findDealLeadSources(): Promise<string[]> {
+    return this.quoteService.findDealLeadSources();
+  }
+
+  /**
    * Check if a property is locked (has an accepted quote)
    */
   @ResellerAllowed()

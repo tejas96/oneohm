@@ -8,10 +8,16 @@ import { useRouter } from 'next/navigation';
 import * as React from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-import { formatKw, monthLabel, plural } from './format';
 import { dashboardLinks } from './links';
-import { ENTER, enterDelay, usePrefersReducedMotion } from './motion';
 
+import {
+  ENTER,
+  enterDelay,
+  formatKw,
+  monthLabel,
+  plural,
+  usePrefersReducedMotion,
+} from '@/components/features/dashboard/kit';
 import { cn } from '@/lib/utils';
 
 type Unit = 'projects' | 'kw';

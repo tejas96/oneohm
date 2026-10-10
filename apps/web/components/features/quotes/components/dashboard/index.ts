@@ -1,6 +1,9 @@
-export { KPIGrid } from './kpi-grid';
-export { RevenueTrend } from './revenue-trend';
-export { ConversionFunnel } from './conversion-funnel';
-export { ActionRequired } from './action-required';
-export { ProjectMix } from './project-mix';
-export { HighValueQuotes } from './high-value-quotes';
+export { BiggestOpen } from './biggest-open';
+export { DealFlow } from './deal-flow';
+export { NeedsAction } from './needs-action';
+export { PersonPicker } from './person-picker';
+export { QuotesDashboardSkeleton } from './skeleton';
+export { Sources } from './sources';
+export { QuotesStrip } from './strip';
+export { Team } from './team';
+export { QuotesTrendChart } from './trend-chart';

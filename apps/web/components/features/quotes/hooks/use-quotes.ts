@@ -9,6 +9,7 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query';
 import {
+  type DealStage,
   DocumentEntityType,
   type PaginationMeta,
   QuoteStatus,
@@ -104,7 +105,11 @@ export interface QuoteListItem {
   createdAt: string;
   updatedAt: string;
   createdBy: string;
+  /** Name of the person who made the quote (list only). */
+  createdByName?: string | null;
   actualSystemSizeKw?: number;
+  /** The deal's stage (list only); null when this quote is not its property's deal quote. */
+  dealStage?: DealStage | null;
 }
 
 export interface PropertyQuoteVersionItem {
@@ -127,16 +132,6 @@ export interface QuoteListResponse {
   meta: PaginationMeta;
 }
 
-export interface QuoteStatusCounts {
-  total: number;
-  draft: number;
-  sent: number;
-  viewed: number;
-  accepted: number;
-  rejected: number;
-  expired: number;
-}
-
 // ============================================================================
 // Query Keys (single source of truth for all quote-related queries)
 // ============================================================================
@@ -151,7 +146,6 @@ export const quoteKeys = {
   byProperty: (propertyId: string) => [...quoteKeys.all(), 'property', propertyId] as const,
   propertyVersions: (propertyId: string) =>
     [...quoteKeys.all(), 'property-versions', propertyId] as const,
-  statusCounts: () => [...quoteKeys.all(), 'statusCounts'] as const,
 };
 
 // ============================================================================
@@ -192,42 +186,6 @@ export function useQuotes(
     },
     enabled: callerEnabled !== false,
     placeholderData: keepPreviousData,
-  });
-}
-
-/**
- * Fetch quote counts per status via lightweight API calls.
- * Fires one call per status with limit=1 to get meta.total without loading data.
- */
-export function useQuoteStatusCounts(): UseQueryResult<QuoteStatusCounts, AxiosError> {
-  return useQuery({
-    queryKey: quoteKeys.statusCounts(),
-    queryFn: async (): Promise<QuoteStatusCounts> => {
-      const statuses = [
-        QuoteStatus.DRAFT,
-        QuoteStatus.SENT,
-        QuoteStatus.VIEWED,
-        QuoteStatus.ACCEPTED,
-        QuoteStatus.REJECTED,
-        QuoteStatus.EXPIRED,
-      ] as const;
-
-      const [totalRes, ...statusResults] = await Promise.all([
-        apiClient.get<QuoteListResponse>('/quotes?limit=1'),
-        ...statuses.map((s) => apiClient.get<QuoteListResponse>(`/quotes?limit=1&status=${s}`)),
-      ]);
-
-      return {
-        total: totalRes.data.meta.total,
-        draft: statusResults[0]?.data.meta.total ?? 0,
-        sent: statusResults[1]?.data.meta.total ?? 0,
-        viewed: statusResults[2]?.data.meta.total ?? 0,
-        accepted: statusResults[3]?.data.meta.total ?? 0,
-        rejected: statusResults[4]?.data.meta.total ?? 0,
-        expired: statusResults[5]?.data.meta.total ?? 0,
-      };
-    },
-    staleTime: 30_000,
   });
 }
 

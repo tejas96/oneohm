@@ -117,6 +117,13 @@ export interface ProjectListItem {
   teamMembers: TeamMemberSummary[];
   paymentSummary: PaymentSummary;
   currentPhase: string | null;
+  /** The property wants a loan; cash otherwise. */
+  wantsLoan: boolean;
+  meterInstalled: boolean;
+  /** India day the meter went in, `YYYY-MM-DD`; null when installed but undated. */
+  meterInstalledOn: string | null;
+  /** The open step to do next and who holds it; null when nothing is open. */
+  nextStep: { name: string; assigneeName: string | null } | null;
   healthStatus: 'on_track' | 'at_risk' | 'delayed' | null;
   createdBy?: string;
   creatorName?: string;

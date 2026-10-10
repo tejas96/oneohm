@@ -7,10 +7,9 @@ import { X } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 
-import { BandError } from './band-state';
-import { plural } from './format';
 import { dashboardLinks } from './links';
 
+import { BandError, plural } from '@/components/features/dashboard/kit';
 import { useStageProjects } from '@/lib/hooks/resources';
 import { cn } from '@/lib/utils';
 

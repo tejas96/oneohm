@@ -33,16 +33,21 @@ function dayOf(d: Date | null): string | undefined {
 const isRealDay = (v: string | undefined): v is string => !!v && !Number.isNaN(Date.parse(v));
 
 /**
- * One period picker and one Cash/Loan switch for the whole page (spec D2).
+ * One period picker, optional extra controls, and one Cash/Loan switch.
  * A custom range is applied only once both dates are set and valid, so half a
  * range never fires a request.
  */
 export function FilterBar({
   filters,
   onChange,
+  children,
+  financingLabel = 'Cash or loan projects',
 }: {
   filters: DashboardFilters;
   onChange: (patch: Partial<DashboardFilters>) => void;
+  /** Extra controls between the period and the Cash/Loan switch. */
+  children?: React.ReactNode;
+  financingLabel?: string;
 }): React.JSX.Element {
   // "Custom dates" picked, but no complete range applied yet.
   const [pickingCustom, setPickingCustom] = React.useState(false);
@@ -108,6 +113,7 @@ export function FilterBar({
           ) : null}
         </div>
       ) : null}
+      {children}
       <ToggleButtonGroup
         exclusive
         size="small"
@@ -116,7 +122,7 @@ export function FilterBar({
           // MUI returns null when the active button is clicked again.
           if (next) onChange({ financing: next });
         }}
-        aria-label="Cash or loan projects"
+        aria-label={financingLabel}
       >
         <ToggleButton value="all">All</ToggleButton>
         <ToggleButton value="cash">Cash</ToggleButton>

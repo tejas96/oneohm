@@ -373,6 +373,14 @@ const root = {
     /** "Created by" — hidden by default, same width as owner. */
     'col-creator': 'minmax(122px,1fr)',
     'col-actions': '40px',
+    // Quote list grid. Customer also carries the quote number on a second line.
+    'col-quote-customer': 'minmax(240px,1.6fr)',
+    'col-quote-property': 'minmax(120px,1fr)',
+    'col-quote-system': '88px',
+    'col-quote-value': '112px',
+    'col-quote-stage': '120px',
+    'col-quote-made-by': 'minmax(120px,1fr)',
+    'col-quote-dates': '132px',
     // Payment approval queue (design min-width 1180px)
     'col-approval-request': '152px',
     'col-approval-date': '96px',
@@ -481,34 +489,28 @@ const root = {
 
     // ── Project grid: column tracks ────────────────────────────────────
     /**
-     * These mirror the widths the project list carried as an `AdvancedTable`,
-     * so migrating the grid did not silently re-proportion columns whose cells
-     * were already tuned to them — the project cell wraps three chips under the
-     * code at 210px, and the contract cell holds a change-order line at 190px.
+     * Seven two-line columns that fit a 1280px window with the section nav open
+     * (992px of table) without scrolling. Only Customer and Progress take spare
+     * width — they hold the text that is otherwise truncated (the name beside
+     * its chips, the phase name).
      */
-    'col-project-name': '210px',
-    /** Was `flex: 2` — the only column that should absorb spare width. */
-    'col-project-customer': 'minmax(220px,2fr)',
-    'col-project-size': '165px',
-    'col-project-contract': '190px',
-    'col-project-progress': '180px',
-    'col-project-phase': '130px',
-    'col-project-type': '140px',
-    'col-project-start': '130px',
-    'col-project-due': '130px',
-    'col-project-team': '140px',
-    'col-project-actions': '48px',
+    'col-project-customer': 'minmax(296px,2.4fr)',
+    /** Ring + "Site Survey & Design", the longest common phase, untruncated. */
+    'col-project-progress': 'minmax(196px,1.4fr)',
+    'col-project-size': '96px',
+    'col-project-contract': '116px',
+    'col-project-dates': '128px',
+    'col-project-team': '92px',
+    'col-project-actions': '36px',
     // Hidden by default, but they still need a track to reappear into.
-    'col-project-status': '130px',
-    'col-project-priority': '110px',
     'col-project-creator': '140px',
     'col-project-pending-task': '150px',
     'col-project-tickets': '150px',
     'col-project-address': 'minmax(240px,1.4fr)',
-    // Sum of the default-visible tracks (210+220+165+190+180+130+140+130+130
-    // +140+48 = 1683) plus the 16px gutters between them, so the grid scrolls
-    // rather than squeezing Customer below its floor.
-    'grid-min-width-project': '1840px',
+    // Sum of the default-visible floors (296+196+96+116+128+92+36 = 960) plus
+    // the row's 16px gutter on each side. Cells carry their own right padding;
+    // the grid has no column gap to add.
+    'grid-min-width-project': '992px',
 
     'grid-min-width': '1280px',
     'row-gutter': '16px',

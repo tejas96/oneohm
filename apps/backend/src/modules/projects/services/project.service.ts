@@ -132,6 +132,10 @@ export class ProjectService {
   ): Promise<{
     projects: (ProjectEntity & {
       currentPhase: string | null;
+      wantsLoan: boolean;
+      meterInstalled: boolean;
+      meterInstalledOn: string | null;
+      nextStep: { name: string; assigneeName: string | null } | null;
       healthStatus: string | null;
       paymentSummary: ProjectPaymentSummary;
       completedTasks: number;
@@ -148,7 +152,7 @@ export class ProjectService {
     const projectIds = projects.map((p) => p.id);
     const paymentMap = await this.projectRepository.getPaymentSummaries(projectIds);
     const taskCountMap = await this.projectRepository.getTaskCounts(projectIds);
-    const phaseMap = await this.projectRepository.getCurrentPhases(projectIds);
+    const factsMap = await this.projectRepository.getListFacts(projectIds);
 
     const nextTaskMap = new Map<
       string,
@@ -206,7 +210,7 @@ export class ProjectService {
     }
 
     const enriched = projects.map((project) => {
-      const currentPhase = phaseMap.get(project.id) ?? null;
+      const facts = factsMap.get(project.id);
       const healthStatus = this.computeHealthStatus(project);
       const paymentSummary = paymentMap.get(project.id) ?? {
         totalExpected: 0,
@@ -220,7 +224,11 @@ export class ProjectService {
       const userOverdueTasks = overdueTaskCountMap.get(project.id) ?? 0;
 
       return Object.assign(project, {
-        currentPhase,
+        currentPhase: facts?.currentPhase ?? null,
+        wantsLoan: facts?.wantsLoan ?? false,
+        meterInstalled: facts?.meterInstalled ?? false,
+        meterInstalledOn: facts?.meterInstalledOn ?? null,
+        nextStep: facts?.nextStep ?? null,
         healthStatus,
         paymentSummary,
         nextTask,

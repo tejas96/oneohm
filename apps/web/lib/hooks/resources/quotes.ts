@@ -1,7 +1,7 @@
 'use client';
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { QuoteStatus } from '@tejas96/shared/types';
+import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { type DealAttention, type DealStageFilter, QuoteStatus } from '@tejas96/shared/types';
 
 import {
   type BaseFilters,
@@ -29,6 +29,20 @@ export interface QuoteListFilters extends BaseFilters {
   resellerId?: string;
   fromDate?: string;
   toDate?: string;
+  // Deal filters (dashboard drill-downs) — see GET /quotes in the backend.
+  stage?: DealStageFilter;
+  attention?: DealAttention;
+  person?: string;
+  financing?: 'cash' | 'loan';
+  leadSource?: string;
+  /** Sent as a repeated parameter, one per source (values can contain commas). */
+  leadSourceNotIn?: string[];
+  newFrom?: string;
+  newTo?: string;
+  wonFrom?: string;
+  wonTo?: string;
+  lostFrom?: string;
+  lostTo?: string;
 }
 
 // ============================================================================
@@ -78,10 +92,13 @@ export function useQuoteListResource(filters: QuoteListFilters = {}) {
   return useQuery({
     queryKey: quoteResourceKeys.list(filters as Record<string, unknown>),
     queryFn: async ({ signal }): Promise<QuoteListResponse> => {
-      const params = buildQueryParams(filters, {
+      const { leadSourceNotIn, ...rest } = filters;
+      const params = buildQueryParams(rest, {
         minSearchLength: 2,
         skipValues: ['all'],
       });
+      // buildQueryParams stringifies an array into one comma-joined value.
+      for (const source of leadSourceNotIn ?? []) params.append('leadSourceNotIn', source);
       const { data } = await apiClient.get<QuoteListResponse>(`/quotes?${params.toString()}`, {
         signal,
       });
@@ -89,5 +106,21 @@ export function useQuoteListResource(filters: QuoteListFilters = {}) {
     },
     placeholderData: keepPreviousData,
     staleTime: RESOURCE_QUERY_DEFAULTS.staleTime,
+  });
+}
+
+/**
+ * Options for the quote list's "Lead source" filter: every normalised source
+ * that has a deal (`GET /quotes/lead-sources`), most deals first. Under the
+ * `quotes` key, so anything that invalidates quotes refreshes it too.
+ */
+export function useQuoteLeadSources(): UseQueryResult<string[]> {
+  return useQuery({
+    queryKey: [...quoteResourceKeys.all(), 'lead-sources'],
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get<string[]>('/quotes/lead-sources', { signal });
+      return data;
+    },
+    staleTime: 5 * 60_000,
   });
 }

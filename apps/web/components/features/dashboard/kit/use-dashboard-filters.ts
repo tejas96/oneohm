@@ -18,6 +18,7 @@ const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 /** Same cap as the API (3 years, inclusive), so a range it would reject never reaches it. */
 const MAX_CUSTOM_DAYS = 1096;
 const DAY_MS = 86_400_000;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** The API rejects custom dates before this year. */
 const MIN_YEAR = 2000;
@@ -35,13 +36,16 @@ function spanDays(from: string, to: string): number {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS) + 1;
 }
 
-export const DEFAULT_DASHBOARD_FILTERS: DashboardFilters = {
+const DEFAULT_DASHBOARD_FILTERS: DashboardFilters = {
   period: 'this_month',
   financing: 'all',
 };
 
-/** Bad or half-filled values fall back to the defaults — a stale link must still open. */
-export function readDashboardFilters(params: URLSearchParams): DashboardFilters {
+/**
+ * Bad or half-filled values fall back to the defaults — a stale link must still open.
+ * `person` is read only for a page that has a person picker (`withPerson`).
+ */
+function readDashboardFilters(params: URLSearchParams, withPerson: boolean): DashboardFilters {
   const rawPeriod = params.get('period');
   const rawType = params.get('type');
   const financing = FINANCING.includes(rawType as DashboardFinancing)
@@ -50,17 +54,24 @@ export function readDashboardFilters(params: URLSearchParams): DashboardFilters 
   const period = PERIODS.includes(rawPeriod as DashboardPeriod)
     ? (rawPeriod as DashboardPeriod)
     : 'this_month';
-  if (period !== 'custom') return { period, financing };
+  const rawPerson = withPerson ? params.get('person') : null;
+  const person = rawPerson && UUID.test(rawPerson) ? rawPerson : undefined;
+  const base: DashboardFilters = { period, financing, ...(person ? { person } : {}) };
+  if (period !== 'custom') return base;
 
   const from = params.get('from') ?? '';
   const to = params.get('to') ?? '';
   if (!isIsoDay(from) || !isIsoDay(to) || from > to || spanDays(from, to) > MAX_CUSTOM_DAYS) {
-    return { ...DEFAULT_DASHBOARD_FILTERS, financing };
+    return { ...base, period: DEFAULT_DASHBOARD_FILTERS.period };
   }
-  return { period, from, to, financing };
+  return { ...base, from, to };
 }
 
-export function useDashboardFilters(): {
+/**
+ * Period, Cash/Loan and — with `{ withPerson: true }` (the quotes dashboard) —
+ * Person, all in the URL. Without it `person` is never read, written or counted.
+ */
+export function useDashboardFilters({ withPerson = false }: { withPerson?: boolean } = {}): {
   filters: DashboardFilters;
   setFilters: (patch: Partial<DashboardFilters>) => void;
   reset: () => void;
@@ -71,8 +82,8 @@ export function useDashboardFilters(): {
   const searchParams = useSearchParams();
 
   const filters = useMemo(
-    () => readDashboardFilters(new URLSearchParams(searchParams.toString())),
-    [searchParams],
+    () => readDashboardFilters(new URLSearchParams(searchParams.toString()), withPerson),
+    [searchParams, withPerson],
   );
 
   // What the last write asked for. `router.replace` lands after the call, so neither
@@ -92,6 +103,7 @@ export function useDashboardFilters(): {
         params.set('to', next.to);
       }
       if (next.financing !== 'all') params.set('type', next.financing);
+      if (withPerson && next.person) params.set('person', next.person);
       const qs = params.toString();
       const target = qs ? `${pathname}?${qs}` : pathname;
       // A write that lands on the URL we are already at never changes searchParams,
@@ -100,7 +112,7 @@ export function useDashboardFilters(): {
         target === `${window.location.pathname}${window.location.search}` ? null : next;
       router.replace(target, { scroll: false });
     },
-    [pathname, router],
+    [pathname, router, withPerson],
   );
 
   /**
@@ -113,19 +125,24 @@ export function useDashboardFilters(): {
       // Merge into what is current at call time, not the last render's copy: two
       // changes in one tick (e.g. period then financing) must both land.
       const current =
-        pending.current ?? readDashboardFilters(new URLSearchParams(window.location.search));
+        pending.current ??
+        readDashboardFilters(new URLSearchParams(window.location.search), withPerson);
       const next = { ...current, ...patch };
       if (next.period !== 'custom') {
         delete next.from;
         delete next.to;
       }
+      if (!withPerson || !next.person) delete next.person;
       write(next);
     },
-    [write],
+    [write, withPerson],
   );
 
   const reset = useCallback(() => write(DEFAULT_DASHBOARD_FILTERS), [write]);
-  const isDefault = filters.period === 'this_month' && filters.financing === 'all';
+  const isDefault =
+    filters.period === 'this_month' &&
+    filters.financing === 'all' &&
+    !(withPerson && filters.person);
 
   return { filters, setFilters, reset, isDefault };
 }

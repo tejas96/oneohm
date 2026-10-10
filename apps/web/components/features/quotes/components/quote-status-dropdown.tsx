@@ -29,7 +29,7 @@ import { showToast } from '@/components/ui/sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { useAccessDialog, useCan } from '@/lib/rbac';
 
-type BadgeVariant = 'muted' | 'info' | 'success' | 'warning' | 'error' | 'pending';
+export type BadgeVariant = 'muted' | 'info' | 'success' | 'warning' | 'error' | 'pending';
 
 interface QuoteStatusDropdownProps {
   quoteId: string;
@@ -52,6 +52,10 @@ interface QuoteStatusDropdownProps {
   canShareWhatsapp?: boolean;
   /** Draws a pulsing ripple around the trigger to point users at where to act (e.g. Draft quotes with no other indicator of where to send). */
   highlight?: boolean;
+  /** Replaces the badge text (e.g. a list row shows the deal stage). Voided still wins. */
+  label?: string;
+  /** Replaces the badge color to match `label`. Voided still wins. */
+  variant?: BadgeVariant;
 }
 
 export const QuoteStatusDropdown = React.memo(
@@ -66,6 +70,8 @@ export const QuoteStatusDropdown = React.memo(
     onShareWhatsapp,
     canShareWhatsapp = false,
     highlight = false,
+    label: labelOverride,
+    variant: variantOverride,
   }: QuoteStatusDropdownProps): React.JSX.Element => {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [acceptModalOpen, setAcceptModalOpen] = useState(false);
@@ -91,8 +97,9 @@ export const QuoteStatusDropdown = React.memo(
     // A voided quote offers nothing, whatever its status says. The status
     // machine on the server refuses every transition on it.
     const transitions = isVoided ? [] : QUOTE_STATUS_TRANSITIONS[status];
-    const label = QUOTE_STATUS_LABELS[status];
-    const variant = QUOTE_STATUS_BADGE_VARIANTS[status] as BadgeVariant;
+    const statusLabel = QUOTE_STATUS_LABELS[status];
+    const label = labelOverride ?? statusLabel;
+    const variant = variantOverride ?? (QUOTE_STATUS_BADGE_VARIANTS[status] as BadgeVariant);
     const isTerminal = transitions.length === 0;
 
     const handleOpen = (event: React.MouseEvent<HTMLButtonElement>): void => {
@@ -286,7 +293,10 @@ export const QuoteStatusDropdown = React.memo(
      */
     if (isVoided) {
       return (
-        <Tooltip title={`Voided${voidReason ? ` — ${voidReason}` : ''}. Was: ${label}.`} arrow>
+        <Tooltip
+          title={`Voided${voidReason ? ` — ${voidReason}` : ''}. Was: ${statusLabel}.`}
+          arrow
+        >
           <span className="inline-flex items-center gap-1 cursor-help">
             <Badge variant="muted" shape="pill" size={size}>
               Voided
