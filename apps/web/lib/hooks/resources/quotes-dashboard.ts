@@ -3,6 +3,7 @@
 import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { QuotesDashboard } from '@tejas96/shared/types';
 
+import { createResourceKeys } from '../core';
 import type { DashboardFilters } from './projects-dashboard';
 
 import { apiClient } from '@/lib/api/client';
@@ -18,9 +19,15 @@ function toQuery(filters: DashboardFilters): string {
   return params.toString();
 }
 
+/**
+ * Under the `quotes` resource key (`['quotes', …]`), the prefix every quote
+ * mutation invalidates (`quoteKeys.all()` — save, send, accept, reject, void,
+ * delete), so a changed quote refetches the dashboard too. Keyed on the request,
+ * so two filter objects that send the same query share one entry.
+ */
+const quoteResourceKeys = createResourceKeys('quotes');
 const quotesDashboardKeys = {
-  /** Keyed on the request, so two filter objects that send the same query share one entry. */
-  summary: (query: string) => ['quotes-dashboard', 'summary', query] as const,
+  summary: (query: string) => [...quoteResourceKeys.all(), 'dashboard', query] as const,
 };
 
 /** `keepPreviousData`: a filter change tweens old numbers to new ones, no skeleton flash. */
