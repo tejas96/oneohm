@@ -16,6 +16,9 @@ const SEGMENTS = [
   { key: 'quiet', label: 'quiet', color: 'var(--ds-danger)' },
 ] as const;
 
+/** Rows shown before "+N more"; the rest scroll inside the card. */
+const COLLAPSED_ROWS = 8;
+
 /** "Deepali: 10 drafting, 18 waiting, 6 quiet, 4 won" — the row's numbers in words. */
 function teamSummary(t: QuotesDashboardTeamRow): string {
   return `${t.name}: ${t.drafting} drafting, ${t.waiting} waiting, ${t.quiet} quiet, ${t.won} won`;
@@ -28,7 +31,10 @@ export function Team({
   data: QuotesDashboard;
   filters: DashboardFilters;
 }): React.JSX.Element {
+  const [expanded, setExpanded] = React.useState(false);
   const max = Math.max(1, ...data.team.map((t) => t.open));
+  const hidden = Math.max(0, data.team.length - COLLAPSED_ROWS);
+  const rows = expanded ? data.team : data.team.slice(0, COLLAPSED_ROWS);
   return (
     <section
       className={cn('h-full rounded-xl bg-surface p-5 shadow-e2', ENTER)}
@@ -52,8 +58,15 @@ export function Team({
       {data.team.length === 0 ? (
         <p className="py-8 text-center text-sm text-foreground-secondary">No open deals.</p>
       ) : (
-        <ul className="divide-y divide-border">
-          {data.team.map((t, i) => (
+        // Expanded: the card keeps its height and the list scrolls inside it.
+        <ul
+          id="quotes-team-list"
+          className={cn(
+            'divide-y divide-border',
+            expanded && 'max-h-[336px] overflow-y-auto overscroll-contain pr-1',
+          )}
+        >
+          {rows.map((t, i) => (
             <li key={t.personId} className={ENTER} style={enterDelay(i, 40)}>
               <Link
                 href={quoteLinks.personOpen(t.personId, filters)}
@@ -94,13 +107,16 @@ export function Team({
           ))}
         </ul>
       )}
-      {data.teamMore > 0 ? (
-        <Link
-          href={quoteLinks.stage('open', filters)}
+      {hidden > 0 ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          aria-controls="quotes-team-list"
           className="mt-2 inline-block text-xs font-medium text-primary-dark hover:underline"
         >
-          +{data.teamMore} more
-        </Link>
+          {expanded ? 'Show less' : `+${hidden} more`}
+        </button>
       ) : null}
     </section>
   );

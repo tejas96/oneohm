@@ -164,7 +164,7 @@ count in red. Rows with 0 show "None" in grey. When all are 0 the card says "Not
 **Team.** One row per person with open deals or wins in the period. Each row: name,
 a stacked bar of their open deals (Drafting stone, Waiting `primary-light`,
 Gone quiet `error`), open count, "N won" in the period. Sorted by open count. The first 8
-rows are shown, then "+N more" (opens the list of open deals, no person filter).
+rows are shown, then "+N more" shows everyone in the same card as a scrolling list ("Show less" folds it back).
 With a Person selected, this card shows that one person.
 
 ### Band 4 — Biggest open deals · Where deals come from
@@ -202,7 +202,7 @@ A switch Deals / ₹ changes the unit. Follows Person and Cash/Loan, not Period.
 | Needs action row | list · `attention=<key>` |
 | Owner name in a Needs action row | list · `attention=<key>` + `person` |
 | Team row | list · `stage=open` + `person` |
-| "+N more" (Team) | list · `stage=open` |
+| "+N more" (Team) | expands the Team card in place (scrolls); not a link |
 | Biggest open deal row | `/quotes/<quoteId>` |
 | Lead source row | list · `newFrom/To` + `leadSource` ("Other" = the excluded sources plus "Not set": `leadSourceNotIn`) |
 | Trend bar | list · `newFrom/To` or `stage=won` + `wonFrom/To` for that month |

@@ -157,7 +157,6 @@ function lossReasonLabel(value: string): string {
 
 type Row = Record<string, unknown>;
 const num = (v: unknown): number => Number(v ?? 0);
-const TEAM_LIMIT = 8;
 const SOURCE_LIMIT = 4;
 const MIN_FOR_WIN_RATE = 3;
 /** Lead sources that are counted inside the Other row, never shown as a top source. */
@@ -235,7 +234,7 @@ export class QuoteDashboardService {
         },
       },
       needsAction: DEAL_ATTENTIONS.map((key) => this.shapeNeeds(key, needsRows)),
-      team: teamRows.slice(0, TEAM_LIMIT).map((r) => ({
+      team: teamRows.map((r) => ({
         personId: String(r.personId),
         name: String(r.name),
         drafting: num(r.drafting),
@@ -244,7 +243,6 @@ export class QuoteDashboardService {
         open: num(r.open),
         won: num(r.won),
       })),
-      teamMore: Math.max(0, teamRows.length - TEAM_LIMIT),
       biggestOpen: bigRows.map((r) => ({
         quoteId: String(r.quoteId),
         customerName: (r.customerName as string | null) ?? null,

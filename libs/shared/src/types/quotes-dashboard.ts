@@ -102,9 +102,8 @@ export interface QuotesDashboard {
   };
   /** Always 4 rows, in DEAL_ATTENTIONS order. */
   needsAction: QuotesDashboardNeedsAction[];
-  /** First 8 people by open deals. */
+  /** Everyone with open deals or wins in the period, most open deals first. */
   team: QuotesDashboardTeamRow[];
-  teamMore: number;
   biggestOpen: QuotesDashboardBigDeal[];
   /** Up to 4 sources then the LEAD_SOURCE_OTHER_BUCKET row (only when non-zero). */
   sources: QuotesDashboardSource[];
