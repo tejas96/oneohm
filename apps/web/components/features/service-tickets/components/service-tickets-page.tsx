@@ -3,11 +3,12 @@
 import AddIcon from '@mui/icons-material/Add';
 import { Button } from '@mui/material';
 import {
+  ACTIVE_TICKET_STATUSES,
   ServiceTicketKind,
   ServiceTicketPriority,
   ServiceTicketStatus,
 } from '@tejas96/shared/types';
-import { type JSX, useCallback, useMemo, useState } from 'react';
+import { type JSX, useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   SERVICE_TICKET_PRIORITY_LABELS,
@@ -52,7 +53,7 @@ import {
   MUIUserAssigneeSelector,
   type AssigneeOption,
 } from '@/components/ui/mui-user-assignee-selector';
-import { useTableUrlState } from '@/lib/hooks';
+import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
 import { useGatedAction } from '@/lib/rbac';
 import { cn, formatNumber, getErrorMessage } from '@/lib/utils';
 
@@ -77,18 +78,19 @@ const STATUS_ORDER: ServiceTicketStatus[] = [
 /**
  * The six sortable columns of the old table, both directions. The models are
  * the same `{ field, direction }` values the headers wrote, so a saved
- * `tkt_sort` URL still means what it meant. Priority and status sort by their
- * stored word, which is what "A–Z" says.
+ * `tkt_sort` URL still opens that sort. Priority and status sort by what they
+ * mean, not by the alphabet: the API ranks priority from low up to urgent and
+ * status along the ticket's life, open to closed.
  */
 const SORT_OPTIONS: SortOption[] = [
   { label: 'Newest first', model: null },
   { label: 'Oldest first', model: { field: 'createdAt', direction: 'asc' } },
   { label: 'Due date: soonest first', model: { field: 'dueDate', direction: 'asc' } },
   { label: 'Due date: latest first', model: { field: 'dueDate', direction: 'desc' } },
-  { label: 'Priority A–Z', model: { field: 'priority', direction: 'asc' } },
-  { label: 'Priority Z–A', model: { field: 'priority', direction: 'desc' } },
-  { label: 'Status A–Z', model: { field: 'status', direction: 'asc' } },
-  { label: 'Status Z–A', model: { field: 'status', direction: 'desc' } },
+  { label: 'Priority: urgent first', model: { field: 'priority', direction: 'desc' } },
+  { label: 'Priority: low first', model: { field: 'priority', direction: 'asc' } },
+  { label: 'Status: open first', model: { field: 'status', direction: 'asc' } },
+  { label: 'Status: closed first', model: { field: 'status', direction: 'desc' } },
   { label: 'Issue A–Z', model: { field: 'title', direction: 'asc' } },
   { label: 'Issue Z–A', model: { field: 'title', direction: 'desc' } },
   { label: 'Ticket number: low to high', model: { field: 'ticketNumber', direction: 'asc' } },
@@ -99,6 +101,40 @@ const SORT_OPTIONS: SortOption[] = [
 const sortIndex = createSortIndex(SORT_OPTIONS, 'createdAt');
 
 const TICKET_NOUN = { one: 'ticket', many: 'tickets' };
+
+/** The sizes the old table offered; 20 is the page's default, so it stays on offer. */
+const PAGE_SIZE_OPTIONS = [10, 20, 25, 50, 100];
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const oneOf = (value: unknown, allowed: readonly string[]): string | undefined =>
+  typeof value === 'string' && allowed.includes(value) ? value : undefined;
+
+/**
+ * The filter record from the URL with everything the list would not understand
+ * taken out, so a hand-edited link cannot send the API a status it rejects or
+ * show a chip for a filter that is not applied. Returns the same object when
+ * nothing was dropped.
+ */
+function sanitizeFilters(raw: TableUrlFilterRecord): TableUrlFilterRecord {
+  const id = (value: unknown): string | undefined =>
+    typeof value === 'string' && UUID.test(value) ? value : undefined;
+  const kept: TableUrlFilterRecord = {
+    [KIND_FILTER_KEY]: oneOf(raw[KIND_FILTER_KEY], [ServiceTicketKind.MAINTENANCE]),
+    [STATUS_FILTER_KEY]: oneOf(raw[STATUS_FILTER_KEY], Object.values(ServiceTicketStatus)),
+    [PRIORITY_FILTER_KEY]: oneOf(raw[PRIORITY_FILTER_KEY], Object.values(ServiceTicketPriority)),
+    [OVERDUE_FILTER_KEY]: oneOf(raw[OVERDUE_FILTER_KEY], ['true']),
+    [ASSIGNEE_FILTER_KEY]:
+      oneOf(raw[ASSIGNEE_FILTER_KEY], [UNASSIGNED_FILTER_VALUE]) ?? id(raw[ASSIGNEE_FILTER_KEY]),
+    [CREATED_BY_FILTER_KEY]: id(raw[CREATED_BY_FILTER_KEY]),
+  };
+  // An empty value is no filter, so dropping one is not a change.
+  const dropped = Object.entries(raw).some(
+    ([key, value]) => value !== '' && value != null && kept[key] !== value,
+  );
+  if (!dropped) return raw;
+  return Object.fromEntries(Object.entries(kept).filter(([, value]) => value !== undefined));
+}
 
 /** A screenful; a longer page does not need a longer placeholder. */
 const MAX_SKELETON_ROWS = 25;
@@ -164,28 +200,40 @@ export function ServiceTicketsPage(): JSX.Element {
   const urlState = useTableUrlState({ prefix: 'tkt', defaultPageSize: 20 });
   const [formOpen, setFormOpen] = useState(false);
 
-  const statusFilter = (urlState.state.filters[STATUS_FILTER_KEY] as string | undefined) ?? '';
-  const priorityFilter = (urlState.state.filters[PRIORITY_FILTER_KEY] as string | undefined) ?? '';
-  const assigneeFilter = (urlState.state.filters[ASSIGNEE_FILTER_KEY] as string | undefined) ?? '';
-  const overdueFilter = (urlState.state.filters[OVERDUE_FILTER_KEY] as string | undefined) ?? '';
-  const createdByFilter =
-    (urlState.state.filters[CREATED_BY_FILTER_KEY] as string | undefined) ?? '';
+  // A link can carry filter values the list would ignore or the API would
+  // reject; show and send only what applies, and rewrite the URL to match
+  // (`setFilters` replaces, so no new history entry). Once rewritten the record
+  // is stable, so this runs once.
+  const { setFilters: replaceUrlFilters } = urlState;
+  const filters = useMemo(() => sanitizeFilters(urlState.state.filters), [urlState.state.filters]);
+  useEffect(() => {
+    if (filters !== urlState.state.filters) replaceUrlFilters(filters);
+  }, [filters, replaceUrlFilters, urlState.state.filters]);
+
+  const statusFilter = (filters[STATUS_FILTER_KEY] as string | undefined) ?? '';
+  const priorityFilter = (filters[PRIORITY_FILTER_KEY] as string | undefined) ?? '';
+  const assigneeFilter = (filters[ASSIGNEE_FILTER_KEY] as string | undefined) ?? '';
+  const overdueFilter = (filters[OVERDUE_FILTER_KEY] as string | undefined) ?? '';
+  const createdByFilter = (filters[CREATED_BY_FILTER_KEY] as string | undefined) ?? '';
 
   // No value in the URL is the Issues tab, so every old link keeps working.
   const kind =
-    urlState.state.filters[KIND_FILTER_KEY] === ServiceTicketKind.MAINTENANCE
+    filters[KIND_FILTER_KEY] === ServiceTicketKind.MAINTENANCE
       ? ServiceTicketKind.MAINTENANCE
       : ServiceTicketKind.ISSUE;
 
   const handleKindChange = useCallback(
     (next: ServiceTicketKind) => {
-      const filters: FilterState = { ...urlState.state.filters };
-      if (next === ServiceTicketKind.MAINTENANCE) filters[KIND_FILTER_KEY] = next;
-      else delete filters[KIND_FILTER_KEY];
-      urlState.setFilters(filters);
+      const nextFilters: FilterState = { ...filters };
+      if (next === ServiceTicketKind.MAINTENANCE) nextFilters[KIND_FILTER_KEY] = next;
+      else delete nextFilters[KIND_FILTER_KEY];
+      urlState.setFilters(nextFilters);
     },
-    [urlState],
+    [filters, urlState],
   );
+
+  // priorityFilter is a raw URL string, so compare against the enum's value.
+  const urgentActive = priorityFilter === String(ServiceTicketPriority.URGENT);
 
   const { data: employees } = useEmployees();
   const { data: stats } = useServiceTicketStats(kind);
@@ -196,7 +244,14 @@ export function ServiceTicketsPage(): JSX.Element {
       page: urlState.state.page + 1,
       limit: urlState.state.pageSize,
       search: urlState.state.search || undefined,
-      status: statusFilter ? (statusFilter as ServiceTicketStatus) : undefined,
+      // Urgent, like Unassigned and Overdue, is a view of work still to be
+      // done — that is what its count counts — so with no status picked it
+      // lists open and in-progress tickets only.
+      status: statusFilter
+        ? (statusFilter as ServiceTicketStatus)
+        : urgentActive
+          ? [...ACTIVE_TICKET_STATUSES]
+          : undefined,
       priority: priorityFilter ? (priorityFilter as ServiceTicketPriority) : undefined,
       assigneeId:
         assigneeFilter && assigneeFilter !== UNASSIGNED_FILTER_VALUE ? assigneeFilter : undefined,
@@ -214,6 +269,7 @@ export function ServiceTicketsPage(): JSX.Element {
       urlState.state.sortModel,
       statusFilter,
       priorityFilter,
+      urgentActive,
       assigneeFilter,
       overdueFilter,
       createdByFilter,
@@ -226,13 +282,10 @@ export function ServiceTicketsPage(): JSX.Element {
   const total = data?.meta.total;
   const { page, pageSize, search, sortModel } = urlState.state;
 
-  // priorityFilter is a raw URL string, so compare against the enum's value.
-  const urgentActive = priorityFilter === String(ServiceTicketPriority.URGENT);
-
   /** Urgent is a toggle: it drops the status, and a second click drops itself. */
   const handleUrgentToggle = useCallback((): void => {
     urlState.setFilters({
-      ...urlState.state.filters,
+      ...filters,
       [STATUS_FILTER_KEY]: '',
       [PRIORITY_FILTER_KEY]: urgentActive ? '' : ServiceTicketPriority.URGENT,
     });
@@ -241,7 +294,7 @@ export function ServiceTicketsPage(): JSX.Element {
   const handleQuickFilterChange = useCallback(
     (key: string): void => {
       urlState.setFilters({
-        ...urlState.state.filters,
+        ...filters,
         [STATUS_FILTER_KEY]: key,
         [PRIORITY_FILTER_KEY]: '',
       });
@@ -257,7 +310,7 @@ export function ServiceTicketsPage(): JSX.Element {
 
   const handleSecondaryQuickFilterChange = useCallback(
     (key: string): void => {
-      const next: FilterState = { ...urlState.state.filters };
+      const next: FilterState = { ...filters };
 
       if (key === 'unassigned') {
         const isActive = assigneeFilter === UNASSIGNED_FILTER_VALUE;
@@ -387,10 +440,10 @@ export function ServiceTicketsPage(): JSX.Element {
    * chip or count toward the filter button's badge.
    */
   const tableFilterModel = useMemo<FilterState>(() => {
-    const rest: FilterState = { ...urlState.state.filters };
+    const rest: FilterState = { ...filters };
     delete rest[KIND_FILTER_KEY];
     return rest;
-  }, [urlState.state.filters]);
+  }, [filters]);
 
   const handleTableFilterChange = useCallback(
     (next: FilterState): void => {
@@ -536,6 +589,7 @@ export function ServiceTicketsPage(): JSX.Element {
           totalRowCount={total ?? 0}
           onPageChange={urlState.setPage}
           onPageSizeChange={urlState.setPageSize}
+          pageSizeOptions={PAGE_SIZE_OPTIONS}
           noun={TICKET_NOUN}
           countUnknown={isError && !data}
         />

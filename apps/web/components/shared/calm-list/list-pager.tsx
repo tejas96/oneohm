@@ -45,6 +45,8 @@ export interface ListPagerProps {
   onPageChange: (page: number) => void;
   /** Omit for a list with one fixed page size: the "Rows" picker is left out. */
   onPageSizeChange?: (pageSize: number) => void;
+  /** The sizes on offer, for a list whose default is not one of the usual four. */
+  pageSizeOptions?: number[];
   /** What a row is, for "Showing 1–10 of 1,230 customers". */
   noun: { one: string; many: string };
   /** The list failed to load: there is no count to state. */
@@ -64,6 +66,7 @@ function ListPagerInner({
   totalRowCount,
   onPageChange,
   onPageSizeChange,
+  pageSizeOptions = PAGE_SIZE_OPTIONS,
   noun,
   countUnknown = false,
 }: ListPagerProps): JSX.Element {
@@ -100,9 +103,9 @@ function ListPagerInner({
               }
               className={cn(CONTROL, 'mr-1.5 cursor-pointer border-0 px-2.5 text-foreground')}
             >
-              {(PAGE_SIZE_OPTIONS.includes(pageSize)
-                ? PAGE_SIZE_OPTIONS
-                : [...PAGE_SIZE_OPTIONS, pageSize].sort((a, b) => a - b)
+              {(pageSizeOptions.includes(pageSize)
+                ? pageSizeOptions
+                : [...pageSizeOptions, pageSize].sort((a, b) => a - b)
               ).map((size) => (
                 <option key={size} value={size}>
                   {size}
