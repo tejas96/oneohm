@@ -55,7 +55,8 @@ that went out), `quoteSent`, `won`, `commissioned` — using the same sub-rules 
 the table. "Lead captured" has no flag: it is always true.
 
 **Deal quote.** The fragment publishes the deal quote it read the stage from
-(`dealQuote: { id, number, status, voided, finalPrice, systemSizeKw } | null`)
+(`dealQuote: { id, number, status, quoteDate, voided, finalPrice, systemSizeKw } | null`;
+`quoteDate` is the day printed on that quote, `YYYY-MM-DD`)
 so a screen shows that quote, not a second pick. The older `latestQuote*`
 fields (newest live quote) are unchanged — mobile reads them.
 
@@ -173,8 +174,10 @@ that is no status highlights no ribbon button (as before the rebuild).
    <name>"), at the right of the row before ⋮; when unassigned, a dashed empty
    avatar with title "Not assigned · created by <creatorName>". Never show
    the creator as if they were the owner. An assignee whose account is
-   archived is still the assignee: the list sends the name with
-   `assigneeArchived: true` and the row and panel read "<name> (archived)".
+   archived is still the assignee: the list and `GET /customers/:id` send the
+   name with `assigneeArchived: true`, and the row, the panel and the
+   customer's own page read "<name> (archived)". An archived user is shown,
+   never offered as a choice when reassigning.
 6. **⋮** menu — unchanged items, gates and delete-block rules.
 
 The row is not a button wrapping links: a real "open details" button covers
