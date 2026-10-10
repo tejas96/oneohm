@@ -20,3 +20,4 @@ export * from './maintenance';
 export * from './commission';
 export * from './project-stage';
 export * from './deal-stage';
+export * from './site-journey';

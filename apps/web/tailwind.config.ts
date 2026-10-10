@@ -449,6 +449,18 @@ const config: Config = {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
+        // Calm list entrance. No end frame on purpose: the row animates to its own
+        // resting style and holds nothing afterwards, so its hover lift still works.
+        'calm-rise': {
+          '0%': { opacity: '0', transform: 'translateY(var(--calm-rise-y, 10px))' },
+        },
+        // The ring behind an overdue follow-up. Plain colour variables, not
+        // color-mix(): Tailwind wraps that in @supports, which is invalid inside
+        // @keyframes and leaves the animation empty.
+        'calm-pulse': {
+          '0%, 100%': { 'box-shadow': '0 0 0 0 var(--ds-danger-glow)' },
+          '50%': { 'box-shadow': '0 0 0 7px var(--ds-danger-glow-fade)' },
+        },
         'fade-out': {
           '0%': {
             opacity: '1',
@@ -505,6 +517,8 @@ const config: Config = {
       animation: {
         'fade-in': 'fade-in 0.4s ease forwards',
         'dashboard-enter': 'dashboard-enter 0.4s ease forwards',
+        'calm-rise': 'calm-rise 0.55s var(--ease-calm) backwards',
+        'calm-pulse': 'calm-pulse 2.2s ease-in-out infinite',
         'fade-out': 'fade-out 0.2s ease forwards',
         'slide-in-right': 'slide-in-right 0.3s ease-out',
         'slide-out-right': 'slide-out-right 0.2s ease-in',

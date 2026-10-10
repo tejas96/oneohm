@@ -1,69 +1,51 @@
 'use client';
 
 import AddIcon from '@mui/icons-material/Add';
-import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined';
-import CheckIcon from '@mui/icons-material/Check';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import {
-  Box,
-  Button,
-  IconButton,
-  Link as MuiLink,
-  ListItemIcon,
-  Menu,
-  MenuItem,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Button } from '@mui/material';
 import { ProjectPriority, ProjectStatus } from '@tejas96/shared/types';
-import {
-  indiaToday,
-  SIDE_TRACK_PHASES,
-  STAGE_GROUP_KEYS,
-  STAGE_GROUPS,
-} from '@tejas96/shared/utils';
-import NextLink from 'next/link';
+import { SIDE_TRACK_PHASES, STAGE_GROUP_KEYS, STAGE_GROUPS } from '@tejas96/shared/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { type JSX, type MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { type JSX, useCallback, useEffect, useMemo } from 'react';
 
 import {
-  PROJECT_PRIORITY_LABELS,
   PROJECT_PRIORITY_OPTIONS,
   PROJECT_STATUS_LABELS,
-  PROJECT_TYPE_LABELS,
   PROJECT_TYPE_OPTIONS,
 } from '../constants';
 import { type ProjectFilters, type ProjectListItem, useEmployees, useProjects } from '../hooks';
-import { TeamAvatarGroup } from './team-avatar-group';
+import { ProjectRow, ProjectRowSkeleton, STATUS_TONE } from './list/project-row';
 
-import { ActiveTicketsChip } from '@/components/features/service-tickets';
 import {
   FilterAutocomplete,
   type ColumnConfig,
   type FilterState,
 } from '@/components/shared/advanced-table';
 import {
-  CrmTable,
-  type CrmColumn,
-  type CrmQuickFilter,
-  type CrmTone,
-} from '@/components/shared/crm-table';
+  CalmListPage,
+  createSortIndex,
+  ListEmpty,
+  ListError,
+  ListPager,
+  ListSkeleton,
+  ListTitle,
+  ListToolbar,
+  PrimaryAction,
+  Segment,
+  SegmentCard,
+  type SortOption,
+  useKeepPageInRange,
+  useListEntrance,
+} from '@/components/shared/calm-list';
+import type { CrmQuickFilter, CrmTone } from '@/components/shared/crm-table';
 import { MUIDateRangePicker } from '@/components/ui';
-import { MUIAvatar } from '@/components/ui/mui-avatar';
-import { MUITypography } from '@/components/ui/mui-typography';
-import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { ROUTES } from '@/lib/config/routes';
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
 import { useAllActiveWorkflowSteps } from '@/lib/hooks/resources';
 import { useGatedAction } from '@/lib/rbac';
-import { color, crm } from '@/lib/theme/tokens';
 import {
   formatBusinessDate,
-  formatCurrency,
   formatLocalDate,
-  formatSystemSize,
+  formatNumber,
   getErrorMessage,
   toTitleLabel,
 } from '@/lib/utils';
@@ -78,7 +60,7 @@ type ProjectRow = ProjectListItem & Record<string, unknown>;
 // Module-level stable references
 // ============================================================================
 
-const EMPTY_PROJECT_ROWS: ProjectRow[] = [];
+const EMPTY_PROJECT_ROWS: ProjectListItem[] = [];
 
 /**
  * The list is a worklist, not an archive: it opens on the projects someone can
@@ -100,14 +82,6 @@ const SORT_FIELD_MAP: Record<string, string> = {
   endDate: 'endDate',
   status: 'status',
   createdAt: 'createdAt',
-};
-
-const STATUS_TONE: Record<string, CrmTone> = {
-  [ProjectStatus.PLANNING]: 'info',
-  [ProjectStatus.ACTIVE]: 'success',
-  [ProjectStatus.ON_HOLD]: 'warning',
-  [ProjectStatus.COMPLETED]: 'neutral',
-  [ProjectStatus.CANCELLED]: 'neutral',
 };
 
 /** Health values ride in the same `status` filter field — see `toProjectFilters`. */
@@ -319,545 +293,47 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
 }
 
 // ============================================================================
-// Sub-components (module-level — must not be defined inside the page component)
-// ============================================================================
-
-function ProjectRowActionsMenu({ project }: { project: ProjectListItem }): JSX.Element {
-  const [anchor, setAnchor] = useState<null | HTMLElement>(null);
-  return (
-    <>
-      <IconButton
-        size="small"
-        onClick={(e) => setAnchor(e.currentTarget)}
-        aria-label="Project actions"
-      >
-        <MoreVertIcon fontSize="small" />
-      </IconButton>
-      <Menu
-        anchorEl={anchor}
-        open={Boolean(anchor)}
-        onClose={() => setAnchor(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <MenuItem
-          component={NextLink}
-          href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id })}
-          onClick={() => setAnchor(null)}
-        >
-          <ListItemIcon>
-            <VisibilityIcon fontSize="small" />
-          </ListItemIcon>
-          View Details
-        </MenuItem>
-      </Menu>
-    </>
-  );
-}
-
-// ============================================================================
-// Row building blocks
+// Sort (what the table's column headers offered)
 // ============================================================================
 
 /**
- * Every cell is two lines on one rhythm — a 20px fact over a 16px note — so
- * the eye can run along a row, or down a column, without re-finding the
- * baseline in each cell.
+ * The five sortable columns of the old table, both directions, and the created
+ * date the list falls back to. The models are the same `{ field, direction }`
+ * values the headers wrote, so a saved `projects_sort` URL still means what it
+ * meant (`projectNumber` is the old "Customer" header: it sorts by project name).
  */
-const LINE_1_BASE = 'block truncate text-base leading-5';
-const LINE_2_BASE = 'block truncate text-xs leading-4';
-const LINE_1 = `${LINE_1_BASE} text-foreground`;
-const LINE_2 = `${LINE_2_BASE} text-foreground-tertiary`;
-/** Line one with nothing to report: a dash or "Not planned", never as dark as a real value. */
-const LINE_1_EMPTY = `${LINE_1_BASE} text-foreground-muted`;
-/** Holds the second line open when a cell has nothing to say there, so line one never drops to the middle. */
-const EMPTY_LINE_2 = (
-  <span className={LINE_2} aria-hidden="true">
-    &nbsp;
-  </span>
-);
-
-/** The grid has no column gap, so each cell keeps its own right gutter. */
-const CELL_GUTTER = { pr: 2, minWidth: 0 } as const;
-
-const PILL_PALETTE: Record<CrmTone, { ink: string; bg: string }> = {
-  neutral: { ink: color.neutral, bg: color['neutral-bg'] },
-  accent: { ink: color['accent-ink'], bg: color['accent-subtle'] },
-  success: { ink: color.success, bg: color['success-bg'] },
-  info: { ink: color.info, bg: color['info-bg'] },
-  warning: { ink: color.warning, bg: color['warning-bg'] },
-  danger: { ink: color.danger, bg: color['danger-bg'] },
-};
-
-/** Only a priority that asks for something gets a colour; the usual ones stay grey. */
-const PRIORITY_TONE: Record<string, CrmTone> = {
-  [ProjectPriority.LOW]: 'neutral',
-  [ProjectPriority.NORMAL]: 'neutral',
-  [ProjectPriority.HIGH]: 'warning',
-  [ProjectPriority.URGENT]: 'danger',
-};
-
-/** Status and priority beside the name: present on every row, never louder than it. */
-function QuietPill({ label, tone }: { label: string; tone: CrmTone }): JSX.Element {
-  const palette = PILL_PALETTE[tone];
-  return (
-    <span
-      className="inline-flex h-[18px] shrink-0 items-center rounded-pill px-1.5 text-2xs font-medium leading-none whitespace-nowrap"
-      style={{ color: palette.ink, backgroundColor: palette.bg }}
-    >
-      {label}
-    </span>
-  );
-}
-
-const RING_SIZE = 36;
-const RING_STROKE = 3;
-const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
-const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
-
-/** Progress as a ring: the same fact the old bar carried, in a third of the width. */
-function ProgressRing({ percent }: { percent: number }): JSX.Element {
-  // Starts empty and fills on the first frame, so the arc draws itself once.
-  const [drawn, setDrawn] = useState(0);
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setDrawn(percent));
-    return () => cancelAnimationFrame(frame);
-  }, [percent]);
-
-  const centre = RING_SIZE / 2;
-  return (
-    <svg
-      role="img"
-      aria-label={`${percent}% complete`}
-      width={RING_SIZE}
-      height={RING_SIZE}
-      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
-      className="shrink-0"
-    >
-      <circle
-        cx={centre}
-        cy={centre}
-        r={RING_RADIUS}
-        fill="none"
-        stroke="var(--ds-neutral-300)"
-        strokeWidth={RING_STROKE}
-      />
-      <circle
-        cx={centre}
-        cy={centre}
-        r={RING_RADIUS}
-        fill="none"
-        stroke="var(--ds-primary)"
-        strokeWidth={RING_STROKE}
-        strokeLinecap="round"
-        strokeDasharray={RING_LENGTH}
-        strokeDashoffset={RING_LENGTH * (1 - drawn / 100)}
-        transform={`rotate(-90 ${centre} ${centre})`}
-        className="transition-[stroke-dashoffset] duration-700 ease-out motion-reduce:transition-none"
-      />
-      <text
-        x={centre}
-        y={centre}
-        textAnchor="middle"
-        dominantBaseline="central"
-        className="fill-foreground-secondary font-semibold tabular-nums"
-        fontSize={10}
-      >
-        {percent}
-        <tspan fontSize={7}>%</tspan>
-      </text>
-    </svg>
-  );
-}
-
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-/** `2026-09-14` → "14 Sep"; the year is added only when it is not this one. */
-function shortDay(day: string | undefined, today: string): string {
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(day ?? '');
-  if (!match) return '-';
-  const [, year = '', month = '', date = ''] = match;
-  const label = `${Number(date)} ${MONTHS[Number(month) - 1] ?? ''}`;
-  return year === today.slice(0, 4) ? label : `${label} ’${year.slice(2)}`;
-}
-
-/** Whole calendar days from one `YYYY-MM-DD` to another. */
-function daysBetween(from: string, to: string): number {
-  const utc = (day: string): number => {
-    const [y = 0, m = 1, d = 1] = day.slice(0, 10).split('-').map(Number);
-    return Date.UTC(y, m - 1, d);
-  };
-  return Math.round((utc(to) - utc(from)) / 86_400_000);
-}
-
-const plural = (count: number, noun: string): string => `${count} ${noun}${count === 1 ? '' : 's'}`;
-
-// ============================================================================
-// Columns
-// ============================================================================
-
-/**
- * Seven columns, each answering one question about the project: whose it is,
- * how far along, how big, what it is worth, when, and who is on it. Sizing is a
- * `crm['col-project-*']` track so the column-visibility menu can rebuild the
- * grid template from exactly the tracks that survive.
- */
-const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
-  {
-    // Still `projectNumber`: the sort key (project name) and any bookmarked sort
-    // in the URL hang off this field.
-    field: 'projectNumber',
-    header: 'Customer',
-    track: crm['col-project-customer'],
-    sortable: true,
-    hideable: false,
-    cellSx: { ...CELL_GUTTER, pl: 1 },
-    renderCell: (row): JSX.Element => {
-      const project = row as ProjectListItem;
-      const name = project.property.customerName || project.name;
-      const place = project.property.city || project.property.address;
-      const address = [project.property.address, project.property.city].filter(Boolean).join(', ');
-      const tickets = project.activeTicketCount;
-      const ticketLabel = `${tickets} active ${tickets === 1 ? 'ticket' : 'tickets'}`;
-      const status = project.status;
-      const priority = project.priority;
-
-      return (
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <MUIAvatar name={name} size="md" sx={{ flexShrink: 0 }} />
-          <div className="min-w-0 flex-1">
-            <div className="flex min-w-0 items-center gap-1.5">
-              <span className={`${LINE_1} font-medium`} title={name}>
-                {name}
-              </span>
-              <QuietPill
-                label={PROJECT_STATUS_LABELS[status] ?? toTitleLabel(status)}
-                tone={STATUS_TONE[status] ?? 'neutral'}
-              />
-              <QuietPill
-                label={PROJECT_PRIORITY_LABELS[priority] ?? toTitleLabel(priority)}
-                tone={PRIORITY_TONE[priority] ?? 'neutral'}
-              />
-              {project.wantsLoan ? <QuietPill label="Loan" tone="info" /> : null}
-              {tickets > 0 ? (
-                <span
-                  role="img"
-                  aria-label={ticketLabel}
-                  title={ticketLabel}
-                  className="inline-flex shrink-0"
-                  style={{ color: color.warning }}
-                >
-                  <BuildOutlinedIcon sx={{ fontSize: 14 }} />
-                </span>
-              ) : null}
-            </div>
-            <span
-              className={LINE_2}
-              title={[project.projectNumber, address].filter(Boolean).join(' · ')}
-            >
-              <span className="tabular-nums">{project.projectNumber}</span>
-              {place ? ` · ${place}` : ''}
-            </span>
-          </div>
-        </div>
-      );
-    },
-  },
-  {
-    field: 'progressPercentage',
-    header: 'Progress',
-    track: crm['col-project-progress'],
-    sortable: true,
-    cellSx: CELL_GUTTER,
-    renderCell: (row): JSX.Element => {
-      const project = row as ProjectListItem;
-      const percent = Math.round(Math.min(100, Math.max(0, project.progressPercentage)));
-      const completed = project.completedTasks ?? 0;
-      const total = project.totalTasks ?? 0;
-      // Every step done: the Phase filter only matches live projects, so the cell
-      // must not name a phase it cannot be filtered by. A cancelled project was
-      // stopped, not finished, so it keeps its phase.
-      const allDone =
-        project.status !== ProjectStatus.CANCELLED && total > 0 && completed === total;
-      const phase = allDone ? 'All phases done' : project.currentPhase;
-      // The ring already says how far along; this line says what happens next and
-      // who holds it. A cancelled project has no next step, whatever is still open.
-      const nextStep = project.status === ProjectStatus.CANCELLED ? null : project.nextStep;
-      const owner = nextStep?.assigneeName?.trim() || null;
-      const ownerFirstName = owner?.split(/\s+/)[0];
-
-      return (
-        <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          <ProgressRing percent={percent} />
-          <div className="min-w-0 flex-1">
-            <span className={phase ? LINE_1 : LINE_1_EMPTY} title={phase ?? undefined}>
-              {phase ?? '-'}
-            </span>
-            {nextStep ? (
-              // The step name gives way first: who holds it is never the part cut off.
-              <span
-                className="flex min-w-0 text-xs leading-4 text-foreground-tertiary"
-                title={`Next: ${nextStep.name} · ${owner ?? 'Unassigned'}`}
-              >
-                <span className="truncate">Next: {nextStep.name}</span>
-                <span className="shrink-0 whitespace-pre">
-                  {' · '}
-                  {owner ? ownerFirstName : <span className="text-error">Unassigned</span>}
-                </span>
-              </span>
-            ) : (
-              EMPTY_LINE_2
-            )}
-          </div>
-        </div>
-      );
-    },
-  },
-  {
-    field: 'systemSizeKw',
-    header: 'System',
-    track: crm['col-project-size'],
-    sortable: true,
-    cellSx: CELL_GUTTER,
-    renderCell: (row): JSX.Element => {
-      const { systemSizeKw, projectType } = row as ProjectListItem;
-      const type = PROJECT_TYPE_LABELS[projectType] ?? toTitleLabel(projectType);
-      return (
-        <div className="min-w-0 flex-1">
-          <span className={`${LINE_1} tabular-nums`}>{formatSystemSize(systemSizeKw)} kW</span>
-          <span className={LINE_2} title={type}>
-            {type}
-          </span>
-        </div>
-      );
-    },
-  },
-  {
-    field: 'estimatedCost',
-    header: 'Contract',
-    track: crm['col-project-contract'],
-    sortable: true,
-    align: 'right',
-    stopPropagation: true,
-    cellSx: { ...CELL_GUTTER, pr: 3 },
-    /**
-     * One number, one word, one source — for worth *and* for collection.
-     *
-     * This column read `estimatedCost` (`cv.finalPrice` — the quote) under the
-     * heading "Value", while the project's Money tab read `v_project_balance`
-     * under "Contract". A project with change orders therefore showed
-     * ₹2,58,568 here and ₹2,98,568.04 there, both correct, with nothing on
-     * either screen explaining the gap. It now reads the same ledger view the
-     * Money tab does, and says so with the same word.
-     *
-     * Collection comes from `outstanding` only (against the *contract*), never
-     * from `totalExpected - totalPaid` (against the payment *schedule*): those
-     * agree only when the schedule covers the whole contract. The schedule
-     * figures and the quote-to-contract gap live in the tooltip — the cell
-     * itself carries each figure once.
-     */
-    renderCell: (row): JSX.Element => {
-      const project = row as ProjectListItem;
-      const {
-        contractValue: contract,
-        outstanding,
-        totalPaid,
-        totalExpected,
-      } = project.paymentSummary;
-      const quoted = project.estimatedCost ?? null;
-
-      if (!contract) {
-        return (
-          <div className="min-w-0 text-right">
-            <span className={LINE_1_EMPTY}>-</span>
-            {EMPTY_LINE_2}
-          </div>
-        );
-      }
-
-      // Only worth mentioning when the contract has actually moved off the quote.
-      const changeOrders = quoted != null ? contract - quoted : 0;
-      const hasChangeOrders = Math.abs(changeOrders) >= 0.01;
-      const projectHref = buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id });
-      // "Paid in full" only when money actually came in and none is left owing —
-      // a zero balance with nothing collected is not a paid project.
-      const paidInFull = outstanding <= 0 && totalPaid > 0;
-
-      return (
-        <Tooltip
-          title={
-            <span style={{ whiteSpace: 'pre-line' }}>
-              {[
-                `Paid ${formatCurrency(totalPaid)} of ${formatCurrency(totalExpected)} invoiced`,
-                hasChangeOrders
-                  ? `Quote ${formatCurrency(quoted ?? 0)} ${changeOrders > 0 ? '+' : '−'} ${formatCurrency(Math.abs(changeOrders))} change orders`
-                  : null,
-              ]
-                .filter(Boolean)
-                .join('\n')}
-            </span>
-          }
-          placement="top"
-          enterDelay={400}
-        >
-          <div className="min-w-0 text-right">
-            <MuiLink
-              component={NextLink}
-              href={`${projectHref}?tab=finance`}
-              underline="hover"
-              color="inherit"
-              onClick={(e: MouseEvent) => e.stopPropagation()}
-              className={`${LINE_1} font-medium tabular-nums`}
-            >
-              {formatCurrency(contract)}
-            </MuiLink>
-            {outstanding > 0 ? (
-              <span className={`${LINE_2_BASE} tabular-nums`} style={{ color: color.warning }}>
-                {formatCurrency(outstanding)} due
-              </span>
-            ) : paidInFull ? (
-              <span className={LINE_2_BASE} style={{ color: color.success }}>
-                paid in full
-              </span>
-            ) : (
-              EMPTY_LINE_2
-            )}
-          </div>
-        </Tooltip>
-      );
-    },
-  },
-  {
-    // One column for both dates; the header sorts by the due date, the one people
-    // chase. `startDate` stays in `SORT_FIELD_MAP` for links that already carry it.
-    field: 'endDate',
-    header: 'Dates',
-    track: crm['col-project-dates'],
-    sortable: true,
-    cellSx: CELL_GUTTER,
-    renderCell: (row): JSX.Element => {
-      const { startDate, endDate, status, meterInstalled, meterInstalledOn } =
-        row as ProjectListItem;
-      const meterLine = meterInstalled ? (
-        <span className={`${LINE_2_BASE} tabular-nums`} style={{ color: color.success }}>
-          <CheckIcon sx={{ fontSize: 12, mr: 0.5, verticalAlign: '-2px' }} />
-          Meter in{meterInstalledOn ? ` · ${shortDay(meterInstalledOn, indiaToday())}` : ''}
-        </span>
-      ) : null;
-      if (!startDate && !endDate) {
-        return (
-          <div className="min-w-0 flex-1">
-            <span className={LINE_1_EMPTY}>Not planned</span>
-            {meterLine ?? EMPTY_LINE_2}
-          </div>
-        );
-      }
-      const today = indiaToday();
-      const range = `${shortDay(startDate, today)} → ${shortDay(endDate, today)}`;
-      const open = status !== ProjectStatus.COMPLETED && status !== ProjectStatus.CANCELLED;
-      // The meter going in is the job's key milestone: once it has, a countdown
-      // (or an overdue warning) to the planned end date would contradict it.
-      const daysLeft = endDate && open && !meterInstalled ? daysBetween(today, endDate) : null;
-
-      return (
-        <div className="min-w-0 flex-1">
-          <span className={`${LINE_1} tabular-nums`} title={range}>
-            {range}
-          </span>
-          {meterLine ? (
-            meterLine
-          ) : daysLeft == null ? (
-            EMPTY_LINE_2
-          ) : daysLeft < 0 ? (
-            // Grey, not red: old due dates are common, and a red column on every row is noise.
-            <span className={`${LINE_2} tabular-nums`}>due {plural(-daysLeft, 'day')} ago</span>
-          ) : (
-            <span className={`${LINE_2} tabular-nums`}>
-              {daysLeft === 0 ? 'due today' : `${plural(daysLeft, 'day')} left`}
-            </span>
-          )}
-        </div>
-      );
-    },
-  },
-  {
-    field: 'team',
-    header: 'Team',
-    track: crm['col-project-team'],
-    stopPropagation: true,
-    renderCell: (row): JSX.Element => (
-      <TeamAvatarGroup members={(row as ProjectListItem).teamMembers} max={3} size="xs" />
-    ),
-  },
-  {
-    field: 'createdBy',
-    header: 'Created By',
-    track: crm['col-project-creator'],
-    defaultHidden: true,
-    renderCell: (row): JSX.Element => {
-      const name = (row as ProjectListItem).creatorName;
-      return <MUITypography variant="body">{name || '-'}</MUITypography>;
-    },
-  },
-  {
-    field: 'pendingWorkflowStepId',
-    header: 'Pending Task',
-    track: crm['col-project-pending-task'],
-    defaultHidden: true,
-    renderCell: (): JSX.Element => <></>,
-  },
-  {
-    field: 'hasActiveTickets',
-    header: 'Service Tickets',
-    track: crm['col-project-tickets'],
-    defaultHidden: true,
-    renderCell: (row): JSX.Element => (
-      <ActiveTicketsChip count={(row as ProjectListItem).activeTicketCount} />
-    ),
-  },
-  {
-    field: 'address',
-    header: 'Property Address',
-    track: crm['col-project-address'],
-    defaultHidden: true,
-    renderCell: (row): JSX.Element => {
-      const project = row as ProjectListItem;
-      const addr = [
-        project.property.address,
-        project.property.city,
-        project.property.state,
-        project.property.pincode,
-      ]
-        .filter(Boolean)
-        .join(', ');
-      return (
-        <MUITypography
-          variant="body"
-          sx={{
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            whiteSpace: 'normal',
-            wordBreak: 'break-word',
-            lineHeight: 1.4,
-          }}
-        >
-          {addr || '-'}
-        </MUITypography>
-      );
-    },
-  },
-  {
-    field: 'actions',
-    header: '',
-    track: crm['col-project-actions'],
-    align: 'right',
-    hideable: false,
-    stopPropagation: true,
-    renderCell: (row): JSX.Element => <ProjectRowActionsMenu project={row as ProjectListItem} />,
-  },
+const SORT_OPTIONS: SortOption[] = [
+  { label: 'Newest first', model: null },
+  { label: 'Oldest first', model: { field: 'createdAt', direction: 'asc' } },
+  { label: 'Name A–Z', model: { field: 'projectNumber', direction: 'asc' } },
+  { label: 'Name Z–A', model: { field: 'projectNumber', direction: 'desc' } },
+  { label: 'Progress: most first', model: { field: 'progressPercentage', direction: 'desc' } },
+  { label: 'Progress: least first', model: { field: 'progressPercentage', direction: 'asc' } },
+  { label: 'System: large to small', model: { field: 'systemSizeKw', direction: 'desc' } },
+  { label: 'System: small to large', model: { field: 'systemSizeKw', direction: 'asc' } },
+  { label: 'Contract: high to low', model: { field: 'estimatedCost', direction: 'desc' } },
+  { label: 'Contract: low to high', model: { field: 'estimatedCost', direction: 'asc' } },
+  { label: 'Due date: soonest first', model: { field: 'endDate', direction: 'asc' } },
+  { label: 'Due date: latest first', model: { field: 'endDate', direction: 'desc' } },
 ];
+
+/** No sort, or a field `SORT_FIELD_MAP` does not know, is the created date (`toApiSortField`). */
+const sortIndex = createSortIndex(SORT_OPTIONS, 'createdAt');
+
+const PROJECT_NOUN = { one: 'project', many: 'projects' };
+
+/** A screenful; a longer page does not need a longer placeholder. */
+const MAX_SKELETON_ROWS = 25;
+
+/** The dot beside a quick view, by the tone its chip had. */
+const TONE_DOT: Record<CrmTone, string> = {
+  neutral: 'var(--ds-neutral-400)',
+  accent: 'var(--ds-primary)',
+  success: 'var(--ds-primary)',
+  info: 'var(--ds-info-soft)',
+  warning: 'var(--ds-warning)',
+  danger: 'var(--ds-danger)',
+};
 
 /** Chip text for a { from, to } day range: "1 Sep 2026 – 30 Sep 2026", "From …" or "Until …". */
 function formatDayRange(value: unknown): string {
@@ -1169,12 +645,8 @@ export function ProjectListPage(): JSX.Element {
     ...toProjectFilters(filters),
   });
 
-  const tableRows = useMemo<ProjectRow[]>(
-    () => (data?.data as ProjectRow[] | undefined) ?? EMPTY_PROJECT_ROWS,
-    [data?.data],
-  );
-
-  const getRowId = useCallback((row: ProjectRow) => row.id, []);
+  const rows = data?.data ?? EMPTY_PROJECT_ROWS;
+  const { page, pageSize, search, sortModel } = urlState.state;
 
   /**
    * Status and health share one chip row because they share one filter field:
@@ -1285,6 +757,7 @@ export function ProjectListPage(): JSX.Element {
       if (col.field === 'onboarded' || col.field === 'meterInstalled' || col.field === 'meterDue') {
         return {
           ...col,
+          filterWide: true,
           renderFilter: ({ value, onChange }) => (
             <DateRangeFilter value={value} onChange={onChange} />
           ),
@@ -1294,168 +767,155 @@ export function ProjectListPage(): JSX.Element {
     });
   }, [creatorOptions, employeeOptions, workflowStepOptions]);
 
-  const renderEmptyState = useCallback(
-    (hasFilters: boolean): JSX.Element => (
-      <Box sx={{ py: 8, textAlign: 'center' }}>
-        <Box
-          aria-hidden="true"
-          sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 48,
-            height: 48,
-            mb: 1.5,
-            borderRadius: '50%',
-            color: color['text-tertiary'],
-            bgcolor: color['canvas-sunken'],
-          }}
-        >
-          <InboxOutlinedIcon sx={{ fontSize: 24 }} />
-        </Box>
-        <Typography sx={{ fontSize: '13px', color: color['text-secondary'] }}>
-          {hasFilters
-            ? 'No projects match these filters.'
-            : activeStatusFilter === ALL_STATUSES
-              ? 'No projects yet.'
-              : `No ${toTitleLabel(activeStatusFilter).toLowerCase()} projects right now.`}
-        </Typography>
-        {hasFilters ? (
-          <Button size="small" sx={{ mt: 1.5 }} onClick={handleResetFilters}>
-            Clear filters
-          </Button>
-        ) : (
-          <Button
-            size="small"
-            variant="contained"
-            // The same gate the header button uses. This empty-state copy used
-            // to push the route directly, so the page had one guarded entry and
-            // one unguarded one for the identical action.
-            sx={{ mt: 1.5, opacity: newProject.allowed ? 1 : 0.5 }}
-            onClick={newProject.onGatedClick}
-            aria-disabled={!newProject.allowed}
-          >
-            New project
-          </Button>
-        )}
-      </Box>
-    ),
-    [activeStatusFilter, handleResetFilters, router],
-  );
+  // The status is always set (it has a default), so it is not what "filtered" means here.
+  const hasOtherFilters =
+    search.length > 0 ||
+    Object.entries(filters).some(
+      ([key, value]) => key !== 'status' && value !== '' && value != null,
+    );
+
+  // Said in the filter panel, so the effect of a filter shows without looking away.
+  const total = data?.meta.total;
+  const resultLabel =
+    total === undefined
+      ? undefined
+      : `${formatNumber(total)} ${total === 1 ? 'project' : 'projects'}`;
+
+  // Rows rise in once. Later changes swap in without replaying it.
+  const entering = useListEntrance(rows.length);
+
+  useKeepPageInRange({ page, pageSize, total, isFetching, onPageChange: urlState.setPage });
+
+  const statusViews = quickFilters.filter((view) => !view.key.startsWith('health:'));
+  const healthViews = quickFilters.filter((view) => view.key.startsWith('health:'));
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {/* ── Page header ── */}
-      <Box
-        sx={{
-          position: 'relative',
-          overflow: 'hidden',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 2,
-          px: 2.5,
-          py: 2,
-          borderRadius: 'var(--radius-card-functional)',
-          bgcolor: color.surface,
-          boxShadow: 'var(--shadow-e2)',
-        }}
-      >
-        <Box
-          aria-hidden="true"
-          sx={{
-            position: 'absolute',
-            top: -140,
-            right: -60,
-            width: 320,
-            height: 320,
-            pointerEvents: 'none',
-            background: 'var(--gradient-glow)',
-            opacity: 0.7,
-          }}
+    <CalmListPage
+      header={
+        <>
+          <ListTitle
+            title="Projects"
+            sub="Every installation you are running, from survey to handover"
+            actions={
+              <PrimaryAction onClick={newProject.onGatedClick} allowed={newProject.allowed}>
+                + New project
+              </PrimaryAction>
+            }
+          />
+
+          {/* Status and health share one row because they share one filter field
+              (see `quickFilters`); the health views sit apart at the right. */}
+          <SegmentCard label="Projects by status">
+            {statusViews.map((view) => (
+              <Segment
+                key={view.key}
+                pressed={activeStatusFilter === view.key}
+                onClick={() => handleQuickFilterChange(view.key)}
+                count={null}
+                label={view.label}
+                dot={view.dot ? TONE_DOT[view.tone ?? 'neutral'] : undefined}
+              />
+            ))}
+            <span className="flex-1" />
+            {healthViews.map((view) => (
+              <Segment
+                key={view.key}
+                pressed={activeStatusFilter === view.key}
+                onClick={() => handleQuickFilterChange(view.key)}
+                count={null}
+                label={view.label}
+                dot={view.dot ? TONE_DOT[view.tone ?? 'neutral'] : undefined}
+              />
+            ))}
+          </SegmentCard>
+        </>
+      }
+      toolbar={
+        <ListToolbar
+          search={search}
+          onSearchChange={urlState.setSearch}
+          searchPlaceholder="Search project, customer, site"
+          searchLabel="Search projects"
+          filterColumns={filterColumns}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          sortOptions={SORT_OPTIONS}
+          sortActiveIndex={sortIndex}
+          sortModel={sortModel}
+          onSortChange={urlState.setSortModel}
+          resultLabel={resultLabel}
         />
-        <Box sx={{ position: 'relative', minWidth: 0 }}>
-          <Typography
-            component="h1"
-            sx={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2 }}
-          >
-            Projects
-          </Typography>
-          <Typography sx={{ fontSize: '13px', color: color['text-secondary'], mt: 0.5 }}>
-            Every installation you are running, from survey to handover
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          component={newProject.allowed ? NextLink : 'button'}
-          href={newProject.allowed ? ROUTES.PROJECTS.NEW : undefined}
-          onClick={newProject.allowed ? undefined : newProject.onGatedClick}
-          aria-disabled={!newProject.allowed}
-          sx={{ position: 'relative', flexShrink: 0 }}
-        >
-          New project
-        </Button>
-      </Box>
-
-      {/* ── Error banner ── */}
-      {isError && (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            p: 2,
-            borderRadius: 'var(--radius-card-functional)',
-            bgcolor: color['danger-bg'],
-          }}
-        >
-          <ErrorOutlineIcon sx={{ color: color.danger, flexShrink: 0 }} />
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Box sx={{ fontSize: crm['text-row-title'], fontWeight: 600, color: color.danger }}>
-              Couldn&rsquo;t load projects
-            </Box>
-            <Box sx={{ fontSize: crm['text-row-sm'], color: color['text-secondary'] }}>
-              {getErrorMessage(error)}
-            </Box>
-          </Box>
-          <Button variant="outlined" color="error" size="small" onClick={() => void refetch()}>
-            Retry
-          </Button>
-        </Box>
+      }
+      error={
+        isError ? (
+          <ListError
+            title="Couldn’t load projects"
+            message={getErrorMessage(error)}
+            onRetry={() => void refetch()}
+          />
+        ) : null
+      }
+      isFetching={isFetching}
+      isLoading={isLoading}
+      page={page}
+      footer={
+        <ListPager
+          page={page}
+          pageSize={pageSize}
+          totalRowCount={data?.meta.total ?? 0}
+          onPageChange={urlState.setPage}
+          onPageSizeChange={urlState.setPageSize}
+          noun={PROJECT_NOUN}
+          countUnknown={isError && !data}
+        />
+      }
+    >
+      {isLoading ? (
+        <ListSkeleton
+          rows={Math.min(pageSize, MAX_SKELETON_ROWS)}
+          label="Loading projects"
+          renderRow={() => <ProjectRowSkeleton />}
+        />
+      ) : rows.length === 0 ? (
+        isError ? null : hasOtherFilters ? (
+          <ListEmpty
+            title="No projects match"
+            hint="Try another name, or remove a filter."
+            action={
+              <Button size="small" variant="outlined" onClick={handleResetFilters} sx={{ mt: 0.5 }}>
+                Clear filters
+              </Button>
+            }
+          />
+        ) : (
+          <ListEmpty
+            title={
+              activeStatusFilter === ALL_STATUSES
+                ? 'No projects yet'
+                : `No ${statusFilterLabel(activeStatusFilter).toLowerCase()} projects right now`
+            }
+            action={
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<AddIcon />}
+                // The same gate the header button uses.
+                sx={{ mt: 0.5, opacity: newProject.allowed ? 1 : 0.5 }}
+                onClick={newProject.onGatedClick}
+                aria-disabled={!newProject.allowed}
+              >
+                New project
+              </Button>
+            }
+          />
+        )
+      ) : (
+        <div className="flex flex-col gap-2">
+          {rows.map((project, index) => (
+            <ProjectRow key={project.id} project={project} index={index} entering={entering} />
+          ))}
+        </div>
       )}
-
-      {/* ── Table ── */}
-      <CrmTable<ProjectRow>
-        columns={CRM_COLUMNS}
-        rows={tableRows}
-        getRowId={getRowId}
-        loading={isLoading}
-        refetching={isFetching && !isLoading}
-        initialSearch={urlState.state.search}
-        onSearchChange={urlState.setSearch}
-        searchPlaceholder="Search project, customer, site"
-        quickFilters={quickFilters}
-        activeQuickFilter={activeStatusFilter}
-        onQuickFilterChange={handleQuickFilterChange}
-        filterColumns={filterColumns}
-        filterModel={filters}
-        onFilterChange={handleFilterChange}
-        sortModel={urlState.state.sortModel}
-        onSortChange={urlState.setSortModel}
-        page={urlState.state.page}
-        pageSize={urlState.state.pageSize}
-        totalRowCount={data?.meta.total ?? 0}
-        onPageChange={urlState.setPage}
-        onPageSizeChange={urlState.setPageSize}
-        onRowClick={(row) => {
-          void router.push(buildRoute(ROUTES.PROJECTS.DETAIL, { id: row.id }));
-        }}
-        renderEmptyState={renderEmptyState}
-        gridMinWidth={crm['grid-min-width-project']}
-        itemLabel="projects"
-      />
-    </Box>
+    </CalmListPage>
   );
 }

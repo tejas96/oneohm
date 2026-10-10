@@ -26,7 +26,6 @@ export {
 } from './file';
 export {
   formatCurrency,
-  formatCurrencyCompact,
   formatCurrencyDecimal,
   formatBusinessDate,
   formatCount,

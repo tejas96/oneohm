@@ -13,7 +13,7 @@ import {
   SpeedDialIcon,
   Typography,
 } from '@mui/material';
-import { CustomerStatus, FollowupStatus, QuoteStatus } from '@tejas96/shared/types';
+import { CustomerStatus, FollowupStatus, ProjectStatus, QuoteStatus } from '@tejas96/shared/types';
 import dynamic from 'next/dynamic';
 import NextLink from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -179,6 +179,19 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
     limit: 100,
   });
   const linkedProjectId = property?.project?.id ?? property?.projectId ?? null;
+  /*
+   * A cancelled project is not this site's project any more — cancelling
+   * releases the roof (the Journey card says the same). It stays reachable from
+   * the header, but under its own name, never as "Open project".
+   */
+  const projectCancelled =
+    Boolean(linkedProjectId) &&
+    (property?.projectStatus ?? property?.project?.status) === ProjectStatus.CANCELLED;
+  const projectActionLabel = !linkedProjectId
+    ? 'Convert to project'
+    : projectCancelled
+      ? 'Cancelled project'
+      : 'Open project';
   const { data: propertyLoan } = usePropertyLoan(property?.id ?? '', { enabled: propertyReady });
   const {
     snapshot: financeSnapshot,
@@ -195,15 +208,22 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
    */
   const quoteSummary = usePropertyQuoteSummary(propertyId, { enabled: propertyReady });
   const headlineQuote = quoteSummary.headline;
+  /*
+   * With no live quote, the quote the site's stage was read from is still
+   * named — a voided one is how a reopened site got to "Quote sent". Only
+   * named: its price is dead and never stands as the site's quote value.
+   */
+  const pastQuote =
+    !quoteSummary.isLoading && !headlineQuote ? (property?.dealQuote ?? null) : null;
 
   /**
    * The property record with those fields put back on it.
    *
-   * Shared components — `SiteStageBar` above all — read `latestQuoteId` and
-   * `latestQuoteStatus` to decide how far a site has travelled. Handed the raw
-   * detail payload they saw neither, so a site with an accepted quote and a
-   * live project sat on "Lead captured". Enriching once here means every tab
-   * below gets the same, complete record.
+   * The tiles and menus below read `latestQuoteId`, `latestQuoteStatus` and the
+   * quote's value from the record; the raw detail payload has none of them.
+   * Enriching once here means every tab gets the same, complete record. (How
+   * far the site has travelled is NOT read from these: `SiteStageBar` uses the
+   * server's `stageIndex` / `lost`, which this endpoint carries.)
    */
   const enrichedProperty = useMemo(() => {
     if (!property || !headlineQuote) return property;
@@ -281,7 +301,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
   const speedDialGoToProject = useGatedAction(
     linkedProjectId ? 'projects.view' : 'projects.create',
     () => handleGoToProject(),
-    linkedProjectId ? 'Open project' : 'Convert to project',
+    projectActionLabel,
   );
   const speedDialLogFollowup = useGatedAction(
     'followups.manage',
@@ -405,7 +425,9 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
             ]
               .filter(Boolean)
               .join(' · ') || undefined
-          : 'No quote yet',
+          : pastQuote
+            ? 'No live quote'
+            : 'No quote yet',
         onClick: () => goToTab('quotes'),
       },
       {
@@ -425,7 +447,11 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
          * liable for matters more than a restatement of the same price.
          */
         secondary: !headlineQuote
-          ? 'Nothing quoted yet'
+          ? pastQuote
+            ? `${pastQuote.number} · ${toTitleLabel(pastQuote.status)}${
+                pastQuote.voided ? ' · voided' : ''
+              }`
+            : 'Nothing quoted yet'
           : hasLinkedProject && financeSnapshot.changeOrderAmount !== 0
             ? `Contract now ${formatCurrency(financeSnapshot.contractAmount)} after change orders`
             : hasSubsidy && headlineQuote.effectivePrice != null
@@ -472,6 +498,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
     ];
   }, [
     headlineQuote,
+    pastQuote,
     quoteSummary.isLoading,
     hasLinkedProject,
     financeSnapshot,
@@ -584,6 +611,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
         quoteLocked={Boolean(lockStatus?.locked)}
         lockedQuoteNumber={lockStatus?.acceptedQuoteNumber}
         hasProject={Boolean(linkedProjectId)}
+        projectActionLabel={projectActionLabel}
         onEdit={handleEdit}
         onCreateQuote={handleCreateQuote}
         onGoToProject={handleGoToProject}
@@ -754,7 +782,9 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
           />
           <SpeedDialAction
             icon={<FolderOpenOutlinedIcon />}
-            slotProps={{ tooltip: { title: linkedProjectId ? 'Open project' : 'Convert' } }}
+            slotProps={{
+              tooltip: { title: linkedProjectId ? projectActionLabel : 'Convert' },
+            }}
             // Through the gates, matching the desktop header. Without this the
             // mobile speed dial was an ungated copy of guarded buttons.
             onClick={() => {

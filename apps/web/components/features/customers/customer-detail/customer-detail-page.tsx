@@ -36,6 +36,7 @@ import { PropertyDetailDrawer } from './property-detail-drawer';
 import { CustomerTabRail } from './tab-rail';
 import { PageSkeleton, TabSkeleton } from './tab-skeleton';
 import { getBalanceTone, getCustomerDisplayName, getOverdueAmount, isValidUuid } from './utils';
+import { handledBy } from '../components/list/format';
 import { PropertySelectModal } from '../components/property-select-modal';
 
 import {
@@ -548,7 +549,8 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
       <CustomerDetailHeader
         customer={customer}
-        assigneeName={customer.assigneeName}
+        // "<name> (archived)" when the assignee's account is archived.
+        assigneeName={handledBy(customer).label ?? undefined}
         isInactive={isInactive}
         onEdit={handleEdit}
         onAddProperty={handleAddProperty}

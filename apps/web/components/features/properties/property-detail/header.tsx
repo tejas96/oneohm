@@ -61,6 +61,12 @@ interface PropertyDetailHeaderProps {
   quoteLocked: boolean;
   lockedQuoteNumber?: string;
   hasProject: boolean;
+  /**
+   * What the project button says: "Open project", "Convert to project", or
+   * "Cancelled project" when the linked project was cancelled — that one is
+   * history, not the site's live project.
+   */
+  projectActionLabel: string;
   onEdit: () => void;
   onCreateQuote: () => void;
   onGoToProject: () => void;
@@ -161,6 +167,7 @@ export function PropertyDetailHeader({
   quoteLocked,
   lockedQuoteNumber,
   hasProject,
+  projectActionLabel,
   onEdit,
   onCreateQuote,
   onGoToProject,
@@ -179,7 +186,7 @@ export function PropertyDetailHeader({
   const goToProject = useGatedAction(
     hasProject ? 'projects.view' : 'projects.create',
     onGoToProject,
-    hasProject ? 'Open project' : 'Convert to project',
+    projectActionLabel,
   );
   const logFollowup = useGatedAction('followups.manage', onLogFollowup, 'Log follow-up');
 
@@ -401,7 +408,7 @@ export function PropertyDetailHeader({
             aria-disabled={!goToProject.allowed}
             sx={{ display: { xs: 'none', md: 'inline-flex' } }}
           >
-            {hasProject ? 'Open project' : 'Convert to project'}
+            {projectActionLabel}
           </Button>
           <Button
             size="small"

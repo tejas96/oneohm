@@ -10,10 +10,12 @@ import {
 } from '@tanstack/react-query';
 import {
   ConnectionType,
+  type CustomerJourney,
   CustomerSortField,
   CustomerStatus,
   LeadSource,
   LeadTemperature,
+  type NextFollowup,
   type PaginationMeta,
   PropertyStatus,
   PropertyType,
@@ -23,7 +25,7 @@ import {
 import { hasContradictoryCustomerPropertyFilters } from '@tejas96/shared/utils';
 import type { AxiosError } from 'axios';
 
-import { customerKeys } from './use-create-customer';
+import { customerKeys, invalidateCustomerListData } from './use-create-customer';
 
 import { showToast } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
@@ -150,12 +152,30 @@ export interface Customer {
   assigneeId?: string;
   assigneeName?: string;
   /**
+   * The assignee's user account is archived. The name is still sent — show it
+   * as archived; the customer is not unassigned.
+   */
+  assigneeArchived?: boolean;
+  /**
    * Everyone on the hook across this customer AND all its sites, deduped, live
    * first. The collapsed CRM row shows these.
    */
   followupAssignees?: FollowupAssignee[];
   /** Only the customer's own followups — what the row shows once expanded. */
   ownFollowupAssignees?: FollowupAssignee[];
+  /**
+   * The four below are on list responses only; single-customer reads omit them.
+   *
+   * Where the customer's sites stand on the six steps (`SITE_JOURNEY_STEPS`).
+   * Computed by the backend's one SQL rule — read it, never re-derive a stage.
+   */
+  journey?: CustomerJourney;
+  /** The list's "needs follow-up" predicate, evaluated for this row. */
+  needsFollowup?: boolean;
+  /** Pending follow-ups on the customer and its sites. */
+  pendingFollowupCount?: number;
+  /** The earliest of those; null when nothing is pending. */
+  nextFollowup?: NextFollowup | null;
 }
 
 export interface CustomerListResponse {
@@ -323,7 +343,7 @@ export function useCustomer(
  */
 export function useCustomerStats(): UseQueryResult<CustomerStatsResponse, AxiosError> {
   return useQuery({
-    queryKey: [...customerKeys.all(), 'stats'] as const,
+    queryKey: customerKeys.stats(),
     queryFn: async (): Promise<CustomerStatsResponse> => {
       const { data } = await apiClient.get<CustomerStatsResponse>(
         '/customers/statistics/status',
@@ -344,7 +364,7 @@ export function useCustomerStats(): UseQueryResult<CustomerStatsResponse, AxiosE
  */
 export function useCustomerOverviewStats(): UseQueryResult<CustomerOverviewStats, AxiosError> {
   return useQuery({
-    queryKey: [...customerKeys.all(), 'overview'] as const,
+    queryKey: customerKeys.overview(),
     queryFn: async (): Promise<CustomerOverviewStats> => {
       const { data } = await apiClient.get<CustomerOverviewStats>('/customers/statistics/overview');
       return data;
@@ -445,10 +465,7 @@ export function useDeleteCustomer(): UseMutationResult<void, AxiosError, string>
     onSuccess: (_, id) => {
       showToast.success('Customer permanently deleted');
       queryClient.removeQueries({ queryKey: customerKeys.detail(id) });
-      void queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
-      void queryClient.invalidateQueries({
-        queryKey: [...customerKeys.all(), 'stats'],
-      });
+      invalidateCustomerListData(queryClient);
     },
     onError: (error: AxiosError<{ message?: string | string[] }>) => {
       const message = error.response?.data?.message;

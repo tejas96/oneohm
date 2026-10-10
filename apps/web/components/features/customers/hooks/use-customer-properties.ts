@@ -5,12 +5,14 @@ import {
   LossReason,
   ConnectionType,
   LeadTemperature,
+  type NextFollowup,
   type ProjectStatus,
   type GpsCoordinates,
   type PropertyDocument,
   PropertyStatus,
   PropertyType,
   QuoteStatus,
+  type SiteJourney,
   SiteStatus,
   type ShadingAnalysis,
   type StoredChangeRequest,
@@ -31,7 +33,7 @@ import { apiClient } from '@/lib/api/client';
  * Customer Property - Installation site belonging to a customer
  * Matches CustomerPropertyResponseDto from backend
  */
-export interface CustomerPropertyResponse {
+export interface CustomerPropertyResponse extends Partial<SiteJourney> {
   id: string;
   customerId: string;
   propertyCode?: string;
@@ -137,6 +139,19 @@ export interface CustomerPropertyResponse {
   // Follow-up state (enriched via shared predicate — do not re-derive on the client)
   nextFollowupAt?: string | null;
   needsFollowup?: boolean;
+  /**
+   * The follow-up `nextFollowupAt` belongs to; null when nothing is pending.
+   * ONLY the customer's site list (`GET /customer-properties/customer/:id`)
+   * carries it — the single-site read (`GET /customer-properties/:id`) has
+   * `nextFollowupAt` and `needsFollowup` but not this, and nothing reads it
+   * there.
+   *
+   * The `SiteJourney` fields this interface extends (`stageIndex`, `lost`,
+   * `journeyLostReason`, `meterInstalled`, `journeySteps`, `dealQuote`) are a
+   * different matter: both of those reads carry them. The paged site list
+   * (`GET /customer-properties`) carries neither.
+   */
+  nextFollowup?: NextFollowup | null;
 }
 
 // ============================================================================

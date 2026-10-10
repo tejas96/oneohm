@@ -19,6 +19,7 @@ import type { AxiosError } from 'axios';
 import { customerKeys, propertyKeys } from './use-create-property';
 import type { DiscomResponse } from './use-discoms';
 
+import { invalidateCustomerListData } from '@/components/features/customers/hooks/use-create-customer';
 import { projectKeys } from '@/components/features/projects/hooks/use-projects';
 import { showToast } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
@@ -184,9 +185,8 @@ export function useDeleteProperty(): UseMutationResult<void, AxiosError, string>
     onSuccess: () => {
       showToast.success('Property permanently deleted');
       void queryClient.invalidateQueries({ queryKey: propertyKeys.all() });
-      void queryClient.invalidateQueries({
-        queryKey: customerKeys.lists(),
-      });
+      // Rows, status counts and the needs-follow-up count all roll sites up.
+      invalidateCustomerListData(queryClient);
     },
     onError: (error: AxiosError<{ message?: string | string[] }>) => {
       const message = error.response?.data?.message;

@@ -41,7 +41,11 @@ export interface UseTableUrlStateOptions {
 
 export interface UseTableUrlStateReturn {
   state: TableUrlState;
-  setPage: (page: number) => void;
+  /**
+   * `replace: true` corrects the URL in place (a page that turned out not to
+   * exist) instead of adding a history entry the Back button would trip over.
+   */
+  setPage: (page: number, options?: { replace?: boolean }) => void;
   setPageSize: (pageSize: number) => void;
   setSearch: (search: string) => void;
   setSortModel: (model: TableUrlSortModel | null) => void;
@@ -279,10 +283,10 @@ export function useTableUrlState(options: UseTableUrlStateOptions = {}): UseTabl
   );
 
   const setPage = useCallback(
-    (page: number): void => {
+    (page: number, options?: { replace?: boolean }): void => {
       if (page === stateRef.current.page) return;
       const next = { ...stateRef.current, page };
-      commitState(next, pushForPageChanges);
+      commitState(next, pushForPageChanges && !options?.replace);
     },
     [commitState, pushForPageChanges],
   );

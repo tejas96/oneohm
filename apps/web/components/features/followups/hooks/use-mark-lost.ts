@@ -6,6 +6,7 @@ import type { AxiosError } from 'axios';
 
 import { followupKeys } from './followup-keys';
 
+import { invalidateCustomerListData } from '@/components/features/customers/hooks/use-create-customer';
 import { apiClient } from '@/lib/api/client';
 
 /**
@@ -32,6 +33,8 @@ export function useMarkPropertyLost(): UseMutationResult<
       void queryClient.invalidateQueries({ queryKey: followupKeys.all });
       void queryClient.invalidateQueries({ queryKey: ['properties'] });
       void queryClient.invalidateQueries({ queryKey: ['property'] });
+      // The customer's row rolls this site up (stage, "lost", needs follow-up).
+      invalidateCustomerListData(queryClient);
     },
   });
 }
@@ -56,6 +59,7 @@ export function useReopenProperty(): UseMutationResult<
       void queryClient.invalidateQueries({ queryKey: followupKeys.all });
       void queryClient.invalidateQueries({ queryKey: ['properties'] });
       void queryClient.invalidateQueries({ queryKey: ['property'] });
+      invalidateCustomerListData(queryClient);
     },
   });
 }

@@ -53,6 +53,9 @@ export interface ProjectListFacts {
  *
  * Business Rule: One property can have only one project (OneToOne relationship)
  */
+/** The select alias the system-size sort is applied through. */
+const SYSTEM_SIZE_SORT_ALIAS = 'system_size_sort';
+
 @Injectable()
 export class ProjectRepository {
   private static readonly SORT_WHITELIST: Record<string, string> = {
@@ -61,7 +64,8 @@ export class ProjectRepository {
     startDate: 'project.startDate',
     endDate: 'project.endDate',
     // Sorted by the same number the column displays, or the order disagrees
-    // with the values in it.
+    // with the values in it. An expression, so it is applied through a selected
+    // alias (see `SYSTEM_SIZE_SORT_ALIAS`), never handed to `orderBy` as text.
     systemSizeKw: systemSizeKwSql('cv'),
     estimatedCost: 'cv.finalPrice',
     progressPercentage: 'project.progressPercentage',
@@ -541,7 +545,19 @@ export class ProjectRepository {
       const sortColumn =
         ProjectRepository.SORT_WHITELIST[filters?.sortBy ?? ''] ?? 'project.createdAt';
       const sortOrder = filters?.sortOrder === 'ASC' ? 'ASC' : 'DESC';
-      query.orderBy(sortColumn, sortOrder);
+      if (filters?.sortBy === 'systemSizeKw') {
+        // TypeORM pages through a DISTINCT sub-query and can order that only by
+        // an entity column or a selected alias. Handed the CASE expression it
+        // reads "CASE WHEN cv" as an alias and throws, so every sort by system
+        // size was a 500. A project with no size sorts last in both directions;
+        // the created date breaks ties so pages do not shuffle.
+        query
+          .addSelect(sortColumn, SYSTEM_SIZE_SORT_ALIAS)
+          .orderBy(SYSTEM_SIZE_SORT_ALIAS, sortOrder, 'NULLS LAST')
+          .addOrderBy('project.createdAt', 'DESC');
+      } else {
+        query.orderBy(sortColumn, sortOrder);
+      }
     }
 
     const projects = await query

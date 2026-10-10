@@ -79,6 +79,12 @@ export interface ColumnConfig<TRow = Record<string, unknown>> {
   renderFilter?: (params: { value: unknown; onChange: (value: unknown) => void }) => ReactNode;
 
   /**
+   * The filter control needs the panel's full width (a from–to date range, for
+   * example) — in a two-column panel it takes both columns instead of wrapping.
+   */
+  filterWide?: boolean;
+
+  /**
    * Extra sx props applied to the body TableCell for this column.
    * Use to override per-column cell styles (e.g. allow wrapping, custom padding).
    */
