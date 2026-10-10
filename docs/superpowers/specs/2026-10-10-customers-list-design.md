@@ -133,7 +133,9 @@ query only (same API params, same URL keys):
 - Search also matches the first + last name with white space squeezed to
   single spaces, against the typed term squeezed the same way. It only adds
   matches; every other search clause is unchanged.
-- Name A–Z / Z–A orders by the first name without its leading white space.
+- Name A–Z / Z–A orders by the first name without its leading white space and
+  without regard to case (the local database sorts "ASHOK" before "Aadesh";
+  the order must not depend on the database collation).
 
 The shared filter panel (`TableFilters`) also closes on Esc while focus is
 still on the page; it opens without taking focus, so MUI never saw the key.

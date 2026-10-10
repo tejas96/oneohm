@@ -312,9 +312,12 @@ function nameSearchParams(search: string): { nameTerm: string } {
   return { nameTerm: `%${search.trim().replace(/\s+/g, ' ').toLowerCase()}%` };
 }
 
-/** Name A-Z / Z-A ignores white space typed before the first name. */
+/**
+ * Name A-Z / Z-A ignores white space typed before the first name, and ignores
+ * case: a database with a byte-order collation would list "ASHOK" before "Aadesh".
+ */
 const NAME_SORT_ALIAS = 'customer_name_sort';
-const NAME_SORT_SQL = `regexp_replace(customer.first_name, '^\\s+', '')`;
+const NAME_SORT_SQL = `LOWER(regexp_replace(customer.first_name, '^\\s+', ''))`;
 
 @Injectable()
 export class CustomerProfileRepository {
