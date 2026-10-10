@@ -128,6 +128,23 @@ export interface JourneySummary {
   title: string;
   /** The small line beside it; null when there is no site. */
   detail: string | null;
+  /**
+   * Which sites the stage was read from, for a customer with two or more: the
+   * roll-up is one answer for all of them and the reader cannot tell which site
+   * it is. Null with one site (the stage IS that site) or none.
+   */
+  scope: string | null;
+}
+
+/** Says which sites `rollUpCustomerJourney` read the stage from. */
+function journeyScope(siteCount: number, lostSites: number, lost: boolean): string | null {
+  if (siteCount < 2) return null;
+  // A lost journey counts every site; a live one leaves the lost sites out.
+  if (lost) return `Furthest any of the ${siteCount} sites reached`;
+  if (lostSites === 0) return `Furthest of ${siteCount} sites`;
+  const open = siteCount - lostSites;
+  const from = open === 1 ? 'From the 1 open site' : `Furthest of ${open} open sites`;
+  return `${from} · ${lostSites} lost not counted`;
 }
 
 /**
@@ -138,21 +155,24 @@ export function journeySummary(customer: Customer): JourneySummary {
   // No journey on a customer that HAS sites is not "no site yet" — it is "not
   // told". (The backend must be deployed before this page; see the spec.)
   if (!customer.journey && (customer.propertyCount ?? 0) > 0) {
-    return { kind: 'unknown', stageIndex: 0, title: '', detail: null };
+    return { kind: 'unknown', stageIndex: 0, title: '', detail: null, scope: null };
   }
   const journey = customer.journey ?? EMPTY_JOURNEY;
   const { siteCount, stageIndex, lost, stageCounts, lostSites, lostReason } = journey;
 
-  if (siteCount === 0) return { kind: 'none', stageIndex: 0, title: 'No site yet', detail: null };
+  if (siteCount === 0) {
+    return { kind: 'none', stageIndex: 0, title: 'No site yet', detail: null, scope: null };
+  }
 
   const sites = siteCount === 1 ? '1 site' : `${siteCount} sites`;
+  const scope = journeyScope(siteCount, lostSites, lost);
 
   if (lost) {
     // Where it stopped, why (the most recently lost site's reason), how many.
     const lostParts = [`stopped at ${stepName(stageIndex).toLowerCase()}`];
     if (lostReason) lostParts.push(lostReason);
     if (siteCount > 1) lostParts.push(sites);
-    return { kind: 'lost', stageIndex, title: 'Lost', detail: lostParts.join(' · ') };
+    return { kind: 'lost', stageIndex, title: 'Lost', detail: lostParts.join(' · '), scope };
   }
 
   const parts = [sites];
@@ -171,7 +191,13 @@ export function journeySummary(customer: Customer): JourneySummary {
     if (lostSites > 0) parts.push(`${lostSites} lost`);
   }
 
-  return { kind: 'live', stageIndex, title: stepName(stageIndex), detail: parts.join(' · ') };
+  return {
+    kind: 'live',
+    stageIndex,
+    title: stepName(stageIndex),
+    detail: parts.join(' · '),
+    scope,
+  };
 }
 
 /**

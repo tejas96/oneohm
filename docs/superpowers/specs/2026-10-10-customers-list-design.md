@@ -215,6 +215,11 @@ shade close it; focus returns to the row; URL not changed).
   its fact is on record (`journey.steps`); a step the journey has passed
   without a record reads "not recorded" and has no tick; the current stage is
   "current step"; later steps are quiet. "Lead captured" is always ticked.
+  With two or more sites the card is the customer roll-up, so one line under
+  the heading says which sites it was read from: "Furthest of 3 sites";
+  "Furthest of 2 open sites · 1 lost not counted"; "From the 1 open site · 2
+  lost not counted"; on a lost journey "Furthest any of the 2 sites reached".
+  No line with one site — the card is that site.
 - **Sites · N** — loaded lazily with the existing `useCustomerProperties`
   (same loading skeleton count, error + Retry, empty state copy). Each site is
   a block: consumer number (or "Consumer no. not available"), Primary chip,

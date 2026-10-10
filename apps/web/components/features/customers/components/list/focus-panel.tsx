@@ -232,6 +232,9 @@ function PanelBody({
             No site yet — the journey starts with the first one.
           </p>
         ) : null}
+        {journey.scope ? (
+          <p className="-mt-1 mb-3 text-[13px] text-foreground-secondary">{journey.scope}</p>
+        ) : null}
         {journey.kind === 'unknown' ? (
           <p className="-mt-1 mb-0 text-[13px] text-foreground-secondary">
             The stage is not available right now. The sites below show where each one stands.
