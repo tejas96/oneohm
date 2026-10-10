@@ -56,6 +56,7 @@ import {
   type FollowupAssigneeRow,
 } from '../repositories/followup.repository';
 import type { NextFollowupRow } from '../sql/next-followup.sql';
+import { toDealQuote, toJourneySteps } from '../sql/site-journey.sql';
 import {
   mergeChangeRequestsForUpdate,
   normalizeChangeRequestsForStorage,
@@ -322,11 +323,23 @@ export class CustomerPropertyService {
       property.id,
     );
 
+    // The property page draws the same journey the customer's site list does,
+    // from the same SQL rule narrowed to this one site.
+    const journey = (await this.propertyRepository.findSiteJourneyByPropertyIds([property.id])).get(
+      property.id,
+    );
+
     return {
       ...property,
       nextFollowupAt: followupState?.nextAt ?? undefined,
       needsFollowup: followupState?.needsFollowup ?? false,
       latestQuoteSystemSizeKw: systemSizeKwOf({ totalWattageWp: quoteInfo?.totalWattageWp }),
+      stageIndex: journey?.stageIndex ?? 0,
+      lost: journey?.lost ?? false,
+      journeyLostReason: journey?.lostReason ?? null,
+      meterInstalled: journey?.meterInstalled ?? false,
+      journeySteps: toJourneySteps(journey),
+      dealQuote: toDealQuote(journey),
     };
   }
 
@@ -487,6 +500,8 @@ export class CustomerPropertyService {
         // closing the site) is an existing field and must keep its meaning.
         journeyLostReason: journey?.lostReason ?? null,
         meterInstalled: journey?.meterInstalled ?? false,
+        journeySteps: toJourneySteps(journey),
+        dealQuote: toDealQuote(journey),
       };
     });
   }

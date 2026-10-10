@@ -20,6 +20,7 @@ import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { FollowupAssigneeDto } from './customer-response.dto';
 import { NextFollowupDto } from './next-followup.dto';
 import { PropertyDocumentDto } from './property-document.dto';
+import { JourneyStepsDto, SiteDealQuoteDto } from './site-journey.dto';
 import { toDto, toNum } from '../../../common/utils';
 import { DiscomResponseDto } from '../../discoms/dto/discom-response.dto';
 import { ProjectResponseDto } from '../../projects/dto/projects/project-response.dto';
@@ -588,9 +589,10 @@ export class CustomerPropertyResponseDto {
   // ==================== Site Journey (one SQL rule — sql/site-journey.sql.ts) ====================
 
   /**
-   * The four below are present on the customer's site list only. They come from
-   * the one SQL rule the customer list rolls up, so a client must read them and
-   * never work a stage out from the quote and project fields above.
+   * The six below are present on the two site reads that compute them
+   * (`GET …/customer/:id` and `GET …/:id`). They come from the one SQL rule
+   * the customer list rolls up, so a client must read them and never work a
+   * stage out from the quote and project fields above.
    */
   @Expose()
   @ApiPropertyOptional({
@@ -604,15 +606,16 @@ export class CustomerPropertyResponseDto {
   @Expose()
   @ApiPropertyOptional({
     description:
-      'Out of play: the site is lost, its project is cancelled, or its quote was rejected. ' +
-      'stageIndex still says where it stopped.',
+      'Out of play: the site is lost, or its live quote was rejected. A cancelled project ' +
+      'does not make a site lost. stageIndex still says where it stopped.',
   })
   lost?: boolean;
 
   /**
    * One line for "why". Not `lostReason` above, which is only what a person
-   * typed when closing the site: this also covers a cancelled project and a
-   * rejected quote, where the site itself was never closed.
+   * typed when closing the site: this also covers a rejected quote, where the
+   * site itself was never closed, and a closed site with a cancelled project
+   * and no reason of its own ("Project cancelled").
    */
   @Expose()
   @ApiPropertyOptional({
@@ -625,4 +628,26 @@ export class CustomerPropertyResponseDto {
   @Expose()
   @ApiPropertyOptional({ description: 'The site’s project has its net meter installed' })
   meterInstalled?: boolean;
+
+  @Expose()
+  @ApiPropertyOptional({
+    type: () => JourneyStepsDto,
+    description: 'Which journey steps are on record for this site',
+  })
+  @Type(() => JourneyStepsDto)
+  journeySteps?: JourneyStepsDto;
+
+  /**
+   * The quote the stage was read from. Not `latestQuote*` above, which picks
+   * the newest live quote: with an accepted quote and a newer draft on one
+   * roof the two differ, and the stage follows this one.
+   */
+  @Expose()
+  @ApiPropertyOptional({
+    type: () => SiteDealQuoteDto,
+    nullable: true,
+    description: 'The quote the stage was read from; null when the site has no quote',
+  })
+  @Type(() => SiteDealQuoteDto)
+  dealQuote?: SiteDealQuoteDto | null;
 }

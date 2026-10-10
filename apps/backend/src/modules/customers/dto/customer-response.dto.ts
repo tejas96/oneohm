@@ -4,6 +4,7 @@ import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { CustomerPropertyResponseDto } from './customer-property-response.dto';
 import { NextFollowupDto } from './next-followup.dto';
+import { JourneyStepsDto } from './site-journey.dto';
 import { toNum } from '../../../common/utils';
 
 /**
@@ -97,6 +98,24 @@ export class CustomerJourneyDto {
   @ApiProperty({ description: 'Sites that are lost' })
   @Expose()
   lostSites!: number;
+
+  @ApiProperty({
+    type: () => JourneyStepsDto,
+    description:
+      'Each step fact OR-ed over the sites the stage was read from: the sites in play, ' +
+      'or every site when lost',
+  })
+  @Expose()
+  @Type(() => JourneyStepsDto)
+  steps!: JourneyStepsDto;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'The reason on the most recently lost site; null when none was recorded',
+  })
+  @Expose()
+  lostReason!: string | null;
 }
 
 /**

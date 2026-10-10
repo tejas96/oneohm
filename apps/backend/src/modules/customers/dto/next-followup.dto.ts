@@ -20,7 +20,10 @@ export class NextFollowupDto {
   @Expose()
   subject!: string;
 
-  @ApiProperty({ description: 'In the past means overdue' })
+  @ApiProperty({
+    description:
+      'Overdue when its day is before today in India; due earlier today is "today", not overdue',
+  })
   @Expose()
   scheduledAt!: Date;
 
