@@ -32,7 +32,8 @@ function RowSkeleton(): JSX.Element {
         <span className={cn(BONE, 'h-4 w-20')} />
         <span className={cn(BONE, 'h-3 w-14')} />
       </div>
-      <div className={cn(ROW_CELL.actions, 'flex justify-end')}>
+      <div className={cn(ROW_CELL.actions, 'flex items-center justify-end gap-1.5')}>
+        <span className={cn(BONE, 'size-7')} />
         <span className={cn(BONE, 'size-[34px]')} />
       </div>
     </div>

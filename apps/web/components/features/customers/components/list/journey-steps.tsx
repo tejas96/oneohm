@@ -1,38 +1,51 @@
-import { SITE_JOURNEY_STEPS } from '@tejas96/shared/utils';
+import type { JourneySteps as StepFacts } from '@tejas96/shared/types';
 import type { JSX } from 'react';
 
+import { journeyStepLines, type StepState } from './format';
 import { CheckIcon } from './icons';
 
 import { cn } from '@/lib/utils';
 
-type StepState = 'done' | 'now' | 'todo';
+const NOTE: Record<StepState, string | null> = {
+  done: null,
+  now: 'current step',
+  missing: 'not recorded',
+  todo: null,
+};
+
+/** What a screen reader hears after the step's name. */
+const SPOKEN: Record<StepState, string> = {
+  done: ' — done',
+  now: '',
+  missing: '',
+  todo: ' — not yet',
+};
 
 /**
- * The six steps as a checklist: ticked up to where the customer stands, the
- * current one marked. A lost customer keeps its ticks up to where it stopped
- * and has no current step.
+ * The six steps as a checklist. A step is ticked only when it is on record
+ * (`steps`, from the server); a step the journey has passed without a record
+ * reads "not recorded" and carries no tick; the current one is marked; later
+ * ones are quiet. A lost journey has no current step.
  */
 export function JourneySteps({
   stageIndex,
   lost,
   hasSite,
+  steps,
 }: {
   stageIndex: number;
   lost: boolean;
   hasSite: boolean;
+  /** Which steps are on record; from `journey.steps` / `journeySteps`. */
+  steps: StepFacts | undefined;
 }): JSX.Element {
-  const stateOf = (step: number): StepState => {
-    if (!hasSite) return 'todo';
-    if (step < stageIndex) return 'done';
-    if (step === stageIndex) return lost ? 'done' : 'now';
-    return 'todo';
-  };
+  const lines = journeyStepLines(stageIndex, lost, hasSite, steps);
 
   return (
     <ol className="m-0 flex list-none flex-col p-0">
-      {SITE_JOURNEY_STEPS.map((name, step) => {
-        const state = stateOf(step);
-        const last = step === SITE_JOURNEY_STEPS.length - 1;
+      {lines.map(({ name, state }, step) => {
+        const last = step === lines.length - 1;
+        const note = NOTE[state];
         return (
           <li
             key={name}
@@ -54,7 +67,8 @@ export function JourneySteps({
                 'z-[1] mt-px grid size-[18px] flex-none place-items-center rounded-full text-white',
                 state === 'done' && 'bg-primary',
                 state === 'now' && 'bg-surface ring-[5px] ring-inset ring-primary',
-                state === 'todo' && 'bg-surface ring-2 ring-inset ring-gray-300',
+                (state === 'todo' || state === 'missing') &&
+                  'bg-surface ring-2 ring-inset ring-gray-300',
               )}
             >
               {state === 'done' ? <CheckIcon /> : null}
@@ -63,16 +77,16 @@ export function JourneySteps({
               <span
                 className={cn(
                   'block',
-                  state === 'todo' ? 'font-normal text-foreground-muted' : 'font-medium',
+                  state === 'done' || state === 'now'
+                    ? 'font-medium'
+                    : 'font-normal text-foreground-tertiary',
                 )}
               >
                 {name}
-                <span className="sr-only">
-                  {state === 'done' ? ' — done' : state === 'todo' ? ' — not yet' : ''}
-                </span>
+                <span className="sr-only">{SPOKEN[state]}</span>
               </span>
-              {state === 'now' ? (
-                <small className="block text-[12px] text-foreground-muted">current step</small>
+              {note ? (
+                <small className="block text-[12px] text-foreground-tertiary">{note}</small>
               ) : null}
             </div>
           </li>

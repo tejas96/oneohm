@@ -97,7 +97,7 @@ export function ListToolbar({
             placeholder={searchPlaceholder}
             aria-label="Search customers"
             autoComplete="off"
-            className="min-w-0 flex-1 appearance-none bg-transparent py-px text-[14px] text-foreground outline-none placeholder:text-foreground-muted focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
+            className="min-w-0 flex-1 appearance-none bg-transparent py-px text-[14px] text-foreground outline-none placeholder:text-foreground-tertiary focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
           />
           {query ? (
             <button

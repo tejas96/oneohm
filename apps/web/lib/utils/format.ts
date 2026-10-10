@@ -1,7 +1,6 @@
 export {
   formatCurrency,
   formatCurrencyDecimal,
-  formatCurrencyCompact,
   formatDate,
   formatFollowupClockTime,
   formatFollowupWhen,

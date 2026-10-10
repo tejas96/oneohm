@@ -31,7 +31,7 @@ const SLIDE_MS = 500;
 const SHADE_MS = 350;
 
 const HEADING =
-  'm-0 mb-3 text-[12px] font-medium uppercase tracking-[0.04em] text-foreground-muted';
+  'm-0 mb-3 text-[12px] font-medium uppercase tracking-[0.04em] text-foreground-tertiary';
 const TAG = 'flex-none rounded-pill px-2 py-0.5 text-[11px] font-medium leading-[13px]';
 const QUICK =
   'flex min-w-0 flex-col items-start gap-1.5 rounded-input-expressive bg-surface p-3.5 text-left shadow-e1 transition-transform duration-200 ease-calm hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0';
@@ -73,7 +73,7 @@ function FollowupPeople({ people }: { people: FollowupAssignee[] }): JSX.Element
             <span>
               {person.firstName}
               {person.live ? null : (
-                <span className="text-foreground-muted"> · handled it last</span>
+                <span className="text-foreground-tertiary"> · handled it last</span>
               )}
             </span>
           </span>
@@ -180,7 +180,7 @@ function PanelBody({
             <span className="text-[12px] text-foreground-secondary">Call</span>
           </a>
         ) : (
-          <div className={cn(QUICK, 'text-foreground-muted hover:translate-y-0')}>
+          <div className={cn(QUICK, 'text-foreground-tertiary hover:translate-y-0')}>
             <PhoneIcon />
             <b className="font-semibold">No phone</b>
             <span className="text-[12px]">Nothing to call</span>
@@ -234,6 +234,7 @@ function PanelBody({
           stageIndex={journey.stageIndex}
           lost={journey.kind === 'lost'}
           hasSite={journey.kind !== 'none'}
+          steps={customer.journey?.steps}
         />
       </Card>
 
@@ -248,7 +249,7 @@ function PanelBody({
         <h3 id={detailsId} className={HEADING}>
           Details
         </h3>
-        <dl className="m-0 grid grid-cols-[120px_minmax(0,1fr)] gap-y-2 text-[14px] [&_dd]:m-0 [&_dd]:font-medium [&_dt]:text-foreground-muted">
+        <dl className="m-0 grid grid-cols-[120px_minmax(0,1fr)] gap-y-2 text-[14px] [&_dd]:m-0 [&_dd]:font-medium [&_dt]:text-foreground-tertiary">
           <dt>Handled by</dt>
           <dd className={cn(!customer.assigneeName && 'text-foreground-secondary')}>
             {customer.assigneeName ?? 'Not assigned'}

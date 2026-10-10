@@ -81,8 +81,12 @@ export interface StatusRibbonProps {
   stats: CustomerStatsResponse | undefined;
   needsFollowupCount: number | undefined;
   activeTicketsCount: number | undefined;
-  /** The `status` filter value, '' for none. */
-  activeStatus: CustomerStatus | '';
+  /**
+   * The `status` filter value as it is in the URL, '' for none. Not narrowed to
+   * the enum: a hand-edited value that is no status highlights nothing — "All"
+   * is pressed only when there is no status filter at all.
+   */
+  activeStatus: string;
   activeWorklist: RibbonWorklist;
   onStatusChange: (status: string) => void;
   onWorklistChange: (worklist: RibbonWorklist) => void;
@@ -136,7 +140,7 @@ export function StatusRibbon({
               style={{
                 width: `${grown ? share : 0}%`,
                 background: STATUS_FILL[status],
-                opacity: !activeStatus || activeStatus === status ? 1 : 0.25,
+                opacity: !activeStatus || activeStatus === String(status) ? 1 : 0.25,
               }}
             />
           );
@@ -154,7 +158,7 @@ export function StatusRibbon({
         {STATUSES.map((status) => (
           <Segment
             key={status}
-            pressed={activeStatus === status}
+            pressed={activeStatus === String(status)}
             onClick={() => onStatusChange(status)}
             count={stats?.[status]}
             label={toTitleLabel(status)}

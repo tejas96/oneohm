@@ -25,7 +25,7 @@ const LINK = 'font-medium text-primary-dark hover:underline';
 function Fact({ label, children }: { label: string; children: ReactNode }): JSX.Element {
   return (
     <>
-      <dt className="text-foreground-muted">{label}</dt>
+      <dt className="text-foreground-tertiary">{label}</dt>
       <dd className="m-0 min-w-0 text-foreground-secondary">{children}</dd>
     </>
   );
@@ -63,10 +63,12 @@ export function SiteBlock({
     PROPERTY_TYPE_LABELS[property.propertyType] ?? toTitleLabel(property.propertyType);
   const place = property.address ?? property.city ?? null;
 
-  const price =
-    property.latestQuoteFinalPrice != null ? Number(property.latestQuoteFinalPrice) : null;
-  const size =
-    property.latestQuoteSystemSizeKw != null ? Number(property.latestQuoteSystemSizeKw) : null;
+  // The quote the stage was read from (the quote list's pick for this site) —
+  // not `latestQuote*`, which takes the newest live quote and so can name a
+  // later draft while the journey says "Won" on the accepted one.
+  const quote = property.dealQuote ?? null;
+  const price = quote?.finalPrice ?? null;
+  const size = quote?.systemSizeKw ?? null;
 
   const connection = [
     property.discom?.label,
@@ -96,7 +98,7 @@ export function SiteBlock({
                 'truncate font-semibold group-hover/site:text-primary-dark',
                 property.consumerNumber
                   ? 'tabular-nums text-foreground'
-                  : 'font-normal italic text-foreground-muted',
+                  : 'font-normal italic text-foreground-tertiary',
               )}
             >
               {property.consumerNumber || 'Consumer no. not available'}
@@ -109,7 +111,7 @@ export function SiteBlock({
           </div>
           <small
             title={[typeLabel, place].filter(Boolean).join(' · ')}
-            className="block truncate text-[12px] text-foreground-muted"
+            className="block truncate text-[12px] text-foreground-tertiary"
           >
             {[typeLabel, place].filter(Boolean).join(' · ')}
           </small>
@@ -120,22 +122,22 @@ export function SiteBlock({
             <b
               className={cn(
                 'block font-semibold tabular-nums',
-                (price == null || property.latestQuoteVoided) &&
-                  'font-normal text-foreground-muted',
+                (price == null || quote?.voided) && 'font-normal text-foreground-tertiary',
               )}
             >
               {price != null ? formatCurrency(price) : 'Not quoted'}
             </b>
             {size != null ? (
-              <small className="block text-[12px] text-foreground-muted">
+              <small className="block text-[12px] text-foreground-tertiary">
                 {formatSystemSize(size)} kW
               </small>
             ) : null}
           </div>
           {/* A click on the menu, or on the backdrop that closes it, is not a click on the site. */}
           <div onClick={stopBlockClick} className="-mr-2 -mt-1.5">
+            {/* "View Quote" opens the same quote the line below names. */}
             <PropertyRowActionsMenu
-              property={property}
+              property={quote ? { ...property, latestQuoteId: quote.id } : property}
               onMarkAsLost={onMarkAsLost}
               onReopen={onReopen}
               onRequestDelete={onRequestDelete}
@@ -148,38 +150,37 @@ export function SiteBlock({
       <div className="mt-2.5">
         <div className="mb-2 flex items-baseline justify-between gap-3">
           <b className={cn('flex-none text-[13px] font-semibold', property.lost && 'text-error')}>
-            {journey.title}
+            {journey?.title ?? '—'}
           </b>
-          {journey.detail ? (
+          {journey?.detail ? (
             <span
               title={journey.detail}
-              className="min-w-0 truncate text-[12px] text-foreground-muted"
+              className="min-w-0 truncate text-[12px] text-foreground-tertiary"
             >
               {journey.detail}
             </span>
           ) : null}
         </div>
-        <JourneyTrack stageIndex={property.stageIndex ?? 0} lost={property.lost} animateIn />
+        {journey ? (
+          <JourneyTrack stageIndex={property.stageIndex ?? 0} lost={property.lost} animateIn />
+        ) : null}
       </div>
 
       <dl className="m-0 mt-3 grid grid-cols-[84px_minmax(0,1fr)] gap-x-3 gap-y-1 text-[12px]">
         <Fact label="Quote">
-          {property.latestQuoteId ? (
+          {quote ? (
             <>
               <Link
-                href={customerLinks.quote(property.latestQuoteId)}
+                href={customerLinks.quote(quote.id)}
                 prefetch={false}
                 onClick={stopBlockClick}
                 className={LINK}
               >
-                {property.latestQuoteNumber ?? 'Open quote'}
+                {quote.number}
               </Link>
               {' · '}
-              {property.latestQuoteStatus
-                ? toTitleLabel(property.latestQuoteStatus)
-                : property.latestQuoteVoided
-                  ? 'Voided'
-                  : 'No status'}
+              {toTitleLabel(quote.status)}
+              {quote.voided ? ' · voided' : null}
             </>
           ) : (
             'Not quoted'
@@ -210,11 +211,19 @@ export function SiteBlock({
                 .join(' · ')}
             </span>
           </Fact>
-        ) : property.needsFollowup ? (
+        ) : (
+          // Needs a follow-up FIRST: an open site whose quote was rejected reads
+          // "lost" on its journey but still owes someone an action.
           <Fact label="Follow-up">
-            <span className="text-error">No follow-up scheduled</span>
+            {property.needsFollowup ? (
+              <span className="text-error">No follow-up planned</span>
+            ) : property.lost ? (
+              'Closed'
+            ) : (
+              'Nothing due'
+            )}
           </Fact>
-        ) : null}
+        )}
 
         <Fact label="Status">
           {lifecycle.label} · added {shortDay(property.createdAt)}

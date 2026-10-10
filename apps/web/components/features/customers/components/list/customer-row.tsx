@@ -2,25 +2,45 @@
 
 import { CustomerStatus } from '@tejas96/shared/types';
 import Link from 'next/link';
-import { type JSX, type KeyboardEvent, type MouseEvent, memo } from 'react';
+import { type JSX, type MouseEvent, memo, useRef } from 'react';
 
-import { AddSiteLink } from './add-site-link';
+import { AddSiteButton } from './add-site-button';
 import { FollowUpCell } from './follow-up-cell';
-import { fullName, groupLabel, journeySummary, metaLine, shortDay } from './format';
+import {
+  followupText,
+  fullName,
+  groupLabel,
+  handledBy,
+  journeyAltText,
+  journeySummary,
+  metaLine,
+  shortDay,
+} from './format';
 import { TicketIcon } from './icons';
 import { JourneyTrack } from './journey-track';
 import { customerLinks } from './links';
 import { RowActionsMenu } from './row-actions-menu';
-import { ROW_CELL, ROW_GRID } from './row-layout';
+import { MAX_STAGGER_STEPS, ROW_CELL, ROW_GRID, STAGGER_MS } from './row-layout';
 import type { Customer } from '../../hooks/use-customers';
 
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { cn, formatCurrency, toTitleLabel } from '@/lib/utils';
 
-/** Rows rise in 55ms apart, the first time the list paints. */
-const STAGGER_MS = 55;
+/** A tag after the name. */
+const TAG =
+  'truncate rounded-pill px-2 py-0.5 text-[11px] font-medium leading-[13px] text-foreground-secondary';
 
-const TAG = 'flex-none rounded-pill px-2 py-0.5 text-[11px] font-medium leading-[13px]';
+/**
+ * How a tag takes its width. The name gets the room first: it sits at its own
+ * width, and the tags start from nothing and grow into what is left, up to
+ * their own text. Only when even their minimum does not fit does the name
+ * itself shrink. (Shrinking everything in proportion instead shaves a pixel
+ * off a name that would have fitted and puts an ellipsis on it.)
+ */
+const TAG_FIT = 'max-w-max basis-0';
+
+/** Everything in a cell sits above the row's cover button. */
+const ABOVE = 'relative z-[1]';
 
 const stopRowClick = (event: MouseEvent): void => event.stopPropagation();
 
@@ -38,6 +58,16 @@ export interface CustomerRowProps {
   onRequestDelete: (customer: Customer) => void;
 }
 
+/**
+ * One customer, one line.
+ *
+ * The row is a plain container, not a `role="button"` wrapping links — that
+ * hides the links inside from a screen reader. Instead a real button covers the
+ * row ("open details", first in tab order) and the name, ticket, follow-up,
+ * value and ⋮ sit above it as ordinary links and buttons. A click on any plain
+ * part of the row opens the panel too, and moves focus to that button so it
+ * has somewhere to return to when the panel closes.
+ */
 function CustomerRowInner({
   customer,
   index,
@@ -48,44 +78,65 @@ function CustomerRowInner({
   onOpen,
   onRequestDelete,
 }: CustomerRowProps): JSX.Element {
+  const openButton = useRef<HTMLButtonElement>(null);
   const name = fullName(customer);
   const group = groupLabel(customer);
   const meta = metaLine(customer, resellerName);
   const journey = journeySummary(customer);
+  const followup = followupText(customer);
+  const handler = handledBy(customer);
+  const status = toTitleLabel(customer.status);
   const value = customer.sitePortfolio?.totalPortfolioAmount ?? 0;
   const tickets = customer.activeTicketCount ?? 0;
   const amount = value > 0 ? formatCurrency(value) : null;
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
-    // Only the row itself: Enter on a link or button inside must do its own job.
-    if (event.target !== event.currentTarget) return;
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
+  const stage = journeyAltText(
+    journey.stageIndex,
+    journey.kind === 'lost',
+    journey.kind !== 'none',
+  );
+  const followupSpoken = [followup.title, followup.sub].filter(Boolean).join(', ');
+
+  const open = (): void => {
+    openButton.current?.focus({ preventScroll: true });
     onOpen(customer);
   };
 
   return (
+    // The cover button below is the keyboard and screen-reader path; this
+    // handler only lets a mouse click on the text between the links do the same.
     <div
-      role="button"
-      tabIndex={0}
-      aria-haspopup="dialog"
-      aria-expanded={selected}
-      aria-label={`${name}: open details`}
       data-customer-row={customer.id}
-      onClick={() => onOpen(customer)}
-      onKeyDown={handleKeyDown}
-      style={entering ? { animationDelay: `${index * STAGGER_MS}ms` } : undefined}
+      onClick={open}
+      style={
+        entering
+          ? { animationDelay: `${Math.min(index, MAX_STAGGER_STEPS) * STAGGER_MS}ms` }
+          : undefined
+      }
       className={cn(
         ROW_GRID,
-        'cursor-pointer rounded-rf-xl bg-surface px-5 py-4 shadow-e1',
+        'relative cursor-pointer rounded-rf-xl bg-surface px-5 py-4 shadow-e1',
         'transition-[box-shadow,transform] duration-[250ms] ease-calm hover:-translate-y-0.5 hover:shadow-calm',
         'motion-reduce:transition-none motion-reduce:hover:translate-y-0',
         entering && 'animate-calm-rise motion-reduce:animate-none',
         selected && 'shadow-calm ring-2 ring-foreground',
       )}
     >
+      <button
+        ref={openButton}
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded={selected}
+        aria-label={`Open details: ${name}. ${stage}. ${followupSpoken}`}
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpen(customer);
+        }}
+        className="absolute inset-0 z-0 cursor-pointer rounded-rf-xl"
+      />
+
       {/* Who */}
-      <div className={cn(ROW_CELL.who, 'flex min-w-0 items-center gap-3.5')}>
+      <div className={cn(ROW_CELL.who, ABOVE, 'flex min-w-0 items-center gap-3.5')}>
         <MUIAvatar
           name={name}
           size={44}
@@ -99,31 +150,29 @@ function CustomerRowInner({
               prefetch={false}
               onClick={stopRowClick}
               title={name}
-              className="min-w-[6ch] truncate text-[16px] font-semibold tracking-[-0.01em] text-foreground hover:text-primary-dark"
+              className="min-w-[9ch] shrink truncate text-[16px] font-semibold tracking-[-0.01em] text-foreground hover:text-primary-dark"
             >
               {name}
             </Link>
             {group ? (
-              // Gives way before the name does; the full label is in the title and the panel.
-              <span
-                title={group}
-                className={cn(
-                  TAG,
-                  'min-w-10 max-w-[104px] shrink-[20] truncate bg-background-tertiary text-foreground-secondary',
-                )}
-              >
-                {customer.groupName || customer.groupCode}
+              <span title={group} className={cn(TAG_FIT, 'flex min-w-7 grow')}>
+                <span className={cn(TAG, 'block max-w-[96px] bg-background-tertiary')}>
+                  {customer.groupName || customer.groupCode}
+                </span>
               </span>
             ) : null}
             <span
+              title={`Status: ${status}`}
               className={cn(
                 TAG,
+                TAG_FIT,
+                'min-w-8 grow-[2]',
                 customer.status === CustomerStatus.LOST
                   ? 'bg-[var(--ds-danger-bg)] text-error'
-                  : 'bg-background-tertiary text-foreground-secondary',
+                  : 'bg-background-tertiary',
               )}
             >
-              {toTitleLabel(customer.status)}
+              {status}
             </span>
             {tickets > 0 ? (
               <Link
@@ -145,15 +194,15 @@ function CustomerRowInner({
       </div>
 
       {/* Journey */}
-      <div className={cn(ROW_CELL.journey, 'min-w-0')}>
+      <div className={cn(ROW_CELL.journey, ABOVE, 'min-w-0')}>
         <div className="mb-2 flex items-baseline justify-between gap-3">
           <b className="flex-none text-[14px] font-semibold">{journey.title}</b>
           {journey.kind === 'none' ? (
-            <AddSiteLink customerId={customer.id} className="flex-none text-[12px]" />
+            <AddSiteButton customerId={customer.id} className="flex-none text-[12px]" />
           ) : (
             <span
               title={journey.detail ?? undefined}
-              className="min-w-0 truncate text-[12px] text-foreground-muted"
+              className="min-w-0 truncate text-[12px] text-foreground-tertiary"
             >
               {journey.detail}
             </span>
@@ -168,10 +217,16 @@ function CustomerRowInner({
       </div>
 
       {/* Follow-up */}
-      <FollowUpCell customer={customer} className={ROW_CELL.next} />
+      <FollowUpCell customer={customer} className={cn(ROW_CELL.next, ABOVE)} />
 
       {/* Value */}
-      <div className={cn(ROW_CELL.value, 'flex flex-col items-end whitespace-nowrap text-right')}>
+      <div
+        className={cn(
+          ROW_CELL.value,
+          ABOVE,
+          'flex flex-col items-end whitespace-nowrap text-right',
+        )}
+      >
         {amount ? (
           <Link
             href={customerLinks.quotes(customer.id)}
@@ -187,20 +242,35 @@ function CustomerRowInner({
             {amount}
           </Link>
         ) : (
-          <span className="text-[13px] text-foreground-muted">Not quoted yet</span>
+          <span className="text-[13px] text-foreground-tertiary">Not quoted yet</span>
         )}
-        <small className="block text-[12px] font-normal text-foreground-muted">
+        <small className="block text-[12px] font-normal text-foreground-tertiary">
           added {shortDay(customer.createdAt)}
         </small>
       </div>
 
-      {/* ⋮ — a plain wrapper so a click on the menu or its backdrop never opens the panel. */}
-      <div className={cn(ROW_CELL.actions, 'flex justify-end')} onClick={stopRowClick}>
-        <RowActionsMenu
-          customer={customer}
-          showDelete={showDelete}
-          onRequestDelete={onRequestDelete}
-        />
+      {/* Handled by · ⋮ */}
+      <div className={cn(ROW_CELL.actions, ABOVE, 'flex items-center justify-end gap-1.5')}>
+        {handler.name ? (
+          <span role="img" aria-label={handler.title} title={handler.title} className="flex-none">
+            <MUIAvatar name={handler.name} size={28} aria-hidden />
+          </span>
+        ) : (
+          <span
+            role="img"
+            aria-label={handler.title}
+            title={handler.title}
+            className="block size-7 flex-none rounded-full border-[1.5px] border-dashed border-gray-300"
+          />
+        )}
+        {/* A click on the menu, or on the backdrop that closes it, never opens the panel. */}
+        <div onClick={stopRowClick}>
+          <RowActionsMenu
+            customer={customer}
+            showDelete={showDelete}
+            onRequestDelete={onRequestDelete}
+          />
+        </div>
       </div>
     </div>
   );

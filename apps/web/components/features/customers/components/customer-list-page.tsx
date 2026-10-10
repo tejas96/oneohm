@@ -1,7 +1,6 @@
 'use client';
 
 import { LinearProgress } from '@mui/material';
-import { CustomerStatus } from '@tejas96/shared/types';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -27,6 +26,7 @@ import { ListPager } from './list/list-pager';
 import { ListSkeleton } from './list/list-skeleton';
 import { ListEmpty, ListError } from './list/list-states';
 import { ListToolbar } from './list/list-toolbar';
+import { MAX_STAGGER_STEPS, STAGGER_MS } from './list/row-layout';
 import { type RibbonWorklist, StatusRibbon } from './list/status-ribbon';
 import { useFilterColumns } from './list/use-filter-columns';
 import { useResellerNames } from './list/use-reseller-names';
@@ -40,10 +40,8 @@ import { getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 const EMPTY_ROWS: Customer[] = [];
-const STATUS_VALUES: ReadonlySet<string> = new Set(Object.values(CustomerStatus));
 
-/** How long the first paint's rise-in runs: the stagger per row plus the rise itself. */
-const ENTRANCE_STAGGER_MS = 55;
+/** The rise itself, after the last row's stagger delay. */
 const ENTRANCE_RISE_MS = 700;
 
 /** A screenful; a longer page does not need a longer placeholder. */
@@ -106,10 +104,7 @@ export function CustomerListPage(): JSX.Element {
    * The ribbon's status buttons write to the same `status` filter field the
    * popover uses — a shortcut into the filter model, never a second copy of it.
    */
-  const activeStatus =
-    typeof filters.status === 'string' && STATUS_VALUES.has(filters.status)
-      ? (filters.status as CustomerStatus)
-      : '';
+  const activeStatus = typeof filters.status === 'string' ? filters.status : '';
 
   const handleStatusChange = useCallback(
     (key: string) => {
@@ -181,7 +176,7 @@ export function CustomerListPage(): JSX.Element {
     if (entered || !hasRows) return undefined;
     const timer = setTimeout(
       () => setEntered(true),
-      rowCount * ENTRANCE_STAGGER_MS + ENTRANCE_RISE_MS,
+      Math.min(rowCount, MAX_STAGGER_STEPS) * STAGGER_MS + ENTRANCE_RISE_MS,
     );
     return () => clearTimeout(timer);
   }, [entered, hasRows, rowCount]);

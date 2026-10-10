@@ -4,12 +4,14 @@
  */
 
 /**
- * Wide: who · journey · follow-up · value · ⋮ on one line. Narrow (the list
- * itself under 960px, so an open side panel counts): name and ⋮, then the
- * journey, then follow-up and value side by side.
+ * Wide: who · journey · follow-up · value · handled-by + ⋮ on one line. Narrow
+ * (the list itself under 960px, so an open side panel counts): name and
+ * handled-by + ⋮, then the journey, then follow-up and value side by side.
+ *
+ * The last track holds the 28px handled-by avatar, a 6px gap and the 34px ⋮.
  */
 export const ROW_GRID =
-  'grid grid-cols-[minmax(0,1fr)_auto_34px] items-center gap-x-3 gap-y-3.5 @[960px]:grid-cols-[minmax(0,1.3fr)_minmax(0,1.75fr)_minmax(0,1.15fr)_112px_34px] @[960px]:gap-[22px]';
+  'grid grid-cols-[minmax(0,1fr)_auto_68px] items-center gap-x-3 gap-y-3.5 @[960px]:grid-cols-[minmax(0,1.5fr)_minmax(0,1.6fr)_minmax(0,1.1fr)_112px_68px] @[960px]:gap-[22px]';
 
 const WIDE = '@[960px]:col-auto @[960px]:row-auto';
 export const ROW_CELL = {
@@ -19,3 +21,7 @@ export const ROW_CELL = {
   value: `col-span-2 col-start-2 row-start-3 ${WIDE}`,
   actions: `col-start-3 row-start-1 ${WIDE}`,
 } as const;
+
+/** Rows rise in 55ms apart; from the 13th on they arrive together. */
+export const STAGGER_MS = 55;
+export const MAX_STAGGER_STEPS = 12;

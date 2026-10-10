@@ -29,14 +29,20 @@ const SORT_OPTIONS: SortOption[] = [
 
 const KNOWN_FIELDS = new Set(['createdAt', 'name', 'city']);
 
-/** Which option a sort model reads as. An unknown field sorts as the default does. */
+/**
+ * Which option a sort model reads as — always the one whose request is the one
+ * actually sent. A hand-edited field the API mapping does not know falls back
+ * to the created date there (`toApiSortField`) while its direction is still
+ * honoured (`toApiSortOrder`), so `{"field":"bogus","direction":"asc"}` is sent
+ * as created-date ascending and reads "Oldest first".
+ */
 function activeIndex(model: TableUrlSortModel | null): number {
-  if (!model || !KNOWN_FIELDS.has(model.field)) return 0;
-  if (model.field === 'createdAt' && model.direction !== 'asc') return 0;
+  if (!model) return 0;
+  const field = KNOWN_FIELDS.has(model.field) ? model.field : 'createdAt';
+  const direction = model.direction === 'asc' ? 'asc' : 'desc';
+  if (field === 'createdAt' && direction === 'desc') return 0;
   const index = SORT_OPTIONS.findIndex(
-    (option) =>
-      option.model?.field === model.field &&
-      option.model.direction === (model.direction === 'asc' ? 'asc' : 'desc'),
+    (option) => option.model?.field === field && option.model.direction === direction,
   );
   return index === -1 ? 0 : index;
 }

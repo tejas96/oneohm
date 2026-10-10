@@ -41,9 +41,7 @@ export function FollowUpCell({
       ]
         .filter(Boolean)
         .join(' · ')
-    : customer.assigneeName
-      ? `${text.title} · handled by ${customer.assigneeName}`
-      : `${text.title} · ${text.sub}`;
+    : [text.title, text.sub].filter(Boolean).join(' · ');
 
   return (
     <Link
@@ -51,7 +49,7 @@ export function FollowUpCell({
       prefetch={false}
       onClick={stopRowClick}
       title={hint}
-      aria-label={`Follow-ups: ${text.title}, ${text.sub}`}
+      aria-label={`Follow-ups: ${[text.title, text.sub].filter(Boolean).join(', ')}`}
       className={cn('group/next flex min-w-0 items-center gap-2.5 rounded-rf-lg', className)}
     >
       <span
@@ -68,12 +66,14 @@ export function FollowUpCell({
             'block truncate text-[14px] group-hover/next:underline',
             text.tone === 'due' && 'font-medium text-error',
             text.tone === 'ok' && 'font-medium text-foreground',
-            text.tone === 'none' && 'font-normal text-foreground-muted',
+            text.tone === 'none' && 'font-normal text-foreground-tertiary',
           )}
         >
           {text.title}
         </span>
-        <span className="block truncate text-[12px] text-foreground-muted">{text.sub}</span>
+        {text.sub ? (
+          <span className="block truncate text-[12px] text-foreground-tertiary">{text.sub}</span>
+        ) : null}
       </span>
     </Link>
   );

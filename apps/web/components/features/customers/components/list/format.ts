@@ -1,4 +1,4 @@
-import type { CustomerJourney, NextFollowup } from '@tejas96/shared/types';
+import type { CustomerJourney, JourneySteps, NextFollowup } from '@tejas96/shared/types';
 import { formatSystemSize, indiaToday, SITE_JOURNEY_STEPS } from '@tejas96/shared/utils';
 
 import { LEAD_SOURCE_LABELS } from '../../constants';
@@ -85,6 +85,8 @@ const EMPTY_JOURNEY: CustomerJourney = {
   lost: false,
   stageCounts: [0, 0, 0, 0, 0, 0],
   lostSites: 0,
+  steps: { surveyed: false, quoted: false, quoteSent: false, won: false, commissioned: false },
+  lostReason: null,
 };
 
 const LAST_STEP = SITE_JOURNEY_STEPS.length - 1;
@@ -123,20 +125,18 @@ export interface JourneySummary {
  */
 export function journeySummary(customer: Customer): JourneySummary {
   const journey = customer.journey ?? EMPTY_JOURNEY;
-  const { siteCount, stageIndex, lost, stageCounts, lostSites } = journey;
+  const { siteCount, stageIndex, lost, stageCounts, lostSites, lostReason } = journey;
 
   if (siteCount === 0) return { kind: 'none', stageIndex: 0, title: 'No site yet', detail: null };
 
   const sites = siteCount === 1 ? '1 site' : `${siteCount} sites`;
 
   if (lost) {
-    const stopped = `stopped at ${stepName(stageIndex).toLowerCase()}`;
-    return {
-      kind: 'lost',
-      stageIndex,
-      title: 'Lost',
-      detail: siteCount > 1 ? `${stopped} · ${sites}` : stopped,
-    };
+    // Where it stopped, why (the most recently lost site's reason), how many.
+    const lostParts = [`stopped at ${stepName(stageIndex).toLowerCase()}`];
+    if (lostReason) lostParts.push(lostReason);
+    if (siteCount > 1) lostParts.push(sites);
+    return { kind: 'lost', stageIndex, title: 'Lost', detail: lostParts.join(' · ') };
   }
 
   const parts = [sites];
@@ -158,19 +158,66 @@ export function journeySummary(customer: Customer): JourneySummary {
   return { kind: 'live', stageIndex, title: stepName(stageIndex), detail: parts.join(' · ') };
 }
 
-/** One site's words: the step, or "Lost · stopped at …" with the reason when there is one. */
+/**
+ * One site's words: the step, or "Lost" with where it stopped and the reason
+ * when there is one. Null when the record carries no journey (an endpoint that
+ * does not compute it) — the caller then shows nothing rather than a guess.
+ */
 export function siteJourneyText(site: {
   stageIndex?: number;
   lost?: boolean;
   journeyLostReason?: string | null;
-}): { title: string; detail: string | null } {
-  const step = stepName(site.stageIndex ?? 0);
+}): { title: string; detail: string | null } | null {
+  if (site.stageIndex === undefined) return null;
+  const step = stepName(site.stageIndex);
   if (!site.lost) return { title: step, detail: null };
   const stopped = `stopped at ${step.toLowerCase()}`;
   return {
     title: 'Lost',
     detail: site.journeyLostReason ? `${stopped} · ${site.journeyLostReason}` : stopped,
   };
+}
+
+export type StepState = 'done' | 'now' | 'missing' | 'todo';
+
+export interface StepLine {
+  name: string;
+  /**
+   * `done` it happened · `now` where it stands · `missing` it stands further on
+   * but this step is not on record · `todo` not reached.
+   */
+  state: StepState;
+}
+
+/**
+ * The six steps as a checklist. A step is ticked only when its own fact is on
+ * record — the stage says how far it got, not that every earlier step happened
+ * (a site can be won with no survey recorded). "Lead captured" has no fact of
+ * its own: it is true of every lead. A lost journey has no current step; the
+ * step it stopped at is ticked.
+ */
+export function journeyStepLines(
+  stageIndex: number,
+  lost: boolean,
+  hasSite: boolean,
+  steps: JourneySteps | undefined,
+): StepLine[] {
+  const facts = [
+    true,
+    steps?.surveyed ?? false,
+    steps?.quoted ?? false,
+    steps?.quoteSent ?? false,
+    steps?.won ?? false,
+    steps?.commissioned ?? false,
+  ];
+  const stage = hasSite ? Math.min(Math.max(stageIndex, 0), LAST_STEP) : 0;
+  return SITE_JOURNEY_STEPS.map((name, step) => {
+    let state: StepState;
+    if (step > stage) state = 'todo';
+    else if (step === stage && hasSite && !lost) state = 'now';
+    else state = facts[step] ? 'done' : 'missing';
+    return { name, state };
+  });
 }
 
 // ============================================================================
@@ -205,12 +252,22 @@ export interface FollowupText {
   sub: string;
 }
 
-/** Who looks after the customer, for the quiet line under "No follow-up planned". */
-function handlerLine(customer: Pick<Customer, 'assigneeName' | 'creatorName'>): string {
-  if (customer.assigneeName) return firstName(customer.assigneeName);
-  if (!customer.creatorName) return 'not assigned';
-  if (customer.creatorName === 'Self') return 'not assigned · self-registered';
-  return `not assigned · by ${firstName(customer.creatorName)}`;
+export interface HandledBy {
+  /** The assignee's full name; null when nobody is assigned. */
+  name: string | null;
+  /** "Handled by Vanita Patil" · "Not assigned · created by Deepali Shinde" */
+  title: string;
+}
+
+/** Who handles the customer. The creator is named, never shown as the owner. */
+export function handledBy(customer: Pick<Customer, 'assigneeName' | 'creatorName'>): HandledBy {
+  if (customer.assigneeName) {
+    return { name: customer.assigneeName, title: `Handled by ${customer.assigneeName}` };
+  }
+  if (!customer.creatorName) return { name: null, title: 'Not assigned' };
+  if (customer.creatorName === 'Self')
+    return { name: null, title: 'Not assigned · self-registered' };
+  return { name: null, title: `Not assigned · created by ${customer.creatorName}` };
 }
 
 export function followupTypeLabel(next: Pick<NextFollowup, 'type'>): string {
@@ -218,7 +275,10 @@ export function followupTypeLabel(next: Pick<NextFollowup, 'type'>): string {
   return label.charAt(0) + label.slice(1).toLowerCase();
 }
 
-/** The two lines of a row's follow-up cell. */
+/**
+ * The two lines of a row's follow-up cell. With nothing pending the second
+ * line is empty: who handles the customer is the avatar at the end of the row.
+ */
 export function followupText(customer: Customer, now: Date = new Date()): FollowupText {
   const next = customer.nextFollowup;
 
@@ -237,11 +297,9 @@ export function followupText(customer: Customer, now: Date = new Date()): Follow
     };
   }
 
+  // Needs a follow-up FIRST: an open site with a rejected quote reads "lost" on
+  // the journey but still owes someone an action — it is not closed.
+  if (customer.needsFollowup) return { tone: 'none', title: 'No follow-up planned', sub: '' };
   if (customer.journey?.lost) return { tone: 'none', title: 'Closed', sub: 'no action needed' };
-
-  return {
-    tone: 'none',
-    title: customer.needsFollowup ? 'No follow-up planned' : 'Nothing due',
-    sub: handlerLine(customer),
-  };
+  return { tone: 'none', title: 'Nothing due', sub: '' };
 }

@@ -2,7 +2,7 @@
 
 import { type JSX, useState } from 'react';
 
-import { AddSiteLink } from './add-site-link';
+import { AddSiteButton } from './add-site-button';
 import { SiteSkeleton } from './list-skeleton';
 import { SiteBlock } from './site-block';
 import { useCustomerProperties } from '../../hooks/use-customer-properties';
@@ -16,7 +16,7 @@ import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmatio
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { useAuth } from '@/providers/auth-provider';
 
-const HEADING = 'm-0 text-[12px] font-medium uppercase tracking-[0.04em] text-foreground-muted';
+const HEADING = 'm-0 text-[12px] font-medium uppercase tracking-[0.04em] text-foreground-tertiary';
 
 /**
  * The customer's sites, fetched when the panel opens — never with the list. A
@@ -107,7 +107,7 @@ export function PanelSites({
       <h3 className={`${HEADING} mb-3`}>Sites · {count}</h3>
       {body}
       {!isLoading && !isError ? (
-        <AddSiteLink customerId={customerId} className="mt-3 inline-block text-[14px]" />
+        <AddSiteButton customerId={customerId} className="mt-3 inline-block text-[14px]" />
       ) : null}
 
       {markLostTarget ? (
