@@ -69,7 +69,7 @@ The deal's values come from that quote and its newest `quote_versions` row
 | kW | `quote_versions.total_wattage_wp / 1000` |
 | Person | `quotes.created_by` → `users` name. (`sales_person_id` is almost always empty; the customer owner is set on only 189 of 824 deals.) |
 | Cash / Loan | `customer_properties.wants_loan` (same as the projects dashboard and finance) |
-| Lead source | `lower(btrim(customer_profiles.lead_source))`, so "Gharkul", "gharkul" and "gharkul " are one source; empty or null → `not_set` ("Not set"). Labels capitalise the first letter ("gharkul" → "Gharkul", "walk_in" → "Walk in"). |
+| Lead source | `customer_profiles.lead_source` lower-cased with all leading and trailing whitespace removed (`lower(regexp_replace(…, '^\s+\|\s+$', '', 'g'))`, the same as the API's and the web's `.trim()`), so "Gharkul", "gharkul" and "gharkul " are one source; empty or null → `not_set` ("Not set"). Labels capitalise the first letter ("gharkul" → "Gharkul", "walk_in" → "Walk in"). |
 
 **Stage**, checked in this order:
 
@@ -175,9 +175,10 @@ days since `valid_until`), and the ₹ on the right.
 
 **Where deals come from** (period tag). The deals new in the period, grouped by lead
 source. The top 4 sources by count, then "Other" (the rest, "Not set" included).
-The stored value `other` (normalised) is always part of the Other row and never a row of
-its own: the top 4 are the 4 most common sources other than `other`, so `topSourceKeys`
-never holds it and the Other link's `leadSourceNotIn` keeps those deals.
+Two values are always part of the Other row and never a row of their own: the stored
+value `other` (normalised) and `not_set` ("Not set"). The top 4 are the 4 most common
+sources other than those two, so `topSourceKeys` never holds either and the Other link's
+`leadSourceNotIn` keeps those deals.
 Each row: source label, a bar, the count, and "N% win" (won now ÷ count). "—" when count < 3.
 The Other row's key is `LEAD_SOURCE_OTHER_BUCKET` (`__other__`, in `libs/shared/src/utils/deal-stage.ts`),
 never `other`: real profiles store the word `other`, so a bucket keyed `other` would collide with it.

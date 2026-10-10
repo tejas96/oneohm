@@ -28,7 +28,7 @@ export const DEAL_ATTENTION_LABELS: Record<DealAttention, string> = {
 
 /**
  * `customer_profiles.lead_source` empty or null, as one filterable value.
- * Deal facts store every source as `lower(btrim(lead_source))`, so "Gharkul",
+ * Deal facts store every source lower-cased and whitespace-trimmed, so "Gharkul",
  * "gharkul" and "gharkul " are one source and the list filter uses the same value.
  */
 export const LEAD_SOURCE_NOT_SET = 'not_set';

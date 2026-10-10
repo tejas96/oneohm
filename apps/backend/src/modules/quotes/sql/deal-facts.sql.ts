@@ -60,7 +60,12 @@ export function dealFactsCte(opts: { quoteIdsParam?: string } = {}): string {
       COALESCE(prop.wants_loan, false) AS wants_loan,
       -- Normalised once, here: "Gharkul", "gharkul" and "gharkul " are one source,
       -- and the list's leadSource filter compares against this same value.
-      COALESCE(NULLIF(lower(btrim(cp.lead_source)), ''), '${LEAD_SOURCE_NOT_SET}') AS lead_source,
+      -- All leading/trailing whitespace goes (tabs and newlines too, not only the
+      -- spaces btrim removes), the same as the DTO's and the web's .trim().
+      COALESCE(
+        NULLIF(lower(regexp_replace(cp.lead_source, '^\\s+|\\s+$', '', 'g')), ''),
+        '${LEAD_SOURCE_NOT_SET}'
+      ) AS lead_source,
       CASE
         WHEN dq.voided_at IS NULL AND dq.status = 'accepted' THEN 'won'
         WHEN dq.status = 'rejected' OR prop.status = 'lost' THEN 'lost'
@@ -156,7 +161,7 @@ export interface DealFactsFilters {
   person?: string;
   financing?: 'cash' | 'loan';
   attention?: DealAttention;
-  /** A normalised lead source (`lower(btrim(...))`, or `not_set`). */
+  /** A normalised lead source (lower-cased, trimmed), or `not_set`. */
   leadSource?: string;
   /** Normalised lead sources to exclude (the dashboard's "Other" row). */
   leadSourceNotIn?: string[];
