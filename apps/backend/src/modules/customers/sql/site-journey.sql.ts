@@ -25,7 +25,9 @@ import { dealQuoteOrderSql } from '../../quotes/sql/deal-facts.sql';
  *  5 Commissioned  — the site's project has its meter installed (a row in
  *                    `v_project_commissioning`, the rule the projects dashboard
  *                    and finance use), or the project is `completed`
- *  4 Won           — the site is `converted`, or it has a live accepted quote
+ *  4 Won           — the site is `converted`, or it has a live accepted quote,
+ *                    or it has a project, including a cancelled one (cancelling
+ *                    voids the accepted quote, but the deal was won first)
  *  3 Quote sent    — the deal quote is `sent`, `viewed`, `expired` or `rejected`
  *                    (live or voided: a quote that went out and was voided when
  *                    the site closed still went out)
@@ -136,7 +138,8 @@ export function siteJourneyCte(
         WHEN COALESCE(pj.meter_installed, false)
           OR pj.status = ${lit(ProjectStatus.COMPLETED)} THEN 5
         WHEN s.status = ${lit(PropertyStatus.CONVERTED)}
-          OR (dq.live AND dq.status = ${lit(QuoteStatus.ACCEPTED)}) THEN 4
+          OR (dq.live AND dq.status = ${lit(QuoteStatus.ACCEPTED)})
+          OR pj.property_id IS NOT NULL THEN 4
         WHEN dq.status IN (${QUOTE_SENT_STATUSES}) THEN 3
         WHEN dq.live THEN 2
         WHEN s.surveyed THEN 1

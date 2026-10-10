@@ -32,7 +32,7 @@ Steps: `Lead captured` → `Survey done` → `Quote drafted` → `Quote sent` �
 |---|---|
 | `lost = true` | site `status = 'lost'`, OR its project is `cancelled`, OR its deal quote is `rejected` (deal quote = the quotes list rule: live accepted → newest live → newest voided; a voided quote never makes a site lost). The stage index is still computed (where it stopped). `lostReason` = site `loss_reason` / `lost_reason`, or "Project cancelled", or the quote's `rejection_reason`. |
 | 5 Commissioned | the site's project has a row in `v_project_commissioning` (meter installed — the rule the projects dashboard and finance use), OR project `status = 'completed'` |
-| 4 Won | site `status = 'converted'`, OR a live (`voided_at IS NULL`) quote with `status = 'accepted'` exists |
+| 4 Won | site `status = 'converted'`, OR a live (`voided_at IS NULL`) quote with `status = 'accepted'` exists, OR the site has a project, including a cancelled one (a cancelled project reads Won + lost: it was won before it was lost) |
 | 3 Quote sent | deal quote status in `sent`, `viewed`, `expired`, `rejected` |
 | 2 Quote drafted | any non-deleted, non-voided quote exists |
 | 1 Survey done | `surveyDone` or `siteVisitDone` (the existing fields) |
