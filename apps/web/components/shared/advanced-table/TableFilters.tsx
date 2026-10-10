@@ -474,6 +474,24 @@ function TableFiltersInner<TRow>({
     onFilterChangeRef.current({});
   }, []);
 
+  // The panel opens without taking focus (disableAutoFocus), so MUI never gets
+  // an Escape pressed while focus is still on the page. Close it from there.
+  // Inside the panel (or a menu it opened) MUI already handles Escape itself.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const isOpen = Boolean(anchorEl);
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest('[role="presentation"], [role="dialog"], [role="listbox"]')) return;
+      onCloseRef.current();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
   if (filterableColumns.length === 0) return null;
 
   return (
