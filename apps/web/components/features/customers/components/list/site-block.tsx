@@ -1,5 +1,6 @@
 'use client';
 
+import { ProjectStatus } from '@tejas96/shared/types';
 import { formatFollowupWhen, formatSystemSize } from '@tejas96/shared/utils';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -80,6 +81,13 @@ export function SiteBlock({
 
   const next = property.nextFollowup ?? null;
   const due = next ? followupDue(next.scheduledAt) : null;
+
+  const projectCancelled = property.projectStatus === ProjectStatus.CANCELLED;
+  const meterInOpenProject =
+    Boolean(property.meterInstalled) &&
+    Boolean(property.projectId) &&
+    !projectCancelled &&
+    property.projectStatus !== ProjectStatus.COMPLETED;
 
   return (
     // The consumer-number link below is the keyboard path to the same place.
@@ -226,10 +234,16 @@ export function SiteBlock({
         )}
 
         <Fact label="Status">
-          {lifecycle.label} · added {shortDay(property.createdAt)}
+          {/* A meter that is in on a project nobody has closed yet: the journey
+              says "Commissioned" while the project still reads "In progress".
+              Say both halves in one line instead of leaving them to argue. */}
+          {meterInOpenProject ? 'Meter installed · project still open' : lifecycle.label} · added{' '}
+          {shortDay(property.createdAt)}
         </Fact>
 
-        {property.projectId ? (
+        {/* A cancelled project is not this site's project any more: a reopened
+            site shows none; a lost one may still name the one that was cancelled. */}
+        {property.projectId && !projectCancelled ? (
           <Fact label="Project">
             <Link
               href={customerLinks.project(property.projectId)}
@@ -238,6 +252,17 @@ export function SiteBlock({
               className={LINK}
             >
               Open project
+            </Link>
+          </Fact>
+        ) : property.projectId && property.lost ? (
+          <Fact label="Project">
+            <Link
+              href={customerLinks.project(property.projectId)}
+              prefetch={false}
+              onClick={stopBlockClick}
+              className={LINK}
+            >
+              Cancelled project
             </Link>
           </Fact>
         ) : null}

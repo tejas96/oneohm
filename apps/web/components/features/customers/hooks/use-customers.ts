@@ -152,6 +152,11 @@ export interface Customer {
   assigneeId?: string;
   assigneeName?: string;
   /**
+   * List responses only: the assignee's user account is archived. The name is
+   * still sent — show it as archived; the customer is not unassigned.
+   */
+  assigneeArchived?: boolean;
+  /**
    * Everyone on the hook across this customer AND all its sites, deduped, live
    * first. The collapsed CRM row shows these.
    */

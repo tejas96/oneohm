@@ -12,6 +12,7 @@ import {
   followupTypeLabel,
   fullName,
   groupLabel,
+  handledBy,
   journeySummary,
   metaLine,
   shortDay,
@@ -99,6 +100,7 @@ function PanelBody({
   const name = fullName(customer);
   const group = groupLabel(customer);
   const journey = journeySummary(customer);
+  const handler = handledBy(customer);
   const next = customer.nextFollowup ?? null;
   const due = next ? followupDue(next.scheduledAt) : null;
   const value = customer.sitePortfolio?.totalPortfolioAmount ?? 0;
@@ -230,12 +232,18 @@ function PanelBody({
             No site yet — the journey starts with the first one.
           </p>
         ) : null}
-        <JourneySteps
-          stageIndex={journey.stageIndex}
-          lost={journey.kind === 'lost'}
-          hasSite={journey.kind !== 'none'}
-          steps={customer.journey?.steps}
-        />
+        {journey.kind === 'unknown' ? (
+          <p className="-mt-1 mb-0 text-[13px] text-foreground-secondary">
+            The stage is not available right now. The sites below show where each one stands.
+          </p>
+        ) : (
+          <JourneySteps
+            stageIndex={journey.stageIndex}
+            lost={journey.kind === 'lost'}
+            hasSite={journey.kind !== 'none'}
+            steps={customer.journey?.steps}
+          />
+        )}
       </Card>
 
       <Card delayMs={160}>
@@ -251,8 +259,8 @@ function PanelBody({
         </h3>
         <dl className="m-0 grid grid-cols-[120px_minmax(0,1fr)] gap-y-2 text-[14px] [&_dd]:m-0 [&_dd]:font-medium [&_dt]:text-foreground-tertiary">
           <dt>Handled by</dt>
-          <dd className={cn(!customer.assigneeName && 'text-foreground-secondary')}>
-            {customer.assigneeName ?? 'Not assigned'}
+          <dd className={cn(!handler.label && 'text-foreground-secondary')}>
+            {handler.label ?? (customer.assigneeId ? handler.title : 'Not assigned')}
           </dd>
           <dt>Created by</dt>
           <dd>

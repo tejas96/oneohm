@@ -90,10 +90,12 @@ function CustomerRowInner({
   const tickets = customer.activeTicketCount ?? 0;
   const amount = value > 0 ? formatCurrency(value) : null;
 
+  const hasSite = journey.kind === 'live' || journey.kind === 'lost';
   const stage = journeyAltText(
     journey.stageIndex,
     journey.kind === 'lost',
-    journey.kind !== 'none',
+    hasSite,
+    journey.kind !== 'unknown',
   );
   const followupSpoken = [followup.title, followup.sub].filter(Boolean).join(', ');
 
@@ -196,10 +198,11 @@ function CustomerRowInner({
       {/* Journey */}
       <div className={cn(ROW_CELL.journey, ABOVE, 'min-w-0')}>
         <div className="mb-2 flex items-baseline justify-between gap-3">
-          <b className="flex-none text-[14px] font-semibold">{journey.title}</b>
+          {/* Keeps its line when there is no stage to name, so the track stays put. */}
+          <b className="min-h-[1.45em] flex-none text-[14px] font-semibold">{journey.title}</b>
           {journey.kind === 'none' ? (
             <AddSiteButton customerId={customer.id} className="flex-none text-[12px]" />
-          ) : (
+          ) : journey.kind === 'unknown' ? null : (
             <span
               title={journey.detail ?? undefined}
               className="min-w-0 truncate text-[12px] text-foreground-tertiary"
@@ -211,7 +214,8 @@ function CustomerRowInner({
         <JourneyTrack
           stageIndex={journey.stageIndex}
           lost={journey.kind === 'lost'}
-          hasSite={journey.kind !== 'none'}
+          hasSite={hasSite}
+          known={journey.kind !== 'unknown'}
           animateIn={entering}
         />
       </div>
@@ -252,7 +256,12 @@ function CustomerRowInner({
       {/* Handled by · ⋮ */}
       <div className={cn(ROW_CELL.actions, ABOVE, 'flex items-center justify-end gap-1.5')}>
         {handler.name ? (
-          <span role="img" aria-label={handler.title} title={handler.title} className="flex-none">
+          <span
+            role="img"
+            aria-label={handler.title}
+            title={handler.title}
+            className={cn('flex-none', handler.archived && 'opacity-55 grayscale')}
+          >
             <MUIAvatar name={handler.name} size={28} aria-hidden />
           </span>
         ) : (

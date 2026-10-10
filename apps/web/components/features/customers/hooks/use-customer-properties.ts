@@ -141,9 +141,15 @@ export interface CustomerPropertyResponse extends Partial<SiteJourney> {
   needsFollowup?: boolean;
   /**
    * The follow-up `nextFollowupAt` belongs to; null when nothing is pending.
-   * Like the `SiteJourney` fields (`stageIndex`, `lost`, `journeyLostReason`,
-   * `meterInstalled`), only the customer's site list
-   * (`GET /customer-properties/customer/:id`) carries it.
+   * ONLY the customer's site list (`GET /customer-properties/customer/:id`)
+   * carries it — the single-site read (`GET /customer-properties/:id`) has
+   * `nextFollowupAt` and `needsFollowup` but not this, and nothing reads it
+   * there.
+   *
+   * The `SiteJourney` fields this interface extends (`stageIndex`, `lost`,
+   * `journeyLostReason`, `meterInstalled`, `journeySteps`, `dealQuote`) are a
+   * different matter: both of those reads carry them. The paged site list
+   * (`GET /customer-properties`) carries neither.
    */
   nextFollowup?: NextFollowup | null;
 }

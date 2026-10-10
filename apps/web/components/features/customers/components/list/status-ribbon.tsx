@@ -111,6 +111,8 @@ export function StatusRibbon({
 }: StatusRibbonProps): JSX.Element {
   const total = stats ? STATUSES.reduce((sum, status) => sum + (stats[status] ?? 0), 0) : undefined;
 
+  const knownStatus = STATUSES.some((status) => String(status) === activeStatus);
+
   // The bar grows from nothing once, when the counts arrive; later it tweens.
   const [grown, setGrown] = useState(false);
   useEffect(() => {
@@ -140,7 +142,9 @@ export function StatusRibbon({
               style={{
                 width: `${grown ? share : 0}%`,
                 background: STATUS_FILL[status],
-                opacity: !activeStatus || activeStatus === String(status) ? 1 : 0.25,
+                // Dim the others only for a real status: a hand-edited value
+                // that is no status selects nothing, so it dims nothing.
+                opacity: !knownStatus || activeStatus === String(status) ? 1 : 0.25,
               }}
             />
           );

@@ -19,6 +19,8 @@ interface JourneyTrackProps {
   hasSite?: boolean;
   /** Fill from the left on mount. Off once the list has made its entrance. */
   animateIn?: boolean;
+  /** False when the stage was not sent at all: an empty track that claims nothing. */
+  known?: boolean;
   className?: string;
 }
 
@@ -31,6 +33,7 @@ export function JourneyTrack({
   lost = false,
   hasSite = true,
   animateIn = false,
+  known = true,
   className,
 }: JourneyTrackProps): JSX.Element {
   const reduced = usePrefersReducedMotion();
@@ -47,7 +50,7 @@ export function JourneyTrack({
   return (
     <div
       role="img"
-      aria-label={journeyAltText(stageIndex, lost, hasSite)}
+      aria-label={journeyAltText(stageIndex, lost, hasSite, known)}
       className={cn('relative h-1.5 rounded-pill bg-background-tertiary', className)}
     >
       <div

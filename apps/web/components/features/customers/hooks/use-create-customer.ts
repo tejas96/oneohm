@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CreateCustomerProfileFormData } from '../schemas/customer.schema';
 
 import { apiClient } from '@/lib/api/client';
+import { quotesDashboardKeys } from '@/lib/hooks/resources';
 
 // ============================================================================
 // Query Keys
@@ -33,14 +34,18 @@ export const customerKeys = {
 /**
  * Everything the customers list page shows that a change to a customer or one
  * of its sites can move: the rows (journey, follow-up, value), the ribbon's
- * status counts and the needs-follow-up count. Call it from every mutation
- * that closes, reopens or deletes a site or deletes a customer — otherwise the
- * row behind an open focus panel keeps saying what was true before.
+ * status counts, the needs-follow-up count, and the header's "₹ in open
+ * quotes" (closing a site as lost takes its deal out of the pipeline; the
+ * figure is the quotes dashboard's). Call it from every mutation that closes,
+ * reopens or deletes a site or deletes a customer — otherwise the row behind
+ * an open focus panel, and the header above it, keep saying what was true
+ * before.
  */
 export function invalidateCustomerListData(queryClient: QueryClient): void {
   void queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
   void queryClient.invalidateQueries({ queryKey: customerKeys.stats() });
   void queryClient.invalidateQueries({ queryKey: customerKeys.overview() });
+  void queryClient.invalidateQueries({ queryKey: quotesDashboardKeys.all() });
 }
 
 // ============================================================================

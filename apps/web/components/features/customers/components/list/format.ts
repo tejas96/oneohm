@@ -103,7 +103,13 @@ export function journeyPercent(stageIndex: number, hasSite: boolean): number {
 }
 
 /** "Stage 4 of 6: Quote sent" — what a screen reader gets instead of the track. */
-export function journeyAltText(stageIndex: number, lost: boolean, hasSite: boolean): string {
+export function journeyAltText(
+  stageIndex: number,
+  lost: boolean,
+  hasSite: boolean,
+  known = true,
+): string {
+  if (!known) return 'Stage not available';
   if (!hasSite) return 'No site yet';
   const index = Math.min(Math.max(stageIndex, 0), LAST_STEP);
   const stage = `${index + 1} of ${SITE_JOURNEY_STEPS.length}: ${stepName(index)}`;
@@ -111,9 +117,14 @@ export function journeyAltText(stageIndex: number, lost: boolean, hasSite: boole
 }
 
 export interface JourneySummary {
-  kind: 'none' | 'lost' | 'live';
+  /**
+   * `unknown`: the customer has sites but the response carried no journey (a
+   * backend older than this page). Nothing is claimed: no stage, no "No site
+   * yet", no "+ Add site" — an empty neutral track.
+   */
+  kind: 'none' | 'lost' | 'live' | 'unknown';
   stageIndex: number;
-  /** The bold word: the step, "Lost" or "No site yet". */
+  /** The bold word: the step, "Lost" or "No site yet"; empty when unknown. */
   title: string;
   /** The small line beside it; null when there is no site. */
   detail: string | null;
@@ -124,6 +135,11 @@ export interface JourneySummary {
  * works a stage out for itself.
  */
 export function journeySummary(customer: Customer): JourneySummary {
+  // No journey on a customer that HAS sites is not "no site yet" — it is "not
+  // told". (The backend must be deployed before this page; see the spec.)
+  if (!customer.journey && (customer.propertyCount ?? 0) > 0) {
+    return { kind: 'unknown', stageIndex: 0, title: '', detail: null };
+  }
   const journey = customer.journey ?? EMPTY_JOURNEY;
   const { siteCount, stageIndex, lost, stageCounts, lostSites, lostReason } = journey;
 
@@ -255,19 +271,33 @@ export interface FollowupText {
 export interface HandledBy {
   /** The assignee's full name; null when nobody is assigned. */
   name: string | null;
+  /** The name as text: "Vanita Patil", "Anurag Gaikwad (archived)"; null when unassigned. */
+  label: string | null;
+  /** The assignee's user account is archived — still assigned, not unassigned. */
+  archived: boolean;
   /** "Handled by Vanita Patil" · "Not assigned · created by Deepali Shinde" */
   title: string;
 }
 
-/** Who handles the customer. The creator is named, never shown as the owner. */
-export function handledBy(customer: Pick<Customer, 'assigneeName' | 'creatorName'>): HandledBy {
+/**
+ * Who handles the customer. The creator is named, never shown as the owner. A
+ * customer assigned to someone whose account is archived is still assigned: it
+ * reads "<name> (archived)", never "Not assigned".
+ */
+export function handledBy(
+  customer: Pick<Customer, 'assigneeId' | 'assigneeName' | 'assigneeArchived' | 'creatorName'>,
+): HandledBy {
   if (customer.assigneeName) {
-    return { name: customer.assigneeName, title: `Handled by ${customer.assigneeName}` };
+    const archived = Boolean(customer.assigneeArchived);
+    const label = archived ? `${customer.assigneeName} (archived)` : customer.assigneeName;
+    return { name: customer.assigneeName, label, archived, title: `Handled by ${label}` };
   }
-  if (!customer.creatorName) return { name: null, title: 'Not assigned' };
-  if (customer.creatorName === 'Self')
-    return { name: null, title: 'Not assigned · self-registered' };
-  return { name: null, title: `Not assigned · created by ${customer.creatorName}` };
+  const none = { name: null, label: null, archived: false };
+  // Assigned, but the server could not name the user: say so rather than "Not assigned".
+  if (customer.assigneeId) return { ...none, title: 'Assigned · name not available' };
+  if (!customer.creatorName) return { ...none, title: 'Not assigned' };
+  if (customer.creatorName === 'Self') return { ...none, title: 'Not assigned · self-registered' };
+  return { ...none, title: `Not assigned · created by ${customer.creatorName}` };
 }
 
 export function followupTypeLabel(next: Pick<NextFollowup, 'type'>): string {
