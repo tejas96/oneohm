@@ -1285,6 +1285,7 @@ export function ProjectListPage(): JSX.Element {
       if (col.field === 'onboarded' || col.field === 'meterInstalled' || col.field === 'meterDue') {
         return {
           ...col,
+          filterWide: true,
           renderFilter: ({ value, onChange }) => (
             <DateRangeFilter value={value} onChange={onChange} />
           ),

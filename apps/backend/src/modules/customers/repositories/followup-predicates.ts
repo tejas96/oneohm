@@ -13,6 +13,11 @@
 /**
  * An open site with nobody owing it an action.
  *
+ * A site with a LIVE accepted quote is won and waiting to become a project, so
+ * it is not chased. A voided accepted quote does not count: voiding (a
+ * cancelled project, a reopened site) puts the roof back in play, and a site
+ * nobody owes an action on must show up here again.
+ *
  * @param alias table alias for `customer_properties`
  */
 export function PROPERTY_NEEDS_FOLLOWUP(alias: string): string {
@@ -28,6 +33,7 @@ export function PROPERTY_NEEDS_FOLLOWUP(alias: string): string {
       SELECT 1 FROM quotes q
        WHERE q.property_id = ${alias}.id
          AND q.deleted_at IS NULL
+         AND q.voided_at IS NULL
          AND q.status = 'accepted')
   `;
 }

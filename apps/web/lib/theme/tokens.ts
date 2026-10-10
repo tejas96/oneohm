@@ -73,6 +73,8 @@ const theme = {
     'input-functional': '10px',
     'input-expressive': '14px',
     'sheet-top': '32px',
+    /** The customers status ribbon — one step softer than a row (`rf-xl`). */
+    'card-calm': '18px',
     /** Buttons and chips are ALWAYS this. Non-negotiable in the DS. */
     pill: '999px',
   },
@@ -90,6 +92,16 @@ const theme = {
     e3: '0 8px 24px rgba(16,24,40,0.06)',
     e4: '0 16px 48px rgba(16,24,40,0.08)',
     e5: '0 24px 72px rgba(16,24,40,0.10)',
+    /**
+     * Calm list (customers). A resting row is `e1`; `calm` is the wider, softer
+     * lift a card or a hovered row sits on. The rest belong to one element
+     * each: the focus panel's left edge, the green call-to-action's glow, and
+     * the journey pin's drop.
+     */
+    calm: '0 1px 2px rgba(16,24,40,0.04),0 4px 16px rgba(16,24,40,0.05)',
+    'calm-drawer': '-24px 0 60px rgba(16,24,40,0.18)',
+    'calm-cta': '0 2px 8px rgba(118,192,68,0.35)',
+    'calm-pin': '0 2px 6px rgba(77,124,15,0.35)',
   },
 
   /** `--ease-*` → `ease-*`. Extends Tailwind's built-in in/out/in-out. */
@@ -99,6 +111,8 @@ const theme = {
     exit: 'cubic-bezier(0.4,0,1,1)',
     /** Sheets, FAB, radial menus. */
     spring: 'cubic-bezier(0.34,1.56,0.64,1)',
+    /** Calm list: rows rising, the journey track filling, the panel sliding. */
+    calm: 'cubic-bezier(0.2,0.8,0.2,1)',
   },
 } as const;
 
@@ -192,6 +206,8 @@ const root = {
      */
     'primary-dark': '#4D7C0F',
     'primary-light': '#8FD35F',
+    /** Start of the journey track's fill; fills only, never text. */
+    'primary-soft': '#CFEBB8',
     'primary-contrast': '#FFFFFF',
     secondary: '#0D74B8',
     'secondary-dark': '#0A5C92',
@@ -227,9 +243,19 @@ const root = {
     danger: '#DC2626',
     'danger-hover': '#B91C1C',
     'danger-bg': '#FDECEC',
+    /** Pastel fills for the status ribbon's Lost / Prospect segments. Never text. */
+    'danger-soft': '#FCA5A5',
+    /**
+     * The two ends of the pulse behind an overdue follow-up: `danger` at 25%
+     * and at 0%. Spelled out because a `color-mix()` inside `@keyframes` is
+     * wrapped in an `@supports` block by Tailwind, which browsers drop there.
+     */
+    'danger-glow': 'rgba(220,38,38,0.25)',
+    'danger-glow-fade': 'rgba(220,38,38,0)',
     info: '#0369A1',
     'info-main': '#0EA5E9',
     'info-bg': '#E8F4FB',
+    'info-soft': '#93C5FD',
     neutral: '#57534E',
     'neutral-bg': '#F5F5F4',
 
@@ -330,57 +356,47 @@ const root = {
   },
 
   /**
-   * ── CRM data grid (`Customers v2`) ────────────────────────────────────
+   * ── CRM data grid (`CrmTable`) ────────────────────────────────────────
    *
-   * The CRM list is the app's densest surface: a customer row, its site
-   * portfolio summary, and — when expanded — a nested sites sub-grid, all in
-   * one viewport. That density needs steps BETWEEN the DS type scale's
-   * `caption` (12px) and `overline` (11px), plus fixed column tracks and
-   * control heights that the DS scale has no opinion about.
+   * `CrmTable` is the app's densest surface: rows of several facts each, pills,
+   * and a toolbar, all in one viewport. That density needs steps BETWEEN the DS
+   * type scale's `caption` (12px) and `overline` (11px), plus fixed column
+   * tracks and control heights that the DS scale has no opinion about.
    *
    * They live here rather than inline in the component for the same reason
    * every other value does: the grid is pixel-matched to the design spec, and
    * a spec change must be a one-line edit in this file, not a hunt through
    * JSX. `crm-table/` reads these exclusively — it contains no raw px.
    *
-   * `-size` values are lengths; `-columns` are full `grid-template-columns`
-   * strings (commas inside `minmax()` are legal in a custom property value).
+   * The customers list was the first page built on these and has since moved
+   * off the grid (2026-10, one card per customer plus a focus panel). Its own
+   * tracks, and the nested sites sub-grid's, went with it.
+   *
+   * `-size` values are lengths; `col-*` are single `grid-template-columns`
+   * tracks (commas inside `minmax()` are legal in a custom property value).
    */
   crm: {
-    // ── Customer grid: column tracks ───────────────────────────────────
+    // ── Shared column tracks ───────────────────────────────────────────
     /**
      * One `grid-template-columns` track per column, authored individually
      * rather than as one composite string so hiding a column can rebuild the
-     * template from exactly the tracks that survive. The column defs in
-     * `customer-list-page.tsx` reference these by name; nothing concatenates
-     * them by hand.
+     * template from exactly the tracks that survive. Column defs reference
+     * these by name; nothing concatenates them by hand.
+     *
+     * These began as the customers grid's tracks. The customers list is no
+     * longer a grid (it reads the `calm` shadows/radius above instead); what
+     * is left here is what other CrmTable pages still borrow.
      *
      * Below `grid-min-width` the grid scrolls horizontally rather than crushing
-     * the portfolio bar and the mono numerics.
+     * its columns.
      */
     'col-select': '38px',
     'col-caret': '30px',
     'col-customer': 'minmax(196px,1.6fr)',
-    'col-contact': '148px',
-    'col-location': 'minmax(102px,0.9fr)',
-    'col-source': '116px',
     'col-portfolio': '178px',
     'col-status': '106px',
     'col-onboarded': '102px',
-    'col-owner': 'minmax(122px,1fr)',
-    /** Followup assignees — three avatars plus an overflow chip. */
-    'col-followup-assignees': '108px',
-    /** "Created by" — hidden by default, same width as owner. */
-    'col-creator': 'minmax(122px,1fr)',
     'col-actions': '40px',
-    // Quote list grid. Customer also carries the quote number on a second line.
-    'col-quote-customer': 'minmax(240px,1.6fr)',
-    'col-quote-property': 'minmax(120px,1fr)',
-    'col-quote-system': '88px',
-    'col-quote-value': '112px',
-    'col-quote-stage': '120px',
-    'col-quote-made-by': 'minmax(120px,1fr)',
-    'col-quote-dates': '132px',
     // Payment approval queue (design min-width 1180px)
     'col-approval-request': '152px',
     'col-approval-date': '96px',
@@ -522,13 +538,6 @@ const root = {
     'spine-width': '3px',
     'spine-radius': '0 3px 3px 0',
     'caret-size': '24px',
-    'avatar-size': '34px',
-    'owner-avatar-size': '22px',
-    'row-action-size': '30px',
-    'group-chip-height': '18px',
-    'group-chip-max-width': '150px',
-    'whatsapp-size': '22px',
-    'portfolio-bar-height': '4px',
     'status-pill-height': '23px',
     'status-dot-size': '5px',
 
@@ -551,35 +560,10 @@ const root = {
     'selection-bar-offset': '62px',
     'selection-bar-pad': '7px 8px 7px 18px',
 
-    // ── Nested sites panel ─────────────────────────────────────────────
-    /** Aligns the panel's left edge with the customer-name column. */
-    'sites-indent': '68px',
-    /** Column tracks for the nested sites sub-grid. */
-    'sites-col-site': 'minmax(252px,1.7fr)',
-    'sites-col-type': '112px',
-    'sites-col-stage': '128px',
-    'sites-col-quote': '112px',
-    'sites-col-cost': '118px',
-    'sites-col-discom': 'minmax(132px,1fr)',
-    /** Followup assignees on one site — three avatars plus overflow. */
-    'sites-col-followups': '96px',
-    'sites-col-status': '100px',
-    'sites-col-added': '88px',
-    'sites-col-actions': '34px',
-    'sites-gutter': '12px',
-    'sites-head-height': '34px',
-    'sites-row-height': '46px',
-    'sites-row-pad-y': '9px',
-    'sites-panel-pad': '11px 12px 12px',
-    'sites-icon-size': '26px',
-    'sites-primary-chip-height': '15px',
-    'sites-summary-pill-height': '24px',
+    // ── Small pills ────────────────────────────────────────────────────
+    /** `CrmStatusPill` at its `sm` and `xs` sizes. */
     'sites-quote-pill-height': '22px',
     'sites-status-pill-height': '21px',
-    'sites-stage-bar-height': '3px',
-    'sites-action-size': '26px',
-    /** The ambient brand glow behind the panel header. */
-    'sites-glow-size': '300px',
 
     // ── Page shell ─────────────────────────────────────────────────────
     'page-pad-x': '24px',
@@ -600,14 +584,8 @@ const root = {
     'text-row-sm': '11.5px',
     /** Row tertiary — site addresses, stage labels. */
     'text-row-xs': '11px',
-    /** Mono sub-labels — pincode, load, quoted total. */
-    'text-row-2xs': '10.5px',
-    /** Sub-grid overline. */
-    'text-overline-sm': '10px',
-    /** The `Primary` site badge. */
-    'text-overline-xs': '9px',
+    /** Tracking for a sub-grid overline. */
     'text-overline-sm-track': '0.1em',
-    'text-overline-xs-track': '0.06em',
   },
 } as const;
 

@@ -311,7 +311,9 @@ export class CustomerController {
       delete updateDto.resellerChangeReason;
     }
     const customer = await this.customerService.update(id, updateDto, currentUser.id, currentUser);
-    return toDto(CustomerResponseDto, customer, { groups: ['detail'] });
+    return toDto(CustomerResponseDto, await this.customerService.withArchivedAssignee(customer), {
+      groups: ['detail'],
+    });
   }
 
   /**
@@ -332,7 +334,9 @@ export class CustomerController {
   ): Promise<CustomerResponseDto> {
     if (resellerId) await this.ownership.assertOwns('customer', id, resellerId);
     const customer = await this.customerService.updateStatus(id, statusDto.status, currentUser.id);
-    return toDto(CustomerResponseDto, customer, { groups: ['detail'] });
+    return toDto(CustomerResponseDto, await this.customerService.withArchivedAssignee(customer), {
+      groups: ['detail'],
+    });
   }
 
   /**

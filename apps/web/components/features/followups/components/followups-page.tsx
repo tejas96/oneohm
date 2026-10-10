@@ -3,6 +3,7 @@
 import { Box, Button, Paper, Stack, Typography } from '@mui/material';
 import { FollowupStatus, type FollowupType, type LeadTemperature } from '@tejas96/shared/types';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useMemo, useState, type JSX } from 'react';
 
 import { dayBoundaries, SCOPE_LABELS, type FollowupScope } from '../constants';
@@ -73,8 +74,20 @@ function GatedScheduleButton({
 
 export function FollowupsPage(): JSX.Element {
   const { user } = useAuth();
-  const [scope, setScope] = useState<FollowupScope>('today');
-  const [owner, setOwner] = useState<FollowupOwner>('me');
+  /**
+   * `?scope=overdue&owner=all` opens the page on that tab for that owner — how
+   * the customers list links its company-wide "follow-ups overdue" count to the
+   * rows behind it. Read once; the tabs and the owner picker take over from
+   * there (the page keeps no other state in the URL).
+   */
+  const searchParams = useSearchParams();
+  const [scope, setScope] = useState<FollowupScope>(() => {
+    const requested = searchParams.get('scope') as FollowupScope | null;
+    return requested && SCOPES.includes(requested) ? requested : 'today';
+  });
+  const [owner, setOwner] = useState<FollowupOwner>(() =>
+    searchParams.get('owner') === 'all' ? 'all' : 'me',
+  );
   // Panel filters (status, type, site temperature, from/to). Empty = open work.
   const [filters, setFilters] = useState<FilterState>({});
   // Already debounced by the table, which owns the search input.

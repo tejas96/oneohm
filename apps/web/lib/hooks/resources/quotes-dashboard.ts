@@ -26,8 +26,10 @@ function toQuery(filters: DashboardFilters): string {
  * so two filter objects that send the same query share one entry.
  */
 const quoteResourceKeys = createResourceKeys('quotes');
-const quotesDashboardKeys = {
-  summary: (query: string) => [...quoteResourceKeys.all(), 'dashboard', query] as const,
+export const quotesDashboardKeys = {
+  /** Every dashboard request, whatever its filters — for invalidation. */
+  all: () => [...quoteResourceKeys.all(), 'dashboard'] as const,
+  summary: (query: string) => [...quotesDashboardKeys.all(), query] as const,
 };
 
 /** `keepPreviousData`: a filter change tweens old numbers to new ones, no skeleton flash. */

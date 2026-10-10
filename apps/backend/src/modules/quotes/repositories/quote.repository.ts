@@ -5,6 +5,11 @@ import { Repository, type EntityManager } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { systemSizeKwOf } from '../../../common/utils';
+import {
+  containsPattern,
+  customerNameMatchesSearch,
+  nameSearchParams,
+} from '../../customers/sql/name-search.sql';
 import { QuoteQueryDto } from '../dto/quotes/quote-query.dto';
 import { QuoteEntity } from '../entities/quote.entity';
 import { buildDealFactsFilter, DEAL_FACTS_CTE, dealFactsCte } from '../sql/deal-facts.sql';
@@ -92,17 +97,19 @@ export class QuoteRepository {
 
     // ===== Search (case-insensitive, multiple fields) =====
     if (query.search && query.search.length >= 2) {
-      const searchTerm = `%${query.search}%`;
+      // What the user typed is text: `%` and `_` in it are not wildcards.
+      const searchTerm = containsPattern(query.search);
       qb.andWhere(
         `(
-          quote.quoteNumber ILIKE :searchTerm OR
-          customer.firstName ILIKE :searchTerm OR
-          customer.lastName ILIKE :searchTerm OR
-          CONCAT(customer.firstName, ' ', customer.lastName) ILIKE :searchTerm OR
-          customer.phone ILIKE :searchTerm OR
-          property.propertyName ILIKE :searchTerm
+          quote.quoteNumber ILIKE :searchTerm ESCAPE '\\' OR
+          customer.firstName ILIKE :searchTerm ESCAPE '\\' OR
+          customer.lastName ILIKE :searchTerm ESCAPE '\\' OR
+          CONCAT(customer.firstName, ' ', customer.lastName) ILIKE :searchTerm ESCAPE '\\' OR
+          ${customerNameMatchesSearch('customer')} OR
+          customer.phone ILIKE :searchTerm ESCAPE '\\' OR
+          property.propertyName ILIKE :searchTerm ESCAPE '\\'
         )`,
-        { searchTerm },
+        { searchTerm, ...nameSearchParams(query.search) },
       );
     }
 

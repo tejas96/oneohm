@@ -19,8 +19,22 @@ import { IsNull, Repository, type EntityManager, type SelectQueryBuilder } from 
 
 import { CUSTOMER_NEEDS_FOLLOWUP } from './followup-predicates';
 import { systemSizeKwSqlRaw } from '../../../common/utils/transform.util';
+import { dealQuoteOrderSql } from '../../quotes/sql/deal-facts.sql';
 import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
+import {
+  containsPattern,
+  customerNameMatchesSearch,
+  nameSearchParams,
+} from '../sql/name-search.sql';
+import {
+  NEXT_FOLLOWUP_COLUMNS,
+  nextPendingFollowupSql,
+  toNextFollowup,
+  type NextFollowupColumns,
+  type NextFollowupRow,
+} from '../sql/next-followup.sql';
+import { SITE_JOURNEY_COLUMNS, siteJourneyCte, type SiteJourneyRow } from '../sql/site-journey.sql';
 
 /**
  * Per-customer roll-up of the site portfolio, as rendered by the CRM list's
@@ -42,6 +56,16 @@ export interface SitePortfolioSummary {
   totalSystemSizeKw: number;
   /** Σ final price across each site's current quote version. */
   totalPortfolioAmount: number;
+}
+
+/** What a customer's row says about follow-ups, for one page of the list. */
+export interface CustomerFollowupState {
+  /** The shared "needs follow-up" predicate — the same one the list filter uses. */
+  needsFollowup: boolean;
+  /** Pending follow-ups on the customer and on its sites that are not deleted. */
+  pendingFollowupCount: number;
+  /** The earliest of those, or null when nothing is pending. */
+  nextFollowup: NextFollowupRow | null;
 }
 
 /** Company-wide CRM roll-up behind the four KPI cards on the list page. */
@@ -68,11 +92,14 @@ const AWAITING_AGEING_DAYS = 7;
  * and that quote's current version (`cv`), for a query whose driving table is
  * aliased `prop`.
  *
- * Shared verbatim by the portfolio roll-up and the overview stats so both read
- * the same "latest quote" as the property list
- * (`CustomerPropertyRepository.findWithFilters`) — three places computing
- * "latest" differently is exactly how a KPI drifts from the table beneath it.
+ * Used by the overview stats, which read the same "latest quote" as the
+ * property list (`CustomerPropertyRepository.findWithFilters`).
  *
+ * The site-portfolio roll-up does NOT use this any more — it reads each site's
+ * DEAL quote (`dealQuoteJoins` below), the quote the journey and the site panel
+ * show. "Latest" is simply the newest quote, voided or not, so a roof with an
+ * accepted quote and a newer draft (or a newer voided one) reported a value on
+ * the customer's row that its own sites did not add up to.
  */
 function latestQuoteJoins(): string {
   return `
@@ -81,6 +108,30 @@ function latestQuoteJoins(): string {
       WHERE q2.property_id = prop.id
         AND q2.deleted_at IS NULL
       ORDER BY q2.created_at DESC, q2.id DESC
+      LIMIT 1
+    )
+    LEFT JOIN quote_versions cv ON cv.id = (
+      SELECT qv.id FROM quote_versions qv
+      WHERE qv.quote_id = latest_quote.id
+      ORDER BY qv.created_at DESC, qv.version_number DESC, qv.id DESC
+      LIMIT 1
+    )
+  `;
+}
+
+/**
+ * The same two joins — same aliases, `latest_quote` and `cv` — but resolving
+ * each property's DEAL quote: a live accepted quote, else the newest live one,
+ * else the newest voided one (`dealQuoteOrderSql`, the ordering the quote list
+ * and the site journey rank with). For the site-portfolio roll-up only.
+ */
+function dealQuoteJoins(): string {
+  return `
+    LEFT JOIN quotes latest_quote ON latest_quote.id = (
+      SELECT q2.id FROM quotes q2
+      WHERE q2.property_id = prop.id
+        AND q2.deleted_at IS NULL
+      ORDER BY ${dealQuoteOrderSql('q2')}
       LIMIT 1
     )
     LEFT JOIN quote_versions cv ON cv.id = (
@@ -242,15 +293,25 @@ const SITE_MATCHES_SEARCH = `EXISTS (
             WHERE site.customer_id = customer.id
               AND site.deleted_at IS NULL
               AND (
-                COALESCE(site.consumer_number, '') LIKE :consumerNumberTerm OR
-                LOWER(COALESCE(site.property_code, '')) LIKE :searchTerm
+                COALESCE(site.consumer_number, '') LIKE :consumerNumberTerm ESCAPE '\\' OR
+                LOWER(COALESCE(site.property_code, '')) LIKE :searchTerm ESCAPE '\\'
               )
           )`;
 
 /** Consumer numbers are stored as digits: "2799 9000 0951" or "2799-9000-0951" still match. */
 function siteSearchParams(search: string): { consumerNumberTerm: string } {
-  return { consumerNumberTerm: `%${search.replace(/[\s-]/g, '').toLowerCase()}%` };
+  return { consumerNumberTerm: containsPattern(search.replace(/[\s-]/g, '').toLowerCase()) };
 }
+
+/** See `customerNameMatchesSearch`. */
+const NAME_MATCHES_SEARCH = customerNameMatchesSearch('customer');
+
+/**
+ * Name A-Z / Z-A ignores white space typed before the first name, and ignores
+ * case: a database with a byte-order collation would list "ASHOK" before "Aadesh".
+ */
+const NAME_SORT_ALIAS = 'customer_name_sort';
+const NAME_SORT_SQL = `LOWER(regexp_replace(customer.first_name, '^\\s+', ''))`;
 
 @Injectable()
 export class CustomerProfileRepository {
@@ -445,6 +506,13 @@ export class CustomerProfileRepository {
    * customer with sites but no quotes reports real counts and a zero value
    * rather than dropping out.
    *
+   * Each site is read at its DEAL quote (`dealQuoteJoins`): a live accepted
+   * quote, else the newest live one, else the newest voided one — the quote
+   * the journey stage is read from and the one the site panel prints. So the
+   * row's ₹ and kW are the sum of what its site blocks show (a converted site
+   * still counts at its contract, below), and never the value of a later draft
+   * or of a voided quote while a live one exists.
+   *
    * System size prefers `total_wattage_wp / 1000` over `system_size_kw`: the
    * former is derived from the modules actually selected during quote
    * calculation (the real installed capacity); the latter is a user-entered
@@ -514,7 +582,7 @@ export class CustomerProfileRepository {
       LEFT JOIN projects pj ON pj.property_id = prop.id AND pj.deleted_at IS NULL
         AND pj.status <> 'cancelled'
       LEFT JOIN v_project_balance bal ON bal.project_id = pj.id
-      ${latestQuoteJoins()} WHERE prop.customer_id = ANY($1::uuid[])
+      ${dealQuoteJoins()} WHERE prop.customer_id = ANY($1::uuid[])
         AND prop.deleted_at IS NULL
       GROUP BY prop.customer_id, prop.status
       `,
@@ -543,6 +611,111 @@ export class CustomerProfileRepository {
     }
 
     return summaries;
+  }
+
+  /**
+   * Names of assignees whose user account has been archived (soft-deleted).
+   *
+   * The list query joins `customer.assignee` the ORM's way, which leaves out a
+   * soft-deleted user — so a customer still assigned to someone who has left
+   * came back with an `assigneeId` and no assignee, and read "Not assigned".
+   * It is assigned; the person is archived. Looked up separately, and only for
+   * the ids the join came back empty for, so the list query itself is untouched.
+   */
+  async getArchivedUserNames(userIds: string[]): Promise<Map<string, string>> {
+    const names = new Map<string, string>();
+    if (userIds.length === 0) return names;
+
+    const rows = await this.repository.manager.query<{ id: string; name: string | null }[]>(
+      `SELECT u.id,
+              NULLIF(btrim(concat_ws(' ', u.first_name, u.last_name)), '') AS name
+         FROM users u
+        WHERE u.id = ANY($1::uuid[])
+          AND u.deleted_at IS NOT NULL`,
+      [userIds],
+    );
+    for (const row of rows) {
+      if (row.name) names.set(row.id, row.name);
+    }
+    return names;
+  }
+
+  /**
+   * Every site of a page of customers, placed on its journey by the one SQL
+   * rule (`siteJourneyCte`) — the same rows the customer's own site list
+   * publishes, so the roll-up on a list row cannot disagree with the sites
+   * behind it. Grouped by customer; a customer with no site has no entry.
+   */
+  async getSiteJourneysByCustomerIds(
+    customerIds: string[],
+  ): Promise<Map<string, SiteJourneyRow[]>> {
+    const byCustomer = new Map<string, SiteJourneyRow[]>();
+    if (customerIds.length === 0) {
+      return byCustomer;
+    }
+
+    const rows = await this.repository.manager.query<SiteJourneyRow[]>(
+      `WITH ${siteJourneyCte({ customerIdsParam: '$1' })}
+       SELECT ${SITE_JOURNEY_COLUMNS} FROM site_journey sj`,
+      [customerIds],
+    );
+
+    for (const row of rows) {
+      const bucket = byCustomer.get(row.customerId);
+      if (bucket) bucket.push(row);
+      else byCustomer.set(row.customerId, [row]);
+    }
+    return byCustomer;
+  }
+
+  /**
+   * Follow-up state for a page of customers, in one query.
+   *
+   * `needsFollowup` is the SHARED predicate, evaluated per row — the list's
+   * "Needs follow-up" filter embeds the same text, so a row and the filter that
+   * returned it cannot disagree.
+   *
+   * The next follow-up is looked for on the customer itself and on its sites
+   * that are not deleted; a follow-up left behind on a deleted site is not
+   * something anyone can act on from this row.
+   */
+  async getFollowupStateByCustomerIds(
+    customerIds: string[],
+  ): Promise<Map<string, CustomerFollowupState>> {
+    if (customerIds.length === 0) {
+      return new Map();
+    }
+
+    const rows = await this.repository.manager.query<
+      Array<{ id: string; needs_followup: boolean } & NextFollowupColumns>
+    >(
+      `
+      SELECT c.id,
+             (${CUSTOMER_NEEDS_FOLLOWUP('c')}) AS needs_followup,
+             ${NEXT_FOLLOWUP_COLUMNS}
+        FROM customer_profiles c
+        LEFT JOIN LATERAL (${nextPendingFollowupSql(`
+               f.customer_id = c.id
+           AND (f.property_id IS NULL OR EXISTS (
+                 SELECT 1 FROM customer_properties site
+                  WHERE site.id = f.property_id
+                    AND site.customer_id = c.id
+                    AND site.deleted_at IS NULL))`)}) nf ON true
+       WHERE c.id = ANY($1::uuid[])
+      `,
+      [customerIds],
+    );
+
+    return new Map(
+      rows.map((row) => [
+        row.id,
+        {
+          needsFollowup: row.needs_followup,
+          pendingFollowupCount: row.pending_count,
+          nextFollowup: toNextFollowup(row),
+        },
+      ]),
+    );
   }
 
   /**
@@ -630,7 +803,7 @@ export class CustomerProfileRepository {
     limit = 20,
   ): Promise<[CustomerProfileEntity[], number]> {
     // Search across multiple fields (case-insensitive)
-    const searchTerm = `%${searchQuery.toLowerCase()}%`;
+    const searchTerm = containsPattern(searchQuery.toLowerCase());
 
     const qb = this.repository
       .createQueryBuilder('customer')
@@ -640,17 +813,18 @@ export class CustomerProfileRepository {
       .andWhere('customer.deletedAt IS NULL')
       .andWhere(
         `(
-          LOWER(customer.first_name) LIKE :searchTerm OR
-          LOWER(customer.last_name) LIKE :searchTerm OR
-          LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm OR
-          customer.phone LIKE :searchTerm OR
-          LOWER(customer.email) LIKE :searchTerm OR
-          LOWER(customer.city) LIKE :searchTerm OR
-          LOWER(COALESCE(customer.group_code, '')) LIKE :searchTerm OR
-          LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm OR
+          LOWER(customer.first_name) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(customer.last_name) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm ESCAPE '\\' OR
+          ${NAME_MATCHES_SEARCH} OR
+          customer.phone LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(customer.email) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(customer.city) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(COALESCE(customer.group_code, '')) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm ESCAPE '\\' OR
           ${SITE_MATCHES_SEARCH}
         )`,
-        { searchTerm, ...siteSearchParams(searchQuery) },
+        { searchTerm, ...nameSearchParams(searchQuery), ...siteSearchParams(searchQuery) },
       );
 
     // Filter by creator OR assignee (for field workers — covers both own-created and assigned)
@@ -721,20 +895,21 @@ export class CustomerProfileRepository {
 
     // ===== Search (case-insensitive, multiple fields) =====
     if (query.search && query.search.length >= 2) {
-      const searchTerm = `%${query.search.toLowerCase()}%`;
+      const searchTerm = containsPattern(query.search.toLowerCase());
       qb.andWhere(
         `(
-          LOWER(customer.first_name) LIKE :searchTerm OR
-          LOWER(customer.last_name) LIKE :searchTerm OR
-          LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm OR
-          customer.phone LIKE :searchTerm OR
-          LOWER(customer.email) LIKE :searchTerm OR
-          LOWER(customer.city) LIKE :searchTerm OR
-          LOWER(COALESCE(customer.group_code, '')) LIKE :searchTerm OR
-          LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm OR
+          LOWER(customer.first_name) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(customer.last_name) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm ESCAPE '\\' OR
+          ${NAME_MATCHES_SEARCH} OR
+          customer.phone LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(customer.email) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(customer.city) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(COALESCE(customer.group_code, '')) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm ESCAPE '\\' OR
           ${SITE_MATCHES_SEARCH}
         )`,
-        { searchTerm, ...siteSearchParams(query.search) },
+        { searchTerm, ...nameSearchParams(query.search), ...siteSearchParams(query.search) },
       );
     }
 
@@ -915,7 +1090,15 @@ export class CustomerProfileRepository {
     // ===== Sorting (using safe field mapping) =====
     const sortColumn = SORT_FIELD_MAP[query.sortBy];
     const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
-    qb.orderBy(sortColumn, sortDirection);
+    if (query.sortBy === CustomerSortField.FIRST_NAME) {
+      // TypeORM pages with a DISTINCT sub-query, so an expression must be a
+      // selected alias before it can be sorted on. The raw column breaks ties.
+      qb.addSelect(NAME_SORT_SQL, NAME_SORT_ALIAS)
+        .orderBy(NAME_SORT_ALIAS, sortDirection)
+        .addOrderBy(sortColumn, sortDirection);
+    } else {
+      qb.orderBy(sortColumn, sortDirection);
+    }
 
     // Split getCount + getMany to avoid TypeORM getManyAndCount crash
     // when leftJoinAndSelect is combined with orderBy on a joined alias.

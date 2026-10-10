@@ -9,18 +9,15 @@ import { Box, Button, Skeleton, Stack, Tooltip, Typography } from '@mui/material
 import { FollowupStatus, PropertyStatus } from '@tejas96/shared/types';
 import { type JSX, useMemo, useState } from 'react';
 
-import {
-  LEAD_SOURCE_LABELS,
-  getSiteLifecycle,
-  QUOTE_STATUS_TONE,
-  type CustomerDetailTab,
-} from '../../constants';
+import { handledBy } from '../../components/list/format';
+import { LEAD_SOURCE_LABELS, getSiteLifecycle, type CustomerDetailTab } from '../../constants';
 import {
   type Customer,
   type CustomerPropertyResponse,
   useAssignCustomer,
   useCustomerFollowups,
 } from '../../hooks';
+import { siteQuoteFacts } from '../../utils';
 import {
   DetailCard,
   EmptyPane,
@@ -81,10 +78,16 @@ function AssigneeField({ customer }: { customer: Customer }): JSX.Element {
   );
   const { data: employees = [], isLoading } = useEmployees({ enabled: pickerActive });
 
+  // Active employees only: an archived user is never one of the choices.
   const options = employees.map((employee) => ({
     id: employee.userId,
     displayName: [employee.user?.firstName, employee.user?.lastName].filter(Boolean).join(' '),
   }));
+  /*
+   * Still assigned to someone whose account is archived: the name is shown,
+   * marked "(archived)", and cannot be picked. The customer is not unassigned.
+   */
+  const handler = handledBy(customer);
 
   if (!pickerActive) {
     return (
@@ -100,6 +103,14 @@ function AssigneeField({ customer }: { customer: Customer }): JSX.Element {
               : []
           }
         />
+        {handler.archived && (
+          <Typography
+            component="span"
+            sx={{ fontSize: '0.8125rem', color: 'var(--ds-text-secondary)', flexShrink: 0 }}
+          >
+            (archived)
+          </Typography>
+        )}
         <Button
           size="small"
           variant="text"
@@ -124,7 +135,9 @@ function AssigneeField({ customer }: { customer: Customer }): JSX.Element {
       optionsLoading={isLoading}
       loading={assignMutation.isPending}
       allowUnassign
-      placeholder="Unassigned"
+      // The archived assignee is not among `options`, so the trigger falls back
+      // to this text: their name stays on screen while a replacement is chosen.
+      placeholder={handler.archived && handler.label ? handler.label : 'Unassigned'}
       triggerMinWidth={0}
     />
   );
@@ -378,18 +391,15 @@ function SiteRow({
   const lifecycle = getSiteLifecycle(property);
   // A converted site is worth what its contract says today, not what its quote
   // said at signing — see lib/utils/site-value.ts.
-  const value = siteValue(property);
-  const quoteStatus = property.latestQuoteStatus;
-  const quoteTone: DetailTone = quoteStatus
-    ? (QUOTE_STATUS_TONE[quoteStatus] ?? 'neutral')
-    : 'neutral';
+  // The quote beside the stage is the one the stage was read from (the deal
+  // quote), so the pill, the value and the size cannot contradict the rail.
+  const quote = siteQuoteFacts(property);
+  const value = siteValue({ ...property, latestQuoteFinalPrice: quote?.finalPrice });
 
   const meta = [
     property.city,
     toTitleLabel(property.propertyType),
-    property.latestQuoteSystemSizeKw
-      ? `${formatSystemSize(property.latestQuoteSystemSizeKw)} kW`
-      : null,
+    quote?.systemSizeKw ? `${formatSystemSize(quote.systemSizeKw)} kW` : null,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -453,10 +463,10 @@ function SiteRow({
 
       <Box sx={{ minWidth: 0 }}>
         <SiteStageBar property={property} />
-        {quoteStatus && (
+        {quote?.statusLabel && (
           <Stack gap={0.25} sx={{ mt: 0.625 }}>
             <Stack direction="row" alignItems="center" gap={0.75}>
-              <TonePill label={toTitleLabel(quoteStatus)} tone={quoteTone} />
+              <TonePill label={quote.statusLabel} tone={quote.tone} />
               {value.label ? (
                 <Mono sx={{ fontSize: '0.6875rem', color: 'var(--ds-text-secondary)' }}>
                   {value.label}

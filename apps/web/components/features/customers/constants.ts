@@ -87,25 +87,6 @@ export const CUSTOMER_STATUS_TONE: Record<CustomerStatus, CrmTone> = {
   lost: 'danger',
 };
 
-/**
- * Lead source → DS tone.
- *
- * Grouped by how the lead reached us: inbound (info), earned (accent), paid
- * (warning), and everything else neutral. Sources not listed — the enum allows
- * free-text values under `other` — fall back to neutral.
- */
-export const LEAD_SOURCE_TONE: Record<string, CrmTone> = {
-  website: 'info',
-  social_media: 'info',
-  referral: 'accent',
-  advertisement: 'warning',
-  exhibition: 'warning',
-  cold_call: 'warning',
-  walk_in: 'neutral',
-  reseller: 'neutral',
-  other: 'neutral',
-};
-
 /** Site (property) status → DS tone. */
 export const PROPERTY_STATUS_TONE: Record<PropertyStatus, CrmTone> = {
   [PropertyStatus.ACTIVE]: 'info',
@@ -114,19 +95,6 @@ export const PROPERTY_STATUS_TONE: Record<PropertyStatus, CrmTone> = {
   [PropertyStatus.INACTIVE]: 'danger',
   [PropertyStatus.LOST]: 'danger',
 };
-
-/**
- * Order the site-status segments are stacked in the portfolio distribution bar.
- * Fixed rather than derived from object key order so the bar's reading — won
- * on the left, lost on the right — is stable across rows.
- */
-export const PROPERTY_STATUS_BAR_ORDER: readonly PropertyStatus[] = [
-  PropertyStatus.CONVERTED,
-  PropertyStatus.ACTIVE,
-  PropertyStatus.PENDING_VERIFICATION,
-  PropertyStatus.INACTIVE,
-  PropertyStatus.LOST,
-];
 
 /** Latest-quote status → DS tone. */
 export const QUOTE_STATUS_TONE: Record<QuoteStatus, CrmTone> = {
@@ -147,56 +115,6 @@ export const PROPERTY_TYPE_TONE: Record<PropertyType, CrmTone> = {
   [PropertyType.AGRICULTURAL]: 'success',
   [PropertyType.INSTITUTIONAL]: 'warning',
 };
-
-// ============================================================================
-// CRM list: site pipeline stage
-// ============================================================================
-
-/**
- * The site journey, in order. The expanded row shows the current rung plus a
- * progress bar of `(index + 1) / length`.
- */
-export const SITE_STAGES = [
-  'Lead captured',
-  'Survey done',
-  'Design ready',
-  'Quote sent',
-  'Converted',
-  'Commissioned',
-] as const;
-
-/** Quote states that mean the quote has actually gone out to the customer. */
-const QUOTE_SENT_STATUSES: readonly string[] = ['sent', 'viewed', 'accepted', 'rejected'];
-
-/**
- * Derive a site's stage index from the facts already on the property record.
- *
- * There is no `stage` column — the stage IS the highest milestone the site has
- * reached, so it is computed from the linked project, converted status, quote
- * state and survey completion rather than stored and risked going stale.
- * Checked highest-first: a converted site is converted regardless of what its
- * quote says, and a commissioned one regardless of both.
- */
-export function getSiteStageIndex(property: {
-  status?: string;
-  projectStatus?: string;
-  latestQuoteId?: string;
-  latestQuoteStatus?: string;
-  surveyDone?: boolean;
-  siteVisitDone?: boolean;
-}): number {
-  // Conversion is not the end of the journey — handover is. Only a finished
-  // project fills the rail; a cancelled one stops where it stopped rather than
-  // reading as progress, and the status pill carries the bad news.
-  if (property.projectStatus === ProjectStatus.COMPLETED) return 5;
-  if (property.status === PropertyStatus.CONVERTED) return 4;
-  if (property.latestQuoteStatus && QUOTE_SENT_STATUSES.includes(property.latestQuoteStatus)) {
-    return 3;
-  }
-  if (property.latestQuoteId) return 2;
-  if (property.surveyDone || property.siteVisitDone) return 1;
-  return 0;
-}
 
 // ============================================================================
 // CRM list: what a site is actually doing

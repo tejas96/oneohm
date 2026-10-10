@@ -4,6 +4,23 @@ import { LEAD_SOURCE_NOT_SET } from '@tejas96/shared/utils';
 import { systemSizeKwSqlRaw } from '../../../common/utils/transform.util';
 
 /**
+ * Which of a property's quotes is its deal quote, as `ORDER BY` text — row 1 is
+ * the deal quote: a live accepted quote, else the newest live quote, else the
+ * newest voided one. The site journey (customers/sql/site-journey.sql.ts) ranks
+ * with this same text, so a site's stage and its deal can never pick two
+ * different quotes.
+ *
+ * @param alias table alias for `quotes`
+ */
+export function dealQuoteOrderSql(alias: string): string {
+  return `CASE WHEN ${alias}.voided_at IS NULL AND ${alias}.status = 'accepted' THEN 2
+               WHEN ${alias}.voided_at IS NULL THEN 1
+               ELSE 0 END DESC,
+          ${alias}.created_at DESC,
+          ${alias}.id DESC`;
+}
+
+/**
  * One row per DEAL — a customer property with at least one non-deleted quote —
  * with every fact the quotes dashboard and the quote list filters need.
  *
@@ -32,11 +49,7 @@ export function dealFactsCte(opts: { quoteIdsParam?: string } = {}): string {
       ROW_NUMBER() OVER (
         PARTITION BY q.property_id
         ORDER BY
-          CASE WHEN q.voided_at IS NULL AND q.status = 'accepted' THEN 2
-               WHEN q.voided_at IS NULL THEN 1
-               ELSE 0 END DESC,
-          q.created_at DESC,
-          q.id DESC
+          ${dealQuoteOrderSql('q')}
       ) AS rn,
       MIN(q.created_at) OVER (PARTITION BY q.property_id) AS first_quote_at
     FROM quotes q

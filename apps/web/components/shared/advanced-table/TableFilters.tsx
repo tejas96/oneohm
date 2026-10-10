@@ -1,5 +1,6 @@
 'use client';
 
+import CloseIcon from '@mui/icons-material/Close';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import FilterListOffIcon from '@mui/icons-material/FilterListOff';
 import {
@@ -8,23 +9,27 @@ import {
   Box,
   Button,
   Chip,
+  Drawer,
   FormControl,
   IconButton,
   MenuItem,
   OutlinedInput,
   Popover,
+  Portal,
   Select,
   Stack,
   TextField,
   Tooltip,
-  Typography,
+  useMediaQuery,
 } from '@mui/material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { type JSX, memo, useCallback, useEffect, useRef, useState } from 'react';
+import { type JSX, memo, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 
 import type { ColumnConfig, FilterState, FilterType } from './types';
 import { toSortableString } from './utils';
+
+import { cn, formatDate } from '@/lib/utils';
 
 // ============================================================================
 // Types
@@ -36,6 +41,14 @@ interface TableFiltersProps<TRow> {
   anchorEl: HTMLButtonElement | null;
   onClose: () => void;
   onFilterChange: (filters: FilterState) => void;
+  /**
+   * `popover` (default) hangs the panel under its button. `drawer` opens it as
+   * a side panel that stays open beside the list, so the rows can be watched
+   * while they filter; a page makes room for it by reading `--filters-drawer-w`.
+   */
+  presentation?: 'popover' | 'drawer';
+  /** Drawer only: what the list holds now ("265 customers"), shown under the title. */
+  resultLabel?: string;
 }
 
 /** Above MUI Popover (1300) so autocomplete menus are not clipped inside filter panels. */
@@ -174,15 +187,11 @@ function TextFilterControl<TRow>({
   return (
     <TextField
       size="small"
-      placeholder={column.filterPlaceholder ?? `Search ${column.headerName}...`}
+      placeholder={column.filterPlaceholder ?? 'Type to search'}
       value={localValue}
       onChange={(e) => handleChange(e.target.value)}
       fullWidth
-      slotProps={{
-        input: {
-          className: 'rounded-lg text-xs bg-background',
-        },
-      }}
+      slotProps={{ htmlInput: { 'aria-label': column.headerName } }}
     />
   );
 }
@@ -198,25 +207,22 @@ function SelectFilterControl<TRow>({
         value={typeof value === 'string' ? value : ''}
         onChange={(e) => onChange(column.field, e.target.value)}
         displayEmpty
-        input={<OutlinedInput className="rounded-lg text-xs bg-background" />}
+        input={<OutlinedInput />}
+        SelectDisplayProps={{ 'aria-label': column.headerName }}
         renderValue={(selected) => {
-          if (!selected) {
-            return (
-              <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
-                Select {column.headerName}
-              </span>
-            );
-          }
+          // The label above already names the field; the empty state only has
+          // to say that nothing is picked.
+          if (!selected) return <span className="text-foreground-tertiary">Any</span>;
           const opt = (column.filterOptions ?? []).find((o) => String(o.value) === selected);
-          return <span className="text-xs">{opt?.label ?? selected}</span>;
+          return opt?.label ?? selected;
         }}
       >
         <MenuItem value="">
-          <span className="text-xs italic">All</span>
+          <span className="text-foreground-tertiary">Any</span>
         </MenuItem>
         {(column.filterOptions ?? []).map((opt) => (
           <MenuItem key={String(opt.value)} value={opt.value}>
-            <span className="text-xs">{opt.label}</span>
+            {opt.label}
           </MenuItem>
         ))}
       </Select>
@@ -235,7 +241,13 @@ function DateFilterControl<TRow>({
   return (
     <DatePicker
       value={parseDateLike(value)}
+      // Day first, like every other date field in the app (`MUIDatePicker`).
+      format="dd/MM/yyyy"
       onChange={(date) => {
+        // The picker reports every keystroke. A year still being typed ("2" of
+        // "2026") is a real date in year 2; filtering on it rewrote the field
+        // under the cursor. Wait for a whole year.
+        if (date && (Number.isNaN(date.getTime()) || date.getFullYear() < 1000)) return;
         const emittedValue = date ? toLocalDate(date) : null;
         onChange(column.field, emittedValue);
       }}
@@ -243,12 +255,7 @@ function DateFilterControl<TRow>({
         textField: {
           size: 'small',
           fullWidth: true,
-          placeholder: `Select ${column.headerName}`,
-          slotProps: {
-            input: {
-              className: 'rounded-lg text-xs bg-background',
-            },
-          },
+          placeholder: 'Any date',
         },
       }}
     />
@@ -277,13 +284,9 @@ function RangeFilterControl<TRow>({
         value={range.min ?? ''}
         onChange={(e) => handleChange('min', e.target.value)}
         fullWidth
-        slotProps={{
-          input: {
-            className: 'rounded-lg text-xs bg-background',
-          },
-        }}
+        slotProps={{ htmlInput: { 'aria-label': `${column.headerName} minimum` } }}
       />
-      <span className="text-text-secondary text-xs">–</span>
+      <span className="text-[13px] text-text-secondary">–</span>
       <TextField
         size="small"
         placeholder="Max"
@@ -291,11 +294,7 @@ function RangeFilterControl<TRow>({
         value={range.max ?? ''}
         onChange={(e) => handleChange('max', e.target.value)}
         fullWidth
-        slotProps={{
-          input: {
-            className: 'rounded-lg text-xs bg-background',
-          },
-        }}
+        slotProps={{ htmlInput: { 'aria-label': `${column.headerName} maximum` } }}
       />
     </div>
   );
@@ -370,7 +369,7 @@ function ActiveFilterChips<TRow>({
     }
     if (col.filterType === 'date') {
       const parsedDate = parseDateLike(value);
-      return `${col.headerName}: ${parsedDate ? parsedDate.toLocaleDateString() : toSortableString(value)}`;
+      return `${col.headerName}: ${parsedDate ? formatDate(parsedDate) : toSortableString(value)}`;
     }
     if (optionLabel) {
       return `${col.headerName}: ${optionLabel}`;
@@ -439,6 +438,148 @@ export function TableFiltersToggle({
 }
 
 // ============================================================================
+// Panel look
+// ============================================================================
+
+/** A long filter list goes two-up so it fits one screen instead of a long scroll. */
+const TWO_COLUMNS_ABOVE = 6;
+
+/**
+ * White fields on a sunken panel — the same "card on canvas" contrast the list
+ * pages use. The DS field fill (`surface-alt`) is nearly white, so on a white
+ * panel the fields could not be told from the panel. One rule here styles
+ * every control, including the ones a page supplies through `renderFilter`,
+ * so no field in the panel can be the odd one out.
+ */
+const FILTER_PANEL_SX = {
+  p: 0,
+  overflowY: 'auto',
+  backgroundColor: 'var(--ds-canvas-sunken)',
+  '& .MuiOutlinedInput-root': { height: 36, backgroundColor: 'var(--ds-surface)' },
+  // The theme pins an Autocomplete's field to its own height; keep every row level.
+  '& .MuiAutocomplete-root .MuiOutlinedInput-root': { height: 36 },
+  '& .MuiOutlinedInput-root.Mui-disabled': { backgroundColor: 'var(--ds-canvas)' },
+  // Date pickers are a different MUI field that the theme does not restyle:
+  // left alone they keep MUI's 1px outline and no fill, the one odd field here.
+  '& .MuiPickersOutlinedInput-root': {
+    height: 36,
+    borderRadius: 'var(--radius-input-functional, 10px)',
+    backgroundColor: 'var(--ds-surface)',
+    boxShadow: 'var(--shadow-e1)',
+    fontSize: '0.8125rem',
+    '&:hover': { boxShadow: 'var(--shadow-e2)' },
+    '&.Mui-focused': {
+      boxShadow: 'var(--shadow-e2), 0 0 0 2px var(--ds-surface), 0 0 0 4px var(--ds-accent)',
+    },
+  },
+  '& .MuiPickersOutlinedInput-notchedOutline': { border: 'none' },
+  // `text-tertiary` (2.5:1) is the browser-facing default for placeholders.
+  '& input::placeholder': { color: 'var(--ds-neutral-500)', opacity: 1 },
+} as const;
+
+/** The panel opens under its button and scrolls inside, so it never covers the toolbar. */
+function panelMaxHeight(anchorEl: HTMLElement | null): number {
+  if (!anchorEl || typeof window === 'undefined') return 480;
+  const room = window.innerHeight - anchorEl.getBoundingClientRect().bottom - 24;
+  return Math.max(280, Math.min(640, room));
+}
+
+// ============================================================================
+// Side panel
+// ============================================================================
+
+/** A page that wants the list to move over reads this (it is unset while closed). */
+const DRAWER_WIDTH_VAR = '--filters-drawer-w';
+/** Narrow enough that a 1366px laptop still has room for a list's wide row. */
+const DRAWER_WIDTH = 280;
+
+interface FilterDrawerProps {
+  open: boolean;
+  anchorEl: HTMLElement | null;
+  onClose: () => void;
+  children: ReactNode;
+}
+
+/**
+ * The filters as a side panel. In a desktop-size window it docks beside the
+ * list with no shade — the filters apply as they change, so the rows stay in
+ * view and usable while it is open. In a smaller window there is no room
+ * beside the list, so it slides over it as an ordinary modal drawer.
+ */
+function FilterDrawer({ open, anchorEl, onClose, children }: FilterDrawerProps): JSX.Element {
+  const docked = useMediaQuery('(min-width:1024px)');
+  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const paperRef = useRef<HTMLDivElement>(null);
+
+  // Docked: publish the width so the page moves over instead of sitting under it.
+  useEffect(() => {
+    if (!open || !docked) return undefined;
+    const root = document.documentElement;
+    root.style.setProperty(DRAWER_WIDTH_VAR, `${DRAWER_WIDTH}px`);
+    return () => {
+      root.style.removeProperty(DRAWER_WIDTH_VAR);
+    };
+  }, [open, docked]);
+
+  // A docked panel is not modal, so MUI moves no focus for it. Send focus in
+  // when it opens (it is at the end of the document, far from its button) and
+  // back to the button when it closes.
+  const buttonRef = useRef<HTMLElement | null>(null);
+  if (anchorEl) buttonRef.current = anchorEl;
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (!docked) {
+      wasOpen.current = open;
+      return;
+    }
+    if (open && !wasOpen.current) paperRef.current?.focus({ preventScroll: true });
+    if (!open && wasOpen.current) buttonRef.current?.focus({ preventScroll: true });
+    wasOpen.current = open;
+  }, [open, docked]);
+
+  const drawer = (
+    <Drawer
+      anchor="right"
+      variant={docked ? 'persistent' : 'temporary'}
+      open={open}
+      onClose={onClose}
+      // No slide for someone who asked the system for less motion.
+      transitionDuration={reducedMotion ? 0 : undefined}
+      slotProps={{
+        paper: {
+          ref: paperRef,
+          tabIndex: -1,
+          role: docked ? 'complementary' : 'dialog',
+          'aria-label': 'Filters',
+          sx: {
+            ...FILTER_PANEL_SX,
+            outline: 'none',
+            border: 'none',
+            maxWidth: '100%',
+            ...(docked
+              ? {
+                  width: DRAWER_WIDTH,
+                  top: 'var(--header-height, 48px)',
+                  height: 'calc(100vh - var(--header-height, 48px))',
+                  // Under the global header and any modal, over the page.
+                  zIndex: 40,
+                  boxShadow: '-8px 0 24px rgba(16,24,40,0.06)',
+                }
+              : { width: 340, boxShadow: 'var(--shadow-e3)' }),
+          },
+        },
+      }}
+    >
+      {children}
+    </Drawer>
+  );
+
+  // Docked drawers render in place; send this one to the body so no ancestor's
+  // stacking context or transform can trap a `position: fixed` panel.
+  return docked ? <Portal>{drawer}</Portal> : drawer;
+}
+
+// ============================================================================
 // Main export
 // ============================================================================
 
@@ -448,6 +589,8 @@ function TableFiltersInner<TRow>({
   anchorEl,
   onClose,
   onFilterChange,
+  presentation = 'popover',
+  resultLabel,
 }: TableFiltersProps<TRow>): JSX.Element | null {
   const filterableColumns = allColumns.filter((c) => c.filterable);
 
@@ -474,7 +617,106 @@ function TableFiltersInner<TRow>({
     onFilterChangeRef.current({});
   }, []);
 
+  // The panel opens without taking focus (disableAutoFocus), so MUI never gets
+  // an Escape pressed while focus is still on the page. Close it from there.
+  // Inside the panel (or a menu it opened) MUI already handles Escape itself.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const isOpen = Boolean(anchorEl);
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest('[role="presentation"], [role="dialog"], [role="listbox"]')) return;
+      // Escape in a text box elsewhere on the page (the list's search) belongs
+      // to that box — it clears it — and must not also close this panel.
+      if (
+        target?.matches('input, textarea, select, [contenteditable="true"]') &&
+        !target.closest('.MuiPaper-root[aria-label="Filters"]')
+      ) {
+        return;
+      }
+      onCloseRef.current();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
   if (filterableColumns.length === 0) return null;
+
+  const activeCount = Object.values(filters).filter((v) => v !== '' && v != null).length;
+  const asDrawer = presentation === 'drawer';
+  const twoColumns = !asDrawer && filterableColumns.length > TWO_COLUMNS_ABOVE;
+
+  const header = (
+    <div className="sticky top-0 z-[1] flex items-start justify-between gap-3 bg-background-tertiary px-5 pb-3 pt-4">
+      <div className="min-w-0">
+        <p className="m-0 flex items-baseline gap-2 text-[14px] font-semibold text-text-primary">
+          Filters
+          {activeCount > 0 ? (
+            <span className="text-[12px] font-medium text-text-secondary">
+              {activeCount} active
+            </span>
+          ) : null}
+        </p>
+        {asDrawer && resultLabel ? (
+          <p aria-live="polite" className="m-0 mt-0.5 text-[12px] text-text-secondary">
+            {resultLabel}
+          </p>
+        ) : null}
+      </div>
+      <div className="flex flex-none items-center gap-0.5">
+        <Button
+          size="small"
+          variant="text"
+          color="inherit"
+          disabled={activeCount === 0}
+          onClick={handleClearAll}
+          startIcon={<FilterListOffIcon className="size-3.5" />}
+          className="min-w-0 px-2 py-1 text-[12px] font-semibold normal-case text-text-secondary hover:text-error"
+        >
+          Reset
+        </Button>
+        {asDrawer ? (
+          <IconButton size="small" aria-label="Close filters" onClick={onClose}>
+            <CloseIcon className="size-4" />
+          </IconButton>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  const fields = (
+    <div
+      className={cn('grid grid-cols-1 gap-x-4 gap-y-3.5 px-5 pb-5', twoColumns && 'sm:grid-cols-2')}
+    >
+      {filterableColumns.map((col) => {
+        const value = filters[col.field];
+        const isSet = value !== '' && value != null;
+        return (
+          <div
+            key={col.field}
+            className={cn(
+              'flex min-w-0 flex-col gap-1.5',
+              twoColumns && col.filterWide && 'sm:col-span-2',
+            )}
+          >
+            <span
+              className={cn(
+                'flex items-center gap-1.5 text-[12px] font-medium',
+                isSet ? 'text-text-primary' : 'text-text-secondary',
+              )}
+            >
+              {col.headerName}
+              {isSet ? <i aria-hidden className="block size-1.5 rounded-full bg-primary" /> : null}
+            </span>
+            <FilterControl column={col} value={value} onChange={handleChange} />
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -486,58 +728,44 @@ function TableFiltersInner<TRow>({
           onClearAll={handleClearAll}
         />
 
-        <Popover
-          open={Boolean(anchorEl)}
-          anchorEl={anchorEl}
-          onClose={onClose}
-          disableAutoFocus
-          disableEnforceFocus
-          disableRestoreFocus
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'right',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-          }}
-          slotProps={{
-            paper: {
-              className: 'p-4 rounded-xl shadow-e3 min-w-[320px] max-w-[400px]',
-              sx: {
-                maxHeight: 480,
-                overflowY: 'auto',
+        {asDrawer ? (
+          <FilterDrawer open={isOpen} anchorEl={anchorEl} onClose={onClose}>
+            {header}
+            {fields}
+          </FilterDrawer>
+        ) : (
+          <Popover
+            open={isOpen}
+            anchorEl={anchorEl}
+            onClose={onClose}
+            disableAutoFocus
+            disableEnforceFocus
+            disableRestoreFocus
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            slotProps={{
+              paper: {
+                'aria-label': 'Filters',
+                sx: {
+                  ...FILTER_PANEL_SX,
+                  borderRadius: '16px',
+                  boxShadow: 'var(--shadow-e3)',
+                  width: `min(calc(100vw - 32px), ${twoColumns ? 600 : 340}px)`,
+                  maxHeight: panelMaxHeight(anchorEl),
+                },
               },
-            },
-          }}
-        >
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between pb-2">
-              <Typography className="text-xs font-semibold text-text-primary">Filters</Typography>
-              <Button
-                size="small"
-                variant="text"
-                color="inherit"
-                onClick={handleClearAll}
-                startIcon={<FilterListOffIcon className="size-3.5" />}
-                className="text-[11px] font-semibold text-text-secondary hover:text-error normal-case p-0 min-w-0"
-              >
-                Reset
-              </Button>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              {filterableColumns.map((col) => (
-                <div key={col.field} className="flex flex-col gap-1">
-                  <span className="text-[11px] font-semibold text-text-secondary">
-                    {col.headerName}
-                  </span>
-                  <FilterControl column={col} value={filters[col.field]} onChange={handleChange} />
-                </div>
-              ))}
-            </div>
-          </div>
-        </Popover>
+            }}
+          >
+            {header}
+            {fields}
+          </Popover>
+        )}
       </>
     </LocalizationProvider>
   );

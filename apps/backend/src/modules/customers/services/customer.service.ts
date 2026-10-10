@@ -18,6 +18,7 @@ import {
   LossReason,
   UserProfileType,
   UserStatus,
+  type CustomerJourney,
 } from '@tejas96/shared/types';
 import { normalizePhoneToE164 } from '@tejas96/shared/utils';
 import { DataSource, In, IsNull } from 'typeorm';
@@ -46,6 +47,7 @@ import { CustomerProfileEntity } from '../entities/customer-profile.entity';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 import {
   CustomerProfileRepository,
+  type CustomerFollowupState,
   type CustomerOverviewStats,
   type SitePortfolioSummary,
 } from '../repositories/customer-profile.repository';
@@ -55,6 +57,7 @@ import {
   type FollowupAssignee,
   type FollowupAssigneeRow,
 } from '../repositories/followup.repository';
+import { rollUpCustomerJourney } from '../sql/site-journey.sql';
 
 type CustomerWithDeleteInfo = CustomerProfileEntity & {
   deleteBlockReasons?: string[];
@@ -75,6 +78,21 @@ type CustomerWithDeleteInfo = CustomerProfileEntity & {
    * two rows meaning two different things.
    */
   ownFollowupAssignees?: FollowupAssignee[];
+  /**
+   * The customer's sites rolled up onto the six-step journey (list only). Built
+   * from the same per-site rows the customer's site list publishes.
+   */
+  journey?: CustomerJourney;
+  /**
+   * The assignee's name when their user account is archived. The ORM join
+   * drops an archived user, so `assignee` is empty for them; this keeps the
+   * customer from reading as unassigned — on the list and on its own page.
+   */
+  archivedAssigneeName?: string;
+  /** Follow-up state for the list row: the shared predicate, the count, the next one. */
+  needsFollowup?: CustomerFollowupState['needsFollowup'];
+  pendingFollowupCount?: CustomerFollowupState['pendingFollowupCount'];
+  nextFollowup?: CustomerFollowupState['nextFollowup'];
 };
 
 /**
@@ -196,9 +214,30 @@ export class CustomerService {
       throw new NotFoundException(`Customer with ID ${id} not found`);
     }
 
-    const deleteBlockReasons = await this.customerRepository.getCustomerDeleteBlockers(id);
+    const [deleteBlockReasons, withAssignee] = await Promise.all([
+      this.customerRepository.getCustomerDeleteBlockers(id),
+      this.withArchivedAssignee(customer),
+    ]);
 
-    return { ...customer, deleteBlockReasons };
+    return { ...withAssignee, deleteBlockReasons };
+  }
+
+  /**
+   * Put the assignee's name back on a single customer whose assignee is an
+   * archived user — the same lookup the list does for a page (`enrichListPage`).
+   * Costs a query only for a customer in that state; every other customer is
+   * returned as it came.
+   *
+   * Every single-customer response the web writes into its detail cache goes
+   * through this (the read, and the two updates that return the record), so
+   * the name does not disappear from the page after an edit.
+   */
+  async withArchivedAssignee<T extends CustomerProfileEntity>(
+    customer: T,
+  ): Promise<T & { archivedAssigneeName?: string }> {
+    if (!customer.assigneeId || customer.assignee) return customer;
+    const names = await this.customerRepository.getArchivedUserNames([customer.assigneeId]);
+    return { ...customer, archivedAssigneeName: names.get(customer.assigneeId) };
   }
 
   /**
@@ -251,9 +290,9 @@ export class CustomerService {
    * Attach the per-row extras the list UI needs but the paged entity query does
    * not carry: delete eligibility and the site-portfolio roll-up.
    *
-   * Both are batched over the page's customer ids and run concurrently — they
-   * touch different tables and neither depends on the other, so serialising
-   * them would only add latency. Two fixed queries per page, never per row.
+   * All are batched over the page's customer ids and run concurrently — none
+   * depends on another, so serialising them would only add latency. A fixed
+   * number of queries per page, never per row.
    */
   private async enrichListPage(
     data: CustomerProfileEntity[],
@@ -261,10 +300,29 @@ export class CustomerService {
   ): Promise<{ data: CustomerWithDeleteInfo[]; total: number }> {
     const customerIds = data.map((customer) => customer.id);
 
-    const [blockerMap, portfolioMap, assigneeRows] = await Promise.all([
+    // Assigned, but the join found no user: that user is archived. Usually none.
+    const archivedAssigneeIds = [
+      ...new Set(
+        data
+          .filter((customer) => customer.assigneeId && !customer.assignee)
+          .map((customer) => customer.assigneeId as string),
+      ),
+    ];
+
+    const [
+      blockerMap,
+      portfolioMap,
+      assigneeRows,
+      journeyMap,
+      followupStateMap,
+      archivedAssigneeNames,
+    ] = await Promise.all([
       this.customerRepository.getCustomerDeleteBlockersBatch(customerIds),
       this.customerRepository.getSitePortfolioSummaries(customerIds),
       this.followupRepository.findAssigneesForCustomers(customerIds),
+      this.customerRepository.getSiteJourneysByCustomerIds(customerIds),
+      this.customerRepository.getFollowupStateByCustomerIds(customerIds),
+      this.customerRepository.getArchivedUserNames(archivedAssigneeIds),
     ]);
 
     const assigneesByCustomer = new Map<string, FollowupAssigneeRow[]>();
@@ -275,15 +333,26 @@ export class CustomerService {
     }
 
     return {
-      data: data.map((customer) => ({
-        ...customer,
-        deleteBlockReasons: blockerMap.get(customer.id) ?? [],
-        sitePortfolio: portfolioMap.get(customer.id) ?? EMPTY_SITE_PORTFOLIO,
-        followupAssignees: rollUpAssignees(assigneesByCustomer.get(customer.id) ?? []),
-        ownFollowupAssignees: rollUpAssignees(
-          (assigneesByCustomer.get(customer.id) ?? []).filter((row) => row.propertyId === null),
-        ),
-      })),
+      data: data.map((customer) => {
+        const followupState = followupStateMap.get(customer.id);
+        return {
+          ...customer,
+          deleteBlockReasons: blockerMap.get(customer.id) ?? [],
+          sitePortfolio: portfolioMap.get(customer.id) ?? EMPTY_SITE_PORTFOLIO,
+          followupAssignees: rollUpAssignees(assigneesByCustomer.get(customer.id) ?? []),
+          ownFollowupAssignees: rollUpAssignees(
+            (assigneesByCustomer.get(customer.id) ?? []).filter((row) => row.propertyId === null),
+          ),
+          journey: rollUpCustomerJourney(journeyMap.get(customer.id) ?? [], customer.status),
+          archivedAssigneeName:
+            customer.assigneeId && !customer.assignee
+              ? archivedAssigneeNames.get(customer.assigneeId)
+              : undefined,
+          needsFollowup: followupState?.needsFollowup ?? false,
+          pendingFollowupCount: followupState?.pendingFollowupCount ?? 0,
+          nextFollowup: followupState?.nextFollowup ?? null,
+        };
+      }),
       total,
     };
   }

@@ -3,6 +3,8 @@ import { CustomerStatus } from '@tejas96/shared/types';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { CustomerPropertyResponseDto } from './customer-property-response.dto';
+import { NextFollowupDto } from './next-followup.dto';
+import { JourneyStepsDto } from './site-journey.dto';
 import { toNum } from '../../../common/utils';
 
 /**
@@ -36,8 +38,10 @@ export class SitePortfolioDto {
 
   @ApiProperty({
     description:
-      'Total system size (kW) across each site’s current quote version. Prefers the ' +
-      'modules actually selected during quote calculation over the quote’s declared size.',
+      'Total system size (kW) across each site’s DEAL quote (live accepted, else newest ' +
+      'live, else newest voided — the quote the journey and the site panel show), at its ' +
+      'current version. Prefers the modules actually selected during quote calculation ' +
+      'over the quote’s declared size.',
     example: 27.5,
   })
   @Expose()
@@ -46,13 +50,75 @@ export class SitePortfolioDto {
 
   @ApiProperty({
     description:
-      'What the customer’s sites are worth: a converted site at its contract, ' +
-      'everything else at its current quote version',
+      'What the customer’s sites are worth: a site with a live project at its contract, ' +
+      'everything else at its DEAL quote (live accepted, else newest live, else newest ' +
+      'voided) at its current version',
     example: 1845200,
   })
   @Expose()
   @Transform(({ value }) => toNum(value) ?? 0)
   totalPortfolioAmount!: number;
+}
+
+/**
+ * A customer's sites rolled up onto the six-step journey (Lead captured →
+ * Survey done → Quote drafted → Quote sent → Won → Commissioned).
+ *
+ * Rolled up from the per-site rows of the one SQL rule
+ * (`sql/site-journey.sql.ts`), the same rows the customer's site list
+ * publishes. Mirrors `CustomerJourney` in the shared types.
+ */
+@Exclude()
+export class CustomerJourneyDto {
+  @ApiProperty({ description: 'Non-deleted sites; 0 means no site yet' })
+  @Expose()
+  siteCount!: number;
+
+  @ApiProperty({
+    description:
+      'Step reached, 0–5: the highest among sites still in play, or — when lost — ' +
+      'the highest any site reached',
+    minimum: 0,
+    maximum: 5,
+  })
+  @Expose()
+  stageIndex!: number;
+
+  @ApiProperty({
+    description: 'Every site is lost, or the customer is marked lost and has sites',
+  })
+  @Expose()
+  lost!: boolean;
+
+  @ApiProperty({
+    type: [Number],
+    description: 'Sites still in play at each of the six steps',
+    example: [0, 1, 0, 2, 1, 0],
+  })
+  @Expose()
+  stageCounts!: number[];
+
+  @ApiProperty({ description: 'Sites that are lost' })
+  @Expose()
+  lostSites!: number;
+
+  @ApiProperty({
+    type: () => JourneyStepsDto,
+    description:
+      'Each step fact OR-ed over the sites the stage was read from: the sites in play, ' +
+      'or every site when lost',
+  })
+  @Expose()
+  @Type(() => JourneyStepsDto)
+  steps!: JourneyStepsDto;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'The reason on the most recently lost site; null when none was recorded',
+  })
+  @Expose()
+  lostReason!: string | null;
 }
 
 /**
@@ -276,6 +342,45 @@ export class CustomerResponseDto {
   @Type(() => FollowupAssigneeDto)
   ownFollowupAssignees?: FollowupAssigneeDto[];
 
+  /**
+   * The four below are on list responses only, computed for the page's
+   * customers in two queries. Single-customer reads omit them.
+   */
+  @ApiPropertyOptional({
+    type: () => CustomerJourneyDto,
+    description: 'Where this customer’s sites stand on the six-step journey (list responses only)',
+  })
+  @Expose()
+  @Type(() => CustomerJourneyDto)
+  journey?: CustomerJourneyDto;
+
+  /**
+   * The same predicate the list's "needs follow-up" filter applies, evaluated
+   * for this row — so a row and the filter that returned it cannot disagree.
+   */
+  @ApiPropertyOptional({
+    description:
+      'An open site, or a site-less lead, with no pending followup (list responses only)',
+  })
+  @Expose()
+  needsFollowup?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Pending followups on this customer and its non-deleted sites (list responses only)',
+  })
+  @Expose()
+  pendingFollowupCount?: number;
+
+  @ApiPropertyOptional({
+    type: () => NextFollowupDto,
+    nullable: true,
+    description: 'The earliest of those; null when nothing is pending (list responses only)',
+  })
+  @Expose()
+  @Type(() => NextFollowupDto)
+  nextFollowup?: NextFollowupDto | null;
+
   @ApiPropertyOptional({
     type: [String],
     description: 'Reasons this customer cannot be permanently deleted (empty when deletable)',
@@ -334,13 +439,28 @@ export class CustomerResponseDto {
   @Expose()
   assigneeId?: string;
 
-  @ApiPropertyOptional({ description: 'Full name of the assigned user' })
+  @ApiPropertyOptional({
+    description:
+      'Full name of the assigned user. Also set when that user is archived ' +
+      '(see assigneeArchived) — the customer is still assigned.',
+  })
   @Expose()
   @Transform(({ obj }) => {
-    if (!obj.assigneeId || !obj.assignee) return undefined;
+    if (!obj.assigneeId) return undefined;
+    // An archived user is left out of the join; the service supplies the name.
+    if (!obj.assignee) return obj.archivedAssigneeName || undefined;
     const firstName = obj.assignee.firstName || '';
     const lastName = obj.assignee.lastName || '';
     return `${firstName} ${lastName}`.trim() || undefined;
   })
   assigneeName?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'The assigned user is archived. Show the name as archived; do not treat the ' +
+      'customer as unassigned.',
+  })
+  @Expose()
+  @Transform(({ obj }) => Boolean(obj.assigneeId && !obj.assignee && obj.archivedAssigneeName))
+  assigneeArchived?: boolean;
 }
