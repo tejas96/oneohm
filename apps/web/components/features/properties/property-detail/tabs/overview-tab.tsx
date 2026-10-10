@@ -11,6 +11,7 @@ import {
   ChangeRequestStatus,
   FollowupStatus,
   LeadTemperature,
+  ProjectStatus,
   PropertyStatus,
   QuoteStatus,
   SiteStatus,
@@ -298,7 +299,15 @@ function JourneyCard({
   quoteLocked: boolean;
 }): JSX.Element {
   const headline = quoteSummary.headline;
-  const hasProject = Boolean(property.project?.id ?? property.projectId);
+  // With no live quote, the quote the journey above was read from is still
+  // worth naming — a voided one is how a reopened site got to "Quote sent".
+  const pastQuote = !headline ? (property.dealQuote ?? null) : null;
+  // A cancelled project is not this site's project any more: cancelling
+  // releases the roof. It is shown as cancelled, and the next action returns.
+  const anyProject = Boolean(property.project?.id ?? property.projectId);
+  const projectCancelled =
+    anyProject && (property.projectStatus ?? property.project?.status) === ProjectStatus.CANCELLED;
+  const hasProject = anyProject && !projectCancelled;
   const isLost = property.status === PropertyStatus.LOST;
 
   const milestones: Milestone[] = [
@@ -332,15 +341,23 @@ function JourneyCard({
       label: 'Quote',
       detail: headline
         ? `${headline.quoteNumber} · ${toTitleLabel(headline.status)}`
-        : 'None raised',
+        : pastQuote
+          ? `${pastQuote.number} · ${toTitleLabel(pastQuote.status)}${
+              pastQuote.voided ? ' · voided' : ''
+            }`
+          : 'None raised',
       done: Boolean(headline),
       tone: headline ? (QUOTE_STATUS_TONE[headline.status] ?? 'neutral') : 'neutral',
     },
     {
       label: 'Project',
-      detail: hasProject ? (property.project?.name ?? 'Linked') : 'Not converted',
+      detail: hasProject
+        ? (property.project?.name ?? 'Linked')
+        : projectCancelled
+          ? 'Cancelled'
+          : 'Not converted',
       done: hasProject,
-      tone: hasProject ? 'success' : 'neutral',
+      tone: hasProject ? 'success' : projectCancelled ? 'danger' : 'neutral',
     },
   ];
 
@@ -349,7 +366,7 @@ function JourneyCard({
     if (isLost || hasProject) return null;
     if (!headline) {
       return {
-        label: 'Create the first quote',
+        label: pastQuote ? 'Create quote' : 'Create the first quote',
         onClick: onCreateQuote,
         disabled: isInactiveCustomer || quoteLocked,
       };

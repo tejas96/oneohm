@@ -19,8 +19,9 @@ import {
 } from '@mui/material';
 import type { JSX } from 'react';
 
-import { getSiteLifecycle, QUOTE_STATUS_TONE } from '../../constants';
+import { getSiteLifecycle } from '../../constants';
 import type { CustomerPropertyResponse } from '../../hooks';
+import { siteQuoteFacts } from '../../utils';
 import {
   DetailCard,
   EmptyPane,
@@ -29,7 +30,6 @@ import {
   RowSkeleton,
   SectionHeading,
   TonePill,
-  type DetailTone,
 } from '../primitives';
 import { SiteStageBar } from '../site-stage';
 import { detailTableSx, tableCardSx } from '../styles';
@@ -143,11 +143,13 @@ export function PropertiesTab({
                 const lifecycle = getSiteLifecycle(property);
                 // A converted site is worth what its contract says today, not
                 // what its quote said at signing — see lib/utils/site-value.ts.
-                const value = siteValue(property);
-                const quoteStatus = property.latestQuoteStatus;
-                const quoteTone: DetailTone = quoteStatus
-                  ? (QUOTE_STATUS_TONE[quoteStatus] ?? 'neutral')
-                  : 'neutral';
+                // The quote beside the stage is the one the stage was read from
+                // (the deal quote) — status, value and size alike.
+                const quote = siteQuoteFacts(property);
+                const value = siteValue({
+                  ...property,
+                  latestQuoteFinalPrice: quote?.finalPrice,
+                });
 
                 return (
                   <TableRow
@@ -193,18 +195,18 @@ export function PropertiesTab({
                     </TableCell>
 
                     <TableCell>
-                      {quoteStatus ? (
+                      {quote?.statusLabel ? (
                         <Stack gap={0.5} alignItems="flex-start">
-                          <TonePill label={toTitleLabel(quoteStatus)} tone={quoteTone} dot />
+                          <TonePill label={quote.statusLabel} tone={quote.tone} dot />
                           <Stack direction="row" alignItems="baseline" gap={0.75}>
                             {value.label ? (
                               <Mono sx={{ fontWeight: 500 }}>{value.label}</Mono>
                             ) : null}
-                            {property.latestQuoteSystemSizeKw ? (
+                            {quote.systemSizeKw ? (
                               <Typography
                                 sx={{ fontSize: '0.6875rem', color: 'var(--ds-text-tertiary)' }}
                               >
-                                {formatSystemSize(property.latestQuoteSystemSizeKw)} kW
+                                {formatSystemSize(quote.systemSizeKw)} kW
                               </Typography>
                             ) : null}
                           </Stack>
@@ -220,7 +222,7 @@ export function PropertiesTab({
                             </Typography>
                           ) : null}
                         </Stack>
-                      ) : property.latestQuoteVoided && value.label ? (
+                      ) : quote?.voided && value.label ? (
                         /* Quoted, then the deal died. "Not quoted" would erase
                            the most useful thing about a lost site — that we
                            tried, and for how much. The status is deliberately

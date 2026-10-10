@@ -7,8 +7,9 @@ import { bankLabel } from '@tejas96/shared/constants';
 import NextLink from 'next/link';
 import type { JSX } from 'react';
 
-import { getSiteLifecycle, PROPERTY_TYPE_TONE, QUOTE_STATUS_TONE } from '../constants';
+import { getSiteLifecycle, PROPERTY_TYPE_TONE } from '../constants';
 import { type CustomerPropertyResponse } from '../hooks';
+import { siteQuoteFacts } from '../utils';
 import { FieldGrid, Mono, SectionHeading, TonePill, type DetailTone } from './primitives';
 import { SiteStageBar } from './site-stage';
 
@@ -55,10 +56,9 @@ export function PropertyDetailDrawer({
   const typeTone: DetailTone = property
     ? (PROPERTY_TYPE_TONE[property.propertyType] ?? 'neutral')
     : 'neutral';
-  const quoteStatus = property?.latestQuoteStatus;
-  const quoteTone: DetailTone = quoteStatus
-    ? (QUOTE_STATUS_TONE[quoteStatus] ?? 'neutral')
-    : 'neutral';
+  // The quote the stage above was read from (the deal quote), not the newest
+  // live one — the two differ on a roof with an accepted quote and a later draft.
+  const quote = property ? siteQuoteFacts(property) : null;
 
   return (
     <Drawer
@@ -225,18 +225,18 @@ export function PropertyDetailDrawer({
               />
             </Section>
 
-            {quoteStatus && (
-              <Section title="Latest quote">
+            {quote?.statusLabel && (
+              <Section title="Quote">
                 <FieldGrid
                   fields={[
                     {
                       label: 'Quote number',
-                      value: property.latestQuoteNumber || '—',
+                      value: quote.number || '—',
                       mono: true,
                     },
                     {
                       label: 'Status',
-                      value: <TonePill label={toTitleLabel(quoteStatus)} tone={quoteTone} dot />,
+                      value: <TonePill label={quote.statusLabel} tone={quote.tone} dot />,
                     },
                     {
                       // This panel is about the QUOTE, so the quote's own price
@@ -249,11 +249,7 @@ export function PropertyDetailDrawer({
                       label: 'Value',
                       value: (
                         <Stack gap={0.25}>
-                          <Mono>
-                            {property.latestQuoteFinalPrice
-                              ? formatCurrency(property.latestQuoteFinalPrice)
-                              : '—'}
-                          </Mono>
+                          <Mono>{quote.finalPrice ? formatCurrency(quote.finalPrice) : '—'}</Mono>
                           {contractMovedNote(property) ? (
                             <Typography
                               sx={{
@@ -270,14 +266,18 @@ export function PropertyDetailDrawer({
                     },
                     {
                       label: 'System size',
-                      value: property.latestQuoteSystemSizeKw
-                        ? `${formatSystemSize(property.latestQuoteSystemSizeKw)} kW`
+                      value: quote.systemSizeKw
+                        ? `${formatSystemSize(quote.systemSizeKw)} kW`
                         : '—',
                       mono: true,
                     },
                     {
                       label: 'Quoted on',
-                      value: property.latestQuoteDate ? formatDate(property.latestQuoteDate) : '—',
+                      // The record only carries the newest live quote's date.
+                      value:
+                        property.latestQuoteDate && property.latestQuoteId === quote.id
+                          ? formatDate(property.latestQuoteDate)
+                          : '—',
                       mono: true,
                     },
                   ]}

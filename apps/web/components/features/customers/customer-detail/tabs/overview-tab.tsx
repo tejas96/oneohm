@@ -9,18 +9,14 @@ import { Box, Button, Skeleton, Stack, Tooltip, Typography } from '@mui/material
 import { FollowupStatus, PropertyStatus } from '@tejas96/shared/types';
 import { type JSX, useMemo, useState } from 'react';
 
-import {
-  LEAD_SOURCE_LABELS,
-  getSiteLifecycle,
-  QUOTE_STATUS_TONE,
-  type CustomerDetailTab,
-} from '../../constants';
+import { LEAD_SOURCE_LABELS, getSiteLifecycle, type CustomerDetailTab } from '../../constants';
 import {
   type Customer,
   type CustomerPropertyResponse,
   useAssignCustomer,
   useCustomerFollowups,
 } from '../../hooks';
+import { siteQuoteFacts } from '../../utils';
 import {
   DetailCard,
   EmptyPane,
@@ -378,18 +374,15 @@ function SiteRow({
   const lifecycle = getSiteLifecycle(property);
   // A converted site is worth what its contract says today, not what its quote
   // said at signing — see lib/utils/site-value.ts.
-  const value = siteValue(property);
-  const quoteStatus = property.latestQuoteStatus;
-  const quoteTone: DetailTone = quoteStatus
-    ? (QUOTE_STATUS_TONE[quoteStatus] ?? 'neutral')
-    : 'neutral';
+  // The quote beside the stage is the one the stage was read from (the deal
+  // quote), so the pill, the value and the size cannot contradict the rail.
+  const quote = siteQuoteFacts(property);
+  const value = siteValue({ ...property, latestQuoteFinalPrice: quote?.finalPrice });
 
   const meta = [
     property.city,
     toTitleLabel(property.propertyType),
-    property.latestQuoteSystemSizeKw
-      ? `${formatSystemSize(property.latestQuoteSystemSizeKw)} kW`
-      : null,
+    quote?.systemSizeKw ? `${formatSystemSize(quote.systemSizeKw)} kW` : null,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -453,10 +446,10 @@ function SiteRow({
 
       <Box sx={{ minWidth: 0 }}>
         <SiteStageBar property={property} />
-        {quoteStatus && (
+        {quote?.statusLabel && (
           <Stack gap={0.25} sx={{ mt: 0.625 }}>
             <Stack direction="row" alignItems="center" gap={0.75}>
-              <TonePill label={toTitleLabel(quoteStatus)} tone={quoteTone} />
+              <TonePill label={quote.statusLabel} tone={quote.tone} />
               {value.label ? (
                 <Mono sx={{ fontSize: '0.6875rem', color: 'var(--ds-text-secondary)' }}>
                   {value.label}
