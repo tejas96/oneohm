@@ -149,6 +149,16 @@ scroll under it. In a smaller window that block would cover most of the screen,
 so only the search bar pins. A row that takes keyboard focus scrolls clear of
 the pinned block. The refetch bar rides on the pinned search bar.
 
+**Filter panel look (owner request, 2026-10-10; shared `TableFilters`, so the
+quote, project, service and follow-up lists get it too).** White fields on a
+sunken panel — the fields were the panel's own colour and could not be seen.
+Every control has one height and one style, date pickers included. More than
+six filters go two-up; a from–to range takes both columns (`filterWide`). The
+header ("Filters · N active", Reset) stays in view while the panel scrolls; a
+filter that is set shows a dot by its label. The empty state reads "Any" /
+"Type to search" instead of repeating the label. Same filters, same requests.
+A typed date applies only once its year is whole.
+
 **Header.** "Customers" + one sentence:
 `<customers> customers · <sites> sites · <₹> in open quotes · <N> follow-ups overdue`
 and "Add customer" (gated `customers.create`, → `/onboarding/new`).

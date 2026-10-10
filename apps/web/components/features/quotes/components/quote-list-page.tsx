@@ -745,6 +745,7 @@ export function QuoteListPage(): JSX.Element {
       if (DAY_RANGE_KEYS.includes(col.field)) {
         return {
           ...col,
+          filterWide: true,
           renderFilter: ({ value, onChange }) => (
             <DateRangeFilter value={value} onChange={onChange} />
           ),
