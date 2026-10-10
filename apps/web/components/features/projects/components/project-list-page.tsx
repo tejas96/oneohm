@@ -769,9 +769,8 @@ const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
           ) : daysLeft == null ? (
             EMPTY_LINE_2
           ) : daysLeft < 0 ? (
-            <span className={`${LINE_2_BASE} tabular-nums text-error`}>
-              due {plural(-daysLeft, 'day')} ago
-            </span>
+            // Grey, not red: old due dates are common, and a red column on every row is noise.
+            <span className={`${LINE_2} tabular-nums`}>due {plural(-daysLeft, 'day')} ago</span>
           ) : (
             <span className={`${LINE_2} tabular-nums`}>
               {daysLeft === 0 ? 'due today' : `${plural(daysLeft, 'day')} left`}
