@@ -173,6 +173,24 @@ with ×, Esc or the Filters button, which shows a dark ring while it is open.
 - Under 1024 px: an ordinary modal drawer with a shade.
 The customer panel opens above it.
 
+**Calm list kit and edge cases (2026-10-10).** The frame, toolbar, sort menu,
+pager, states and row card live in `apps/web/components/shared/calm-list/`;
+the customers and quote lists run on it (projects and follow-ups to follow).
+Rules every list on the kit gets:
+- A page past the end (the last row of the last page was deleted, an old link)
+  steps back to the last page that has rows, replacing the URL.
+- A click that ends a text selection does not open the row, so a number can be
+  copied.
+- A page change scrolls back to the top.
+- A search term shorter than the API's minimum (2) shows "Type 2 or more
+  letters to search." instead of an unfiltered list with no explanation.
+- Esc in a text box outside the filter panel does not close the panel; the
+  panel does not slide for a user who asked for reduced motion.
+- Search (owner-approved changes to the query): the typed name also matches
+  first + middle + last name, in the customer list and the quote list
+  (`sql/name-search.sql.ts`, one rule for both); `%` and `_` in what the user
+  typed are those characters, not wildcards.
+
 **Header.** "Customers" + one sentence:
 `<customers> customers · <sites> sites · <₹> in open quotes · <N> follow-ups overdue`
 and "Add customer" (gated `customers.create`, → `/onboarding/new`).

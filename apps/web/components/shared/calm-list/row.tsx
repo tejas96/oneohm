@@ -18,6 +18,14 @@ export const ABOVE = 'relative z-[1]';
 /** For a link or button inside a row: its click is its own, not the row's. */
 export const stopRowClick = (event: MouseEvent): void => event.stopPropagation();
 
+/**
+ * True when the click that just happened ended a text selection — the user
+ * dragged across a name or a number to copy it. That is not "open this row".
+ */
+export function clickSelectedText(): boolean {
+  return Boolean(window.getSelection()?.toString());
+}
+
 /** A small pill after a name: a status, a group, "Loan". */
 export const ROW_TAG =
   'truncate rounded-pill px-2 py-0.5 text-[11px] font-medium leading-[13px] text-foreground-secondary';
@@ -72,6 +80,7 @@ export function CalmRow({
   const cover = useRef<HTMLButtonElement>(null);
 
   const open = (event: MouseEvent): void => {
+    if (clickSelectedText()) return;
     if (href) {
       // Keep the browser's own "open in a new tab" for a modified click.
       if (event.metaKey || event.ctrlKey || event.shiftKey) window.open(href, '_blank');

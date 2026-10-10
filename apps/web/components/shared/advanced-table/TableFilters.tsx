@@ -508,6 +508,7 @@ interface FilterDrawerProps {
  */
 function FilterDrawer({ open, anchorEl, onClose, children }: FilterDrawerProps): JSX.Element {
   const docked = useMediaQuery('(min-width:1024px)');
+  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const paperRef = useRef<HTMLDivElement>(null);
 
   // Docked: publish the width so the page moves over instead of sitting under it.
@@ -542,6 +543,8 @@ function FilterDrawer({ open, anchorEl, onClose, children }: FilterDrawerProps):
       variant={docked ? 'persistent' : 'temporary'}
       open={open}
       onClose={onClose}
+      // No slide for someone who asked the system for less motion.
+      transitionDuration={reducedMotion ? 0 : undefined}
       slotProps={{
         paper: {
           ref: paperRef,
@@ -626,6 +629,14 @@ function TableFiltersInner<TRow>({
       if (event.key !== 'Escape' || event.defaultPrevented) return;
       const target = event.target instanceof Element ? event.target : null;
       if (target?.closest('[role="presentation"], [role="dialog"], [role="listbox"]')) return;
+      // Escape in a text box elsewhere on the page (the list's search) belongs
+      // to that box — it clears it — and must not also close this panel.
+      if (
+        target?.matches('input, textarea, select, [contenteditable="true"]') &&
+        !target.closest('.MuiPaper-root[aria-label="Filters"]')
+      ) {
+        return;
+      }
       onCloseRef.current();
     };
     document.addEventListener('keydown', handleKeyDown);

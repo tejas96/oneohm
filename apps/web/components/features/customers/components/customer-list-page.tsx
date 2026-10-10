@@ -37,6 +37,7 @@ import {
   ListPager,
   ListSkeleton,
   ListToolbar,
+  useKeepPageInRange,
   useListEntrance,
 } from '@/components/shared/calm-list';
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
@@ -184,6 +185,8 @@ export function CustomerListPage(): JSX.Element {
   // Rows rise in once. Later changes swap in without replaying it.
   const entering = useListEntrance(rows.length);
 
+  useKeepPageInRange({ page, pageSize, total, isFetching, onPageChange: urlState.setPage });
+
   // ── Focus panel: one customer at a time, by id so it follows a refetch. ──
   const [openId, setOpenId] = useState<string | null>(null);
   const openCustomer = useMemo(
@@ -251,6 +254,7 @@ export function CustomerListPage(): JSX.Element {
       }
       isFetching={isFetching}
       isLoading={isLoading}
+      page={page}
       footer={
         <ListPager
           page={page}

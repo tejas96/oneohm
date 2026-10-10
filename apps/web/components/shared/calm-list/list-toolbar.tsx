@@ -31,6 +31,11 @@ export interface ListToolbarProps<TRow> {
   searchPlaceholder: string;
   /** What a screen reader calls the search box: "Search customers". */
   searchLabel: string;
+  /**
+   * The fewest letters the list's API searches on (most lists: 2). A shorter
+   * term is not sent, so the toolbar says so instead of looking broken.
+   */
+  searchMinLength?: number;
   filterColumns: ColumnConfig<TRow>[];
   filters: TableUrlFilterRecord;
   onFilterChange: (filters: TableUrlFilterRecord) => void;
@@ -58,6 +63,7 @@ export function ListToolbar<TRow>({
   onSearchChange,
   searchPlaceholder,
   searchLabel,
+  searchMinLength = 2,
   filterColumns,
   filters,
   onFilterChange,
@@ -168,6 +174,12 @@ export function ListToolbar<TRow>({
         ) : null}
         {children}
       </div>
+
+      {query.trim().length > 0 && query.trim().length < searchMinLength ? (
+        <p role="status" className="m-0 px-4 pt-1.5 text-[12px] text-foreground-tertiary">
+          Type {searchMinLength} or more letters to search.
+        </p>
+      ) : null}
 
       {/* Chips sit 4px in from the list's edge; the shared row brings its own 16px. */}
       <div className="-mx-3">

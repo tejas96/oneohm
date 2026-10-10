@@ -22,7 +22,12 @@ import { RowActionsMenu } from './row-actions-menu';
 import { ROW_CELL, ROW_GRID } from './row-layout';
 import type { Customer } from '../../hooks/use-customers';
 
-import { MAX_STAGGER_STEPS, STAGGER_MS, TicketIcon } from '@/components/shared/calm-list';
+import {
+  clickSelectedText,
+  MAX_STAGGER_STEPS,
+  STAGGER_MS,
+  TicketIcon,
+} from '@/components/shared/calm-list';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { cn, formatCurrency, toTitleLabel } from '@/lib/utils';
 
@@ -100,6 +105,7 @@ function CustomerRowInner({
   const followupSpoken = [followup.title, followup.sub].filter(Boolean).join(', ');
 
   const open = (): void => {
+    if (clickSelectedText()) return;
     openButton.current?.focus({ preventScroll: true });
     onOpen(customer);
   };

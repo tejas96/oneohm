@@ -56,6 +56,34 @@ export function useListEntrance(rowCount: number): boolean {
   return !entered;
 }
 
+/**
+ * Keeps the page inside the list. A page past the end (the last row of the
+ * last page was deleted, or an old link) would otherwise show an empty list
+ * that reads as "nothing here yet". Once the count is known, it steps back to
+ * the last page that has rows, replacing the URL rather than adding to history.
+ */
+export function useKeepPageInRange({
+  page,
+  pageSize,
+  total,
+  isFetching,
+  onPageChange,
+}: {
+  /** Zero-based. */
+  page: number;
+  pageSize: number;
+  /** The list's count; undefined until a response has it. */
+  total: number | undefined;
+  isFetching: boolean;
+  onPageChange: (page: number, options?: { replace?: boolean }) => void;
+}): void {
+  useEffect(() => {
+    if (isFetching || total === undefined) return;
+    const lastPage = Math.max(0, Math.ceil(total / pageSize) - 1);
+    if (page > lastPage) onPageChange(lastPage, { replace: true });
+  }, [page, pageSize, total, isFetching, onPageChange]);
+}
+
 export interface CalmListPageProps {
   /** The title and anything else that pins above the search bar (a ribbon, quick views). */
   header: ReactNode;
@@ -75,6 +103,11 @@ export interface CalmListPageProps {
   footer?: ReactNode;
   /** Panels and dialogs: they sit outside the column. */
   overlays?: ReactNode;
+  /**
+   * The list's page. When it changes, the window goes back to the top: after
+   * "Next" at the foot of a page the new page should start at its first row.
+   */
+  page?: number;
 }
 
 /**
@@ -91,7 +124,16 @@ export function CalmListPage({
   children,
   footer,
   overlays,
+  page,
 }: CalmListPageProps): JSX.Element {
+  const shownPage = useRef(page);
+  useEffect(() => {
+    if (shownPage.current === page) return;
+    shownPage.current = page;
+    // `auto` follows the document's own scroll behaviour (and its reduced-motion rule).
+    if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [page]);
+
   // ── Pinned header: its height is published so a row that takes keyboard
   // focus is scrolled clear of it, never underneath (ROW_FOCUS_CLEARS_PINNED). ──
   const pageRef = useRef<HTMLDivElement>(null);

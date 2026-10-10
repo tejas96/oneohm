@@ -23,6 +23,11 @@ import { dealQuoteOrderSql } from '../../quotes/sql/deal-facts.sql';
 import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
 import {
+  containsPattern,
+  customerNameMatchesSearch,
+  nameSearchParams,
+} from '../sql/name-search.sql';
+import {
   NEXT_FOLLOWUP_COLUMNS,
   nextPendingFollowupSql,
   toNextFollowup,
@@ -288,29 +293,18 @@ const SITE_MATCHES_SEARCH = `EXISTS (
             WHERE site.customer_id = customer.id
               AND site.deleted_at IS NULL
               AND (
-                COALESCE(site.consumer_number, '') LIKE :consumerNumberTerm OR
-                LOWER(COALESCE(site.property_code, '')) LIKE :searchTerm
+                COALESCE(site.consumer_number, '') LIKE :consumerNumberTerm ESCAPE '\\' OR
+                LOWER(COALESCE(site.property_code, '')) LIKE :searchTerm ESCAPE '\\'
               )
           )`;
 
 /** Consumer numbers are stored as digits: "2799 9000 0951" or "2799-9000-0951" still match. */
 function siteSearchParams(search: string): { consumerNumberTerm: string } {
-  return { consumerNumberTerm: `%${search.replace(/[\s-]/g, '').toLowerCase()}%` };
+  return { consumerNumberTerm: containsPattern(search.replace(/[\s-]/g, '').toLowerCase()) };
 }
 
-/**
- * Stored names can carry stray white space ("Hanmant " + "Kharade", a tab after
- * a surname), so a typed full name misses the plain first + ' ' + last match.
- * This compares both sides with the white space squeezed to single spaces.
- * Uses :nameTerm (nameSearchParams). It only adds matches.
- */
-const NAME_MATCHES_SEARCH = `LOWER(btrim(regexp_replace(
-            concat_ws(' ', customer.first_name, customer.last_name), '\\s+', ' ', 'g'
-          ))) LIKE :nameTerm`;
-
-function nameSearchParams(search: string): { nameTerm: string } {
-  return { nameTerm: `%${search.trim().replace(/\s+/g, ' ').toLowerCase()}%` };
-}
+/** See `customerNameMatchesSearch`. */
+const NAME_MATCHES_SEARCH = customerNameMatchesSearch('customer');
 
 /**
  * Name A-Z / Z-A ignores white space typed before the first name, and ignores
@@ -809,7 +803,7 @@ export class CustomerProfileRepository {
     limit = 20,
   ): Promise<[CustomerProfileEntity[], number]> {
     // Search across multiple fields (case-insensitive)
-    const searchTerm = `%${searchQuery.toLowerCase()}%`;
+    const searchTerm = containsPattern(searchQuery.toLowerCase());
 
     const qb = this.repository
       .createQueryBuilder('customer')
@@ -819,15 +813,15 @@ export class CustomerProfileRepository {
       .andWhere('customer.deletedAt IS NULL')
       .andWhere(
         `(
-          LOWER(customer.first_name) LIKE :searchTerm OR
-          LOWER(customer.last_name) LIKE :searchTerm OR
-          LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm OR
+          LOWER(customer.first_name) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(customer.last_name) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm ESCAPE '\\' OR
           ${NAME_MATCHES_SEARCH} OR
-          customer.phone LIKE :searchTerm OR
-          LOWER(customer.email) LIKE :searchTerm OR
-          LOWER(customer.city) LIKE :searchTerm OR
-          LOWER(COALESCE(customer.group_code, '')) LIKE :searchTerm OR
-          LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm OR
+          customer.phone LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(customer.email) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(customer.city) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(COALESCE(customer.group_code, '')) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm ESCAPE '\\' OR
           ${SITE_MATCHES_SEARCH}
         )`,
         { searchTerm, ...nameSearchParams(searchQuery), ...siteSearchParams(searchQuery) },
@@ -901,18 +895,18 @@ export class CustomerProfileRepository {
 
     // ===== Search (case-insensitive, multiple fields) =====
     if (query.search && query.search.length >= 2) {
-      const searchTerm = `%${query.search.toLowerCase()}%`;
+      const searchTerm = containsPattern(query.search.toLowerCase());
       qb.andWhere(
         `(
-          LOWER(customer.first_name) LIKE :searchTerm OR
-          LOWER(customer.last_name) LIKE :searchTerm OR
-          LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm OR
+          LOWER(customer.first_name) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(customer.last_name) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm ESCAPE '\\' OR
           ${NAME_MATCHES_SEARCH} OR
-          customer.phone LIKE :searchTerm OR
-          LOWER(customer.email) LIKE :searchTerm OR
-          LOWER(customer.city) LIKE :searchTerm OR
-          LOWER(COALESCE(customer.group_code, '')) LIKE :searchTerm OR
-          LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm OR
+          customer.phone LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(customer.email) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(customer.city) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(COALESCE(customer.group_code, '')) LIKE :searchTerm ESCAPE '\\' OR
+          LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm ESCAPE '\\' OR
           ${SITE_MATCHES_SEARCH}
         )`,
         { searchTerm, ...nameSearchParams(query.search), ...siteSearchParams(query.search) },

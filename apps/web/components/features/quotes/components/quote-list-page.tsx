@@ -31,6 +31,7 @@ import {
   ListToolbar,
   PrimaryAction,
   type SortOption,
+  useKeepPageInRange,
   useListEntrance,
 } from '@/components/shared/calm-list';
 import { MUIDateRangePicker } from '@/components/ui';
@@ -536,6 +537,8 @@ export function QuoteListPage(): JSX.Element {
   // Rows rise in once. Later changes swap in without replaying it.
   const entering = useListEntrance(rows.length);
 
+  useKeepPageInRange({ page, pageSize, total, isFetching, onPageChange: urlState.setPage });
+
   return (
     <CalmListPage
       header={
@@ -581,6 +584,7 @@ export function QuoteListPage(): JSX.Element {
       }
       isFetching={isFetching}
       isLoading={isLoading}
+      page={page}
       footer={
         <ListPager
           page={page}
