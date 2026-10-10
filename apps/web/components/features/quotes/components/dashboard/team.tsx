@@ -53,6 +53,8 @@ export function Team({
               {s.label}
             </span>
           ))}
+          {/* "N won" follows the period picker; say so, like the other period cards. */}
+          <span className="ml-2">· won in {data.period.label}</span>
         </span>
       </header>
       {data.team.length === 0 ? (
