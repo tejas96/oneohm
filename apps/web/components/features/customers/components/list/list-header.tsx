@@ -9,6 +9,7 @@ import { useCustomerOverviewStats } from '../../hooks/use-customers';
 import { AnimatedNumber } from '@/components/features/dashboard/kit';
 import { useFollowupSummary } from '@/components/features/followups';
 import { formatRupees } from '@/components/features/quotes/components/dashboard/strip';
+import { ListTitle, PrimaryAction } from '@/components/shared/calm-list';
 import { useQuotesDashboard } from '@/lib/hooks/resources';
 import { cn, formatCurrency, formatNumber } from '@/lib/utils';
 
@@ -116,34 +117,23 @@ export function ListHeader({
   }
 
   return (
-    <header className="mb-[26px] flex flex-wrap items-end justify-between gap-4">
-      <div className="min-w-0">
-        <h1 className="m-0 text-[26px] font-semibold leading-[1.45] tracking-[-0.02em]">
-          Customers
-        </h1>
-        <p className="mt-1 min-h-[1.45em] text-[14px] text-foreground-secondary">
-          {/* Keyed by the fact, not its position: a fact that loads later must
-              not remount (and restart the count-up of) the ones after it. */}
-          {facts.map((fact, index) => (
-            <span key={fact.key}>
-              {index > 0 ? ' · ' : null}
-              {fact.node}
-            </span>
-          ))}
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={onAddCustomer}
-        aria-disabled={!canAddCustomer}
-        className={cn(
-          'flex-none rounded-pill bg-primary px-[18px] py-2.5 text-[14px] font-medium text-white shadow-calm-cta',
-          'transition-transform duration-200 ease-calm hover:-translate-y-px motion-reduce:transition-none motion-reduce:hover:translate-y-0',
-          !canAddCustomer && 'opacity-50',
-        )}
-      >
-        + Add customer
-      </button>
-    </header>
+    <ListTitle
+      title="Customers"
+      sub={
+        // Keyed by the fact, not its position: a fact that loads later must not
+        // remount (and restart the count-up of) the ones after it.
+        facts.map((fact, index) => (
+          <span key={fact.key}>
+            {index > 0 ? ' · ' : null}
+            {fact.node}
+          </span>
+        ))
+      }
+      actions={
+        <PrimaryAction onClick={onAddCustomer} allowed={canAddCustomer}>
+          + Add customer
+        </PrimaryAction>
+      }
+    />
   );
 }

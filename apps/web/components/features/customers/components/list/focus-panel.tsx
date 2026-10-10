@@ -17,13 +17,13 @@ import {
   metaLine,
   shortDay,
 } from './format';
-import { CalendarIcon, CloseIcon, PhoneIcon } from './icons';
 import { JourneySteps } from './journey-steps';
 import { customerLinks } from './links';
 import { PanelSites } from './panel-sites';
 import type { Customer, FollowupAssignee } from '../../hooks/use-customers';
 
 import { usePrefersReducedMotion } from '@/components/features/dashboard/kit';
+import { CalendarIcon, CloseIcon, PhoneIcon } from '@/components/shared/calm-list';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { ease, shadow } from '@/lib/theme/tokens';
 import { cn, formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';

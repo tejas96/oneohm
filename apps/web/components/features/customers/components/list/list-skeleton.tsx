@@ -2,14 +2,13 @@ import type { JSX } from 'react';
 
 import { ROW_CELL, ROW_GRID } from './row-layout';
 
+import { BONE, SKELETON_CARD } from '@/components/shared/calm-list';
 import { cn } from '@/lib/utils';
 
-const BONE = 'animate-pulse rounded-pill bg-background-tertiary motion-reduce:animate-none';
-
 /** One placeholder shaped like a customer row, so nothing jumps when data lands. */
-function RowSkeleton(): JSX.Element {
+export function CustomerRowSkeleton(): JSX.Element {
   return (
-    <div className={cn(ROW_GRID, 'rounded-rf-xl bg-surface px-5 py-4 shadow-e1')}>
+    <div className={cn(ROW_GRID, SKELETON_CARD)}>
       <div className={cn(ROW_CELL.who, 'flex items-center gap-3.5')}>
         <span className={cn(BONE, 'size-11 flex-none')} />
         <span className="flex min-w-0 flex-1 flex-col gap-2">
@@ -36,16 +35,6 @@ function RowSkeleton(): JSX.Element {
         <span className={cn(BONE, 'size-7')} />
         <span className={cn(BONE, 'size-[34px]')} />
       </div>
-    </div>
-  );
-}
-
-export function ListSkeleton({ rows }: { rows: number }): JSX.Element {
-  return (
-    <div role="status" aria-label="Loading customers" className="flex flex-col gap-2">
-      {Array.from({ length: rows }, (_, index) => (
-        <RowSkeleton key={index} />
-      ))}
     </div>
   );
 }

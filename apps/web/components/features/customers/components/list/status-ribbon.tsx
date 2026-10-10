@@ -5,7 +5,8 @@ import { type JSX, useEffect, useState } from 'react';
 
 import type { CustomerStatsResponse } from '../../hooks/use-customers';
 
-import { cn, formatNumber, toTitleLabel } from '@/lib/utils';
+import { Segment } from '@/components/shared/calm-list';
+import { toTitleLabel } from '@/lib/utils';
 
 /** One fill per status. Pastels are fills only; the label carries the meaning. */
 const STATUS_FILL: Record<CustomerStatus, string> = {
@@ -22,59 +23,6 @@ const STATUSES = Object.values(CustomerStatus);
 const MIN_SEGMENT_PERCENT = 1.2;
 
 export type RibbonWorklist = '' | 'needs-followup' | 'active-tickets';
-
-interface SegmentProps {
-  pressed: boolean;
-  onClick: () => void;
-  count: number | undefined;
-  label: string;
-  /** What a screen reader hears in place of "900 need follow-up". */
-  name: string;
-  dot?: string;
-  warn?: boolean;
-  title?: string;
-}
-
-function Segment({
-  pressed,
-  onClick,
-  count,
-  label,
-  name,
-  dot,
-  warn,
-  title,
-}: SegmentProps): JSX.Element {
-  return (
-    <button
-      type="button"
-      aria-pressed={pressed}
-      aria-label={count === undefined ? name : `${name}: ${formatNumber(count)}`}
-      title={title}
-      onClick={onClick}
-      className={cn(
-        'flex items-baseline gap-2 rounded-rf-lg px-3.5 py-2 transition-colors duration-200 motion-reduce:transition-none',
-        pressed ? 'bg-foreground text-white' : 'hover:bg-background-tertiary',
-      )}
-    >
-      {dot ? (
-        <i className="block size-2 self-center rounded-full" style={{ background: dot }} />
-      ) : null}
-      <span
-        className={cn(
-          'text-[18px] font-semibold tabular-nums',
-          warn && !pressed && 'text-error',
-          count === undefined && 'text-foreground-muted',
-        )}
-      >
-        {count === undefined ? '–' : formatNumber(count)}
-      </span>
-      <span className={cn('text-[13px]', pressed ? 'text-white/70' : 'text-foreground-secondary')}>
-        {label}
-      </span>
-    </button>
-  );
-}
 
 export interface StatusRibbonProps {
   /** Per-status counts; undefined while they load. */

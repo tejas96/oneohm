@@ -5,10 +5,10 @@ import Link from 'next/link';
 import type { JSX, MouseEvent } from 'react';
 
 import { followupText } from './format';
-import { CalendarIcon } from './icons';
 import { customerLinks } from './links';
 import type { Customer } from '../../hooks/use-customers';
 
+import { CalendarIcon } from '@/components/shared/calm-list';
 import { cn } from '@/lib/utils';
 
 const RING_TONE = {

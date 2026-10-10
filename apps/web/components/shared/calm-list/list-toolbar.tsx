@@ -1,10 +1,17 @@
 'use client';
 
-import { type ChangeEvent, type JSX, type MouseEvent, useEffect, useRef, useState } from 'react';
+import {
+  type ChangeEvent,
+  type JSX,
+  type MouseEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
-import type { CustomerRow } from './filter-columns';
 import { CloseIcon, FiltersIcon, SearchIcon } from './icons';
-import { SortMenu } from './sort-menu';
+import { SortMenu, type SortOption } from './sort-menu';
 
 import { type ColumnConfig, TableFilters } from '@/components/shared/advanced-table';
 import { type TableUrlFilterRecord, type TableUrlSortModel, useDebounce } from '@/lib/hooks';
@@ -13,41 +20,54 @@ import { cn } from '@/lib/utils';
 /** Matches `AdvancedTable` and `CrmTable`, so search feels the same across the app. */
 const SEARCH_DEBOUNCE_MS = 300;
 
-const GHOST =
+/** The toolbar's white pill button; a page uses it for its own extra control. */
+export const TOOLBAR_BUTTON =
   'flex flex-none items-center gap-2 rounded-input-expressive bg-surface px-4 py-3 text-[14px] text-foreground-secondary shadow-calm';
 
-export interface ListToolbarProps {
-  /** The search term in the URL. */
+export interface ListToolbarProps<TRow> {
+  /** The search term the page holds (the URL's, on most lists). */
   search: string;
   onSearchChange: (search: string) => void;
   searchPlaceholder: string;
-  filterColumns: ColumnConfig<CustomerRow>[];
+  /** What a screen reader calls the search box: "Search customers". */
+  searchLabel: string;
+  filterColumns: ColumnConfig<TRow>[];
   filters: TableUrlFilterRecord;
   onFilterChange: (filters: TableUrlFilterRecord) => void;
-  sortModel: TableUrlSortModel | null;
-  onSortChange: (model: TableUrlSortModel | null) => void;
+  /** Omit all three for a list that has one fixed order. */
+  sortOptions?: SortOption[];
+  sortModel?: TableUrlSortModel | null;
+  onSortChange?: (model: TableUrlSortModel | null) => void;
+  /** See `SortMenu`. */
+  sortActiveIndex?: (model: TableUrlSortModel | null) => number;
   /** What the list holds now ("265 customers"); shown in the filter panel. */
   resultLabel?: string;
+  /** Extra controls after Sort (an export button, for example). */
+  children?: ReactNode;
 }
 
 /**
  * Search · Filters · Sort, and under them the active-filter chips.
  *
  * The side panel and the chips are the shared `TableFilters`, handed the same
- * columns and filter model as before — filter behaviour is shared code here,
- * not a second implementation.
+ * columns and filter model the list's old table gave it — filter behaviour is
+ * shared code here, not a second implementation.
  */
-export function ListToolbar({
+export function ListToolbar<TRow>({
   search,
   onSearchChange,
   searchPlaceholder,
+  searchLabel,
   filterColumns,
   filters,
   onFilterChange,
-  sortModel,
+  sortOptions,
+  sortModel = null,
   onSortChange,
+  sortActiveIndex,
   resultLabel,
-}: ListToolbarProps): JSX.Element {
+  children,
+}: ListToolbarProps<TRow>): JSX.Element {
   // ── Search: typed locally, pushed up after the debounce ───────────────────
   const [query, setQuery] = useState(search);
   const debounced = useDebounce(query, SEARCH_DEBOUNCE_MS);
@@ -98,7 +118,7 @@ export function ListToolbar({
             value={query}
             onChange={(event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)}
             placeholder={searchPlaceholder}
-            aria-label="Search customers"
+            aria-label={searchLabel}
             autoComplete="off"
             className="min-w-0 flex-1 appearance-none bg-transparent py-px text-[14px] text-foreground outline-none placeholder:text-foreground-tertiary focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
           />
@@ -124,7 +144,7 @@ export function ListToolbar({
           }
           // Open reads like a selected row: the same dark ring.
           className={cn(
-            GHOST,
+            TOOLBAR_BUTTON,
             'aria-expanded:text-foreground aria-expanded:ring-2 aria-expanded:ring-foreground',
           )}
         >
@@ -137,7 +157,16 @@ export function ListToolbar({
           ) : null}
         </button>
 
-        <SortMenu sortModel={sortModel} onSortChange={onSortChange} className={GHOST} />
+        {sortOptions && onSortChange ? (
+          <SortMenu
+            options={sortOptions}
+            sortModel={sortModel}
+            onSortChange={onSortChange}
+            activeIndex={sortActiveIndex}
+            className={TOOLBAR_BUTTON}
+          />
+        ) : null}
+        {children}
       </div>
 
       {/* Chips sit 4px in from the list's edge; the shared row brings its own 16px. */}

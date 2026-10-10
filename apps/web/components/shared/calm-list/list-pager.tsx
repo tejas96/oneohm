@@ -43,7 +43,10 @@ export interface ListPagerProps {
   pageSize: number;
   totalRowCount: number;
   onPageChange: (page: number) => void;
-  onPageSizeChange: (pageSize: number) => void;
+  /** Omit for a list with one fixed page size: the "Rows" picker is left out. */
+  onPageSizeChange?: (pageSize: number) => void;
+  /** What a row is, for "Showing 1–10 of 1,230 customers". */
+  noun: { one: string; many: string };
   /** The list failed to load: there is no count to state. */
   countUnknown?: boolean;
 }
@@ -61,6 +64,7 @@ function ListPagerInner({
   totalRowCount,
   onPageChange,
   onPageSizeChange,
+  noun,
   countUnknown = false,
 }: ListPagerProps): JSX.Element {
   const totalPages = totalRowCount === 0 ? 1 : Math.ceil(totalRowCount / pageSize);
@@ -78,31 +82,35 @@ function ListPagerInner({
         {countUnknown
           ? ''
           : totalRowCount === 0
-            ? 'No customers'
+            ? `No ${noun.many}`
             : `Showing ${formatNumber(start)}–${formatNumber(end)} of ${formatNumber(totalRowCount)} ${
-                totalRowCount === 1 ? 'customer' : 'customers'
+                totalRowCount === 1 ? noun.one : noun.many
               }`}
       </span>
 
       <div className="flex flex-wrap items-center gap-1.5">
-        <label htmlFor="customers-page-size">Rows</label>
-        <select
-          id="customers-page-size"
-          value={pageSize}
-          onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-            onPageSizeChange(Number(event.target.value))
-          }
-          className={cn(CONTROL, 'mr-1.5 cursor-pointer border-0 px-2.5 text-foreground')}
-        >
-          {(PAGE_SIZE_OPTIONS.includes(pageSize)
-            ? PAGE_SIZE_OPTIONS
-            : [...PAGE_SIZE_OPTIONS, pageSize].sort((a, b) => a - b)
-          ).map((size) => (
-            <option key={size} value={size}>
-              {size}
-            </option>
-          ))}
-        </select>
+        {onPageSizeChange ? (
+          <>
+            <label htmlFor="list-page-size">Rows</label>
+            <select
+              id="list-page-size"
+              value={pageSize}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                onPageSizeChange(Number(event.target.value))
+              }
+              className={cn(CONTROL, 'mr-1.5 cursor-pointer border-0 px-2.5 text-foreground')}
+            >
+              {(PAGE_SIZE_OPTIONS.includes(pageSize)
+                ? PAGE_SIZE_OPTIONS
+                : [...PAGE_SIZE_OPTIONS, pageSize].sort((a, b) => a - b)
+              ).map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </>
+        ) : null}
 
         <button
           type="button"

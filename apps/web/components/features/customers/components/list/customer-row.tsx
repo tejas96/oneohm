@@ -16,13 +16,13 @@ import {
   metaLine,
   shortDay,
 } from './format';
-import { TicketIcon } from './icons';
 import { JourneyTrack } from './journey-track';
 import { customerLinks } from './links';
 import { RowActionsMenu } from './row-actions-menu';
-import { MAX_STAGGER_STEPS, ROW_CELL, ROW_GRID, STAGGER_MS } from './row-layout';
+import { ROW_CELL, ROW_GRID } from './row-layout';
 import type { Customer } from '../../hooks/use-customers';
 
+import { MAX_STAGGER_STEPS, STAGGER_MS, TicketIcon } from '@/components/shared/calm-list';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { cn, formatCurrency, toTitleLabel } from '@/lib/utils';
 

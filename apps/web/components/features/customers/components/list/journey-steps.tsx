@@ -2,8 +2,8 @@ import type { JourneySteps as StepFacts } from '@tejas96/shared/types';
 import type { JSX } from 'react';
 
 import { journeyStepLines, type StepState } from './format';
-import { CheckIcon } from './icons';
 
+import { CheckIcon } from '@/components/shared/calm-list';
 import { cn } from '@/lib/utils';
 
 const NOTE: Record<StepState, string | null> = {

@@ -21,7 +21,3 @@ export const ROW_CELL = {
   value: `col-span-2 col-start-2 row-start-3 ${WIDE}`,
   actions: `col-start-3 row-start-1 ${WIDE}`,
 } as const;
-
-/** Rows rise in 55ms apart; from the 13th on they arrive together. */
-export const STAGGER_MS = 55;
-export const MAX_STAGGER_STEPS = 12;
