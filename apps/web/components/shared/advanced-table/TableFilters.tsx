@@ -1,5 +1,6 @@
 'use client';
 
+import CloseIcon from '@mui/icons-material/Close';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import FilterListOffIcon from '@mui/icons-material/FilterListOff';
 import {
@@ -8,19 +9,22 @@ import {
   Box,
   Button,
   Chip,
+  Drawer,
   FormControl,
   IconButton,
   MenuItem,
   OutlinedInput,
   Popover,
+  Portal,
   Select,
   Stack,
   TextField,
   Tooltip,
+  useMediaQuery,
 } from '@mui/material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { type JSX, memo, useCallback, useEffect, useRef, useState } from 'react';
+import { type JSX, memo, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 
 import type { ColumnConfig, FilterState, FilterType } from './types';
 import { toSortableString } from './utils';
@@ -37,6 +41,14 @@ interface TableFiltersProps<TRow> {
   anchorEl: HTMLButtonElement | null;
   onClose: () => void;
   onFilterChange: (filters: FilterState) => void;
+  /**
+   * `popover` (default) hangs the panel under its button. `drawer` opens it as
+   * a side panel that stays open beside the list, so the rows can be watched
+   * while they filter; a page makes room for it by reading `--filters-drawer-w`.
+   */
+  presentation?: 'popover' | 'drawer';
+  /** Drawer only: what the list holds now ("265 customers"), shown under the title. */
+  resultLabel?: string;
 }
 
 /** Above MUI Popover (1300) so autocomplete menus are not clipped inside filter panels. */
@@ -442,9 +454,7 @@ const TWO_COLUMNS_ABOVE = 6;
 const FILTER_PANEL_SX = {
   p: 0,
   overflowY: 'auto',
-  borderRadius: '16px',
   backgroundColor: 'var(--ds-canvas-sunken)',
-  boxShadow: 'var(--shadow-e3)',
   '& .MuiOutlinedInput-root': { height: 36, backgroundColor: 'var(--ds-surface)' },
   // The theme pins an Autocomplete's field to its own height; keep every row level.
   '& .MuiAutocomplete-root .MuiOutlinedInput-root': { height: 36 },
@@ -475,6 +485,98 @@ function panelMaxHeight(anchorEl: HTMLElement | null): number {
 }
 
 // ============================================================================
+// Side panel
+// ============================================================================
+
+/** A page that wants the list to move over reads this (it is unset while closed). */
+const DRAWER_WIDTH_VAR = '--filters-drawer-w';
+/** Narrow enough that a 1366px laptop still has room for a list's wide row. */
+const DRAWER_WIDTH = 280;
+
+interface FilterDrawerProps {
+  open: boolean;
+  anchorEl: HTMLElement | null;
+  onClose: () => void;
+  children: ReactNode;
+}
+
+/**
+ * The filters as a side panel. In a desktop-size window it docks beside the
+ * list with no shade — the filters apply as they change, so the rows stay in
+ * view and usable while it is open. In a smaller window there is no room
+ * beside the list, so it slides over it as an ordinary modal drawer.
+ */
+function FilterDrawer({ open, anchorEl, onClose, children }: FilterDrawerProps): JSX.Element {
+  const docked = useMediaQuery('(min-width:1024px)');
+  const paperRef = useRef<HTMLDivElement>(null);
+
+  // Docked: publish the width so the page moves over instead of sitting under it.
+  useEffect(() => {
+    if (!open || !docked) return undefined;
+    const root = document.documentElement;
+    root.style.setProperty(DRAWER_WIDTH_VAR, `${DRAWER_WIDTH}px`);
+    return () => {
+      root.style.removeProperty(DRAWER_WIDTH_VAR);
+    };
+  }, [open, docked]);
+
+  // A docked panel is not modal, so MUI moves no focus for it. Send focus in
+  // when it opens (it is at the end of the document, far from its button) and
+  // back to the button when it closes.
+  const buttonRef = useRef<HTMLElement | null>(null);
+  if (anchorEl) buttonRef.current = anchorEl;
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (!docked) {
+      wasOpen.current = open;
+      return;
+    }
+    if (open && !wasOpen.current) paperRef.current?.focus({ preventScroll: true });
+    if (!open && wasOpen.current) buttonRef.current?.focus({ preventScroll: true });
+    wasOpen.current = open;
+  }, [open, docked]);
+
+  const drawer = (
+    <Drawer
+      anchor="right"
+      variant={docked ? 'persistent' : 'temporary'}
+      open={open}
+      onClose={onClose}
+      slotProps={{
+        paper: {
+          ref: paperRef,
+          tabIndex: -1,
+          role: docked ? 'complementary' : 'dialog',
+          'aria-label': 'Filters',
+          sx: {
+            ...FILTER_PANEL_SX,
+            outline: 'none',
+            border: 'none',
+            maxWidth: '100%',
+            ...(docked
+              ? {
+                  width: DRAWER_WIDTH,
+                  top: 'var(--header-height, 48px)',
+                  height: 'calc(100vh - var(--header-height, 48px))',
+                  // Under the global header and any modal, over the page.
+                  zIndex: 40,
+                  boxShadow: '-8px 0 24px rgba(16,24,40,0.06)',
+                }
+              : { width: 340, boxShadow: 'var(--shadow-e3)' }),
+          },
+        },
+      }}
+    >
+      {children}
+    </Drawer>
+  );
+
+  // Docked drawers render in place; send this one to the body so no ancestor's
+  // stacking context or transform can trap a `position: fixed` panel.
+  return docked ? <Portal>{drawer}</Portal> : drawer;
+}
+
+// ============================================================================
 // Main export
 // ============================================================================
 
@@ -484,6 +586,8 @@ function TableFiltersInner<TRow>({
   anchorEl,
   onClose,
   onFilterChange,
+  presentation = 'popover',
+  resultLabel,
 }: TableFiltersProps<TRow>): JSX.Element | null {
   const filterableColumns = allColumns.filter((c) => c.filterable);
 
@@ -531,7 +635,77 @@ function TableFiltersInner<TRow>({
   if (filterableColumns.length === 0) return null;
 
   const activeCount = Object.values(filters).filter((v) => v !== '' && v != null).length;
-  const twoColumns = filterableColumns.length > TWO_COLUMNS_ABOVE;
+  const asDrawer = presentation === 'drawer';
+  const twoColumns = !asDrawer && filterableColumns.length > TWO_COLUMNS_ABOVE;
+
+  const header = (
+    <div className="sticky top-0 z-[1] flex items-start justify-between gap-3 bg-background-tertiary px-5 pb-3 pt-4">
+      <div className="min-w-0">
+        <p className="m-0 flex items-baseline gap-2 text-[14px] font-semibold text-text-primary">
+          Filters
+          {activeCount > 0 ? (
+            <span className="text-[12px] font-medium text-text-secondary">
+              {activeCount} active
+            </span>
+          ) : null}
+        </p>
+        {asDrawer && resultLabel ? (
+          <p aria-live="polite" className="m-0 mt-0.5 text-[12px] text-text-secondary">
+            {resultLabel}
+          </p>
+        ) : null}
+      </div>
+      <div className="flex flex-none items-center gap-0.5">
+        <Button
+          size="small"
+          variant="text"
+          color="inherit"
+          disabled={activeCount === 0}
+          onClick={handleClearAll}
+          startIcon={<FilterListOffIcon className="size-3.5" />}
+          className="min-w-0 px-2 py-1 text-[12px] font-semibold normal-case text-text-secondary hover:text-error"
+        >
+          Reset
+        </Button>
+        {asDrawer ? (
+          <IconButton size="small" aria-label="Close filters" onClick={onClose}>
+            <CloseIcon className="size-4" />
+          </IconButton>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  const fields = (
+    <div
+      className={cn('grid grid-cols-1 gap-x-4 gap-y-3.5 px-5 pb-5', twoColumns && 'sm:grid-cols-2')}
+    >
+      {filterableColumns.map((col) => {
+        const value = filters[col.field];
+        const isSet = value !== '' && value != null;
+        return (
+          <div
+            key={col.field}
+            className={cn(
+              'flex min-w-0 flex-col gap-1.5',
+              twoColumns && col.filterWide && 'sm:col-span-2',
+            )}
+          >
+            <span
+              className={cn(
+                'flex items-center gap-1.5 text-[12px] font-medium',
+                isSet ? 'text-text-primary' : 'text-text-secondary',
+              )}
+            >
+              {col.headerName}
+              {isSet ? <i aria-hidden className="block size-1.5 rounded-full bg-primary" /> : null}
+            </span>
+            <FilterControl column={col} value={value} onChange={handleChange} />
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -543,88 +717,44 @@ function TableFiltersInner<TRow>({
           onClearAll={handleClearAll}
         />
 
-        <Popover
-          open={isOpen}
-          anchorEl={anchorEl}
-          onClose={onClose}
-          disableAutoFocus
-          disableEnforceFocus
-          disableRestoreFocus
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'right',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-          }}
-          slotProps={{
-            paper: {
-              'aria-label': 'Filters',
-              sx: {
-                ...FILTER_PANEL_SX,
-                width: `min(calc(100vw - 32px), ${twoColumns ? 600 : 340}px)`,
-                maxHeight: panelMaxHeight(anchorEl),
+        {asDrawer ? (
+          <FilterDrawer open={isOpen} anchorEl={anchorEl} onClose={onClose}>
+            {header}
+            {fields}
+          </FilterDrawer>
+        ) : (
+          <Popover
+            open={isOpen}
+            anchorEl={anchorEl}
+            onClose={onClose}
+            disableAutoFocus
+            disableEnforceFocus
+            disableRestoreFocus
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            slotProps={{
+              paper: {
+                'aria-label': 'Filters',
+                sx: {
+                  ...FILTER_PANEL_SX,
+                  borderRadius: '16px',
+                  boxShadow: 'var(--shadow-e3)',
+                  width: `min(calc(100vw - 32px), ${twoColumns ? 600 : 340}px)`,
+                  maxHeight: panelMaxHeight(anchorEl),
+                },
               },
-            },
-          }}
-        >
-          <div className="sticky top-0 z-[1] flex items-center justify-between gap-3 bg-background-tertiary px-5 pb-3 pt-4">
-            <p className="m-0 flex items-baseline gap-2 text-[14px] font-semibold text-text-primary">
-              Filters
-              {activeCount > 0 ? (
-                <span className="text-[12px] font-medium text-text-secondary">
-                  {activeCount} active
-                </span>
-              ) : null}
-            </p>
-            <Button
-              size="small"
-              variant="text"
-              color="inherit"
-              disabled={activeCount === 0}
-              onClick={handleClearAll}
-              startIcon={<FilterListOffIcon className="size-3.5" />}
-              className="min-w-0 px-2 py-1 text-[12px] font-semibold normal-case text-text-secondary hover:text-error"
-            >
-              Reset
-            </Button>
-          </div>
-
-          <div
-            className={cn(
-              'grid grid-cols-1 gap-x-4 gap-y-3.5 px-5 pb-5',
-              twoColumns && 'sm:grid-cols-2',
-            )}
+            }}
           >
-            {filterableColumns.map((col) => {
-              const value = filters[col.field];
-              const isSet = value !== '' && value != null;
-              return (
-                <div
-                  key={col.field}
-                  className={cn(
-                    'flex min-w-0 flex-col gap-1.5',
-                    twoColumns && col.filterWide && 'sm:col-span-2',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'flex items-center gap-1.5 text-[12px] font-medium',
-                      isSet ? 'text-text-primary' : 'text-text-secondary',
-                    )}
-                  >
-                    {col.headerName}
-                    {isSet ? (
-                      <i aria-hidden className="block size-1.5 rounded-full bg-primary" />
-                    ) : null}
-                  </span>
-                  <FilterControl column={col} value={value} onChange={handleChange} />
-                </div>
-              );
-            })}
-          </div>
-        </Popover>
+            {header}
+            {fields}
+          </Popover>
+        )}
       </>
     </LocalizationProvider>
   );

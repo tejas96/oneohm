@@ -36,7 +36,7 @@ import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmatio
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { useGatedAction } from '@/lib/rbac';
-import { cn, getErrorMessage } from '@/lib/utils';
+import { cn, formatNumber, getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 const EMPTY_ROWS: Customer[] = [];
@@ -196,6 +196,13 @@ export function CustomerListPage(): JSX.Element {
 
   const rows = customerData?.data ?? EMPTY_ROWS;
 
+  // Said in the filter panel, so the effect of a filter shows without looking away.
+  const total = customerData?.meta.total;
+  const resultLabel =
+    total === undefined
+      ? undefined
+      : `${formatNumber(total)} ${total === 1 ? 'customer' : 'customers'}`;
+
   const hasActiveFilters =
     search.length > 0 || Object.values(filters).some((value) => value !== '' && value != null);
 
@@ -261,7 +268,10 @@ export function CustomerListPage(): JSX.Element {
   return (
     <div
       ref={pageRef}
-      className="-m-4 min-h-[calc(100vh-var(--header-height))] bg-surface-secondary text-[14px] leading-[1.45] text-foreground lg:-m-5"
+      // The filter panel docks at the right. From 1350px the page moves over and
+      // keeps its wide rows; narrower, moving over would squeeze the rows into
+      // their stacked shape, so the panel lies over the right edge instead.
+      className="-m-4 min-h-[calc(100vh-var(--header-height))] bg-surface-secondary min-[1350px]:pr-[var(--filters-drawer-w,0px)] text-[14px] leading-[1.45] text-foreground transition-[padding] duration-200 ease-calm motion-reduce:transition-none lg:-m-5"
     >
       <div className="mx-auto max-w-[1180px] px-4 pb-20 pt-6 sm:px-7 sm:pt-9">
         <div ref={pinnedHeaderRef} className={PINNED_HEADER}>
@@ -290,6 +300,7 @@ export function CustomerListPage(): JSX.Element {
               onFilterChange={handleFilterChange}
               sortModel={sortModel}
               onSortChange={urlState.setSortModel}
+              resultLabel={resultLabel}
             />
             {/* Background refetch: the rows stay; only this thin bar shows. Always
                 mounted so toggling it never moves the list. It rides on the pinned

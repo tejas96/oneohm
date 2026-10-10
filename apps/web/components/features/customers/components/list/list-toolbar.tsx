@@ -26,12 +26,14 @@ export interface ListToolbarProps {
   onFilterChange: (filters: TableUrlFilterRecord) => void;
   sortModel: TableUrlSortModel | null;
   onSortChange: (model: TableUrlSortModel | null) => void;
+  /** What the list holds now ("265 customers"); shown in the filter panel. */
+  resultLabel?: string;
 }
 
 /**
  * Search · Filters · Sort, and under them the active-filter chips.
  *
- * The popover and the chips are the shared `TableFilters`, handed the same
+ * The side panel and the chips are the shared `TableFilters`, handed the same
  * columns and filter model as before — filter behaviour is shared code here,
  * not a second implementation.
  */
@@ -44,6 +46,7 @@ export function ListToolbar({
   onFilterChange,
   sortModel,
   onSortChange,
+  resultLabel,
 }: ListToolbarProps): JSX.Element {
   // ── Search: typed locally, pushed up after the debounce ───────────────────
   const [query, setQuery] = useState(search);
@@ -68,7 +71,7 @@ export function ListToolbar({
     setQuery(search);
   }, [search]);
 
-  // ── Filters popover ───────────────────────────────────────────────────────
+  // ── Filters side panel ───────────────────────────────────────────────────────
   const [filterAnchor, setFilterAnchor] = useState<HTMLButtonElement | null>(null);
   const activeFilterCount = Object.values(filters).filter((v) => v !== '' && v != null).length;
 
@@ -119,7 +122,11 @@ export function ListToolbar({
           onClick={(event: MouseEvent<HTMLButtonElement>) =>
             setFilterAnchor((open) => (open ? null : event.currentTarget))
           }
-          className={GHOST}
+          // Open reads like a selected row: the same dark ring.
+          className={cn(
+            GHOST,
+            'aria-expanded:text-foreground aria-expanded:ring-2 aria-expanded:ring-foreground',
+          )}
         >
           <FiltersIcon />
           Filters
@@ -141,6 +148,8 @@ export function ListToolbar({
           anchorEl={filterAnchor}
           onClose={closeFilters}
           onFilterChange={handleFilterChange}
+          presentation="drawer"
+          resultLabel={resultLabel}
         />
       </div>
     </div>

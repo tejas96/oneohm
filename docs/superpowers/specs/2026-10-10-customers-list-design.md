@@ -159,6 +159,20 @@ filter that is set shows a dot by its label. The empty state reads "Any" /
 "Type to search" instead of repeating the label. Same filters, same requests.
 A typed date applies only once its year is whole.
 
+**Filters open as a side panel on this page (owner request, 2026-10-10).**
+`TableFilters` takes `presentation="drawer"`; the other lists keep the popover.
+The filters apply as they change, so the panel stays open beside the list and
+the rows can be watched while they filter: no shade, the list stays usable, and
+the panel's header says what the list now holds ("377 customers"). It closes
+with ×, Esc or the Filters button, which shows a dark ring while it is open.
+- 1350 px wide or more: the page moves over (the panel publishes
+  `--filters-drawer-w`) and the rows keep their wide shape. 280 px wide, so a
+  1366 px laptop still fits a wide row.
+- 1024–1349 px: the panel lies over the page's right edge; moving over would
+  squeeze the rows into their stacked shape.
+- Under 1024 px: an ordinary modal drawer with a shade.
+The customer panel opens above it.
+
 **Header.** "Customers" + one sentence:
 `<customers> customers · <sites> sites · <₹> in open quotes · <N> follow-ups overdue`
 and "Add customer" (gated `customers.create`, → `/onboarding/new`).
