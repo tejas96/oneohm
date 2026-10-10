@@ -493,15 +493,16 @@ const root = {
     // while Lead/Subject — the columns that should take leftover width —
     // never received tracks of their own. Actions holds Complete + kebab,
     // not the customer list's icon-only 40px.
+    'col-followup-tick': '28px',
     'col-followup-due': '168px',
-    'col-followup-lead': 'minmax(200px,1.6fr)',
-    'col-followup-temp': '88px',
-    'col-followup-subject': 'minmax(220px,1.8fr)',
-    'col-followup-owner': 'minmax(120px,0.9fr)',
+    // Lead, Subject and Owner share what is left; their text truncates, so they
+    // need no floor and the row fits the list at its narrowest wide width (960px).
+    'col-followup-lead': 'minmax(0px,1.5fr)',
+    'col-followup-temp': '72px',
+    'col-followup-subject': 'minmax(0px,1.6fr)',
+    'col-followup-owner': 'minmax(0px,0.9fr)',
     // Complete (~110px) + kebab (~30px) + gap — 124px let the button paint over Owner.
     'col-followup-actions': '160px',
-    // 38 (select) + 168 + 200 + 88 + 220 + 120 + 160 = 994, plus gutters.
-    'grid-min-width-followup': '1040px',
 
     'grid-min-width': '1280px',
     'row-gutter': '16px',

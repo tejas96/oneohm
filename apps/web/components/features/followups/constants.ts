@@ -25,12 +25,13 @@ export const SCOPE_LABELS: Record<FollowupScope, string> = {
 };
 
 /**
- * One track per follow-up column. Kept here — not inline in the list —
- * so the grid-token tests can pin the floors without importing a client
- * component. `FollowupList` must read from this object, not from the
- * customer-list tokens these used to alias.
+ * One track per cell of a follow-up row, in row order. Kept here — not inline
+ * in the row — so the grid-token test can pin the floors without importing a
+ * client component. `FollowupRow` lays itself out from `FOLLOWUP_ROW_TEMPLATE`,
+ * never from tracks of its own.
  */
 export const FOLLOWUP_GRID_TRACKS = {
+  tick: crm['col-followup-tick'],
   due: crm['col-followup-due'],
   lead: crm['col-followup-lead'],
   temperature: crm['col-followup-temp'],
@@ -38,6 +39,9 @@ export const FOLLOWUP_GRID_TRACKS = {
   owner: crm['col-followup-owner'],
   actions: crm['col-followup-actions'],
 } as const;
+
+/** The wide row's `grid-template-columns`. */
+export const FOLLOWUP_ROW_TEMPLATE = Object.values(FOLLOWUP_GRID_TRACKS).join(' ');
 
 /**
  * Start of today and tomorrow in the business timezone (Asia/Kolkata).

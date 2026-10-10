@@ -191,6 +191,19 @@ Rules every list on the kit gets:
   (`sql/name-search.sql.ts`, one rule for both); `%` and `_` in what the user
   typed are those characters, not wildcards.
 
+**All four lists on the kit (2026-10-11).** Customers, quotes, projects and
+follow-ups share the frame. Per list, what the kit does not decide:
+- Quotes: no quick views (the quote dashboard owns those numbers).
+- Projects: the status and health chips, as label-only quick views.
+- Follow-ups: the four windows (Overdue, Today, Upcoming, Needs follow-up) with
+  their counts, left out while a search or filter narrows the list; the owner
+  picker in the title; tick boxes with a floating selection bar (Select all,
+  Reassign); one fixed page size, so no "Rows" picker; no sort. The "Needs
+  follow-up" view has its own rule: it offers no filter panel and the search
+  narrows it by name in the browser.
+- Sort: empty values (no due date, no city) sort last in both directions, and
+  every sort ends in a unique key so pages do not shuffle.
+
 **Header.** "Customers" + one sentence:
 `<customers> customers · <sites> sites · <₹> in open quotes · <N> follow-ups overdue`
 and "Add customer" (gated `customers.create`, → `/onboarding/new`).

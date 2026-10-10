@@ -51,10 +51,6 @@ export function useDragGuard(): {
   };
 }
 
-/** A small pill after a name: a status, a group, "Loan". */
-export const ROW_TAG =
-  'truncate rounded-pill px-2 py-0.5 text-[11px] font-medium leading-[13px] text-foreground-secondary';
-
 const CARD = cn(
   'relative cursor-pointer rounded-rf-xl bg-surface px-5 py-4 shadow-e1',
   'transition-[box-shadow,transform] duration-[250ms] ease-calm hover:-translate-y-0.5 hover:shadow-calm',
