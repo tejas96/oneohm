@@ -503,31 +503,6 @@ const root = {
     // 38 (select) + 168 + 200 + 88 + 220 + 120 + 160 = 994, plus gutters.
     'grid-min-width-followup': '1040px',
 
-    // ── Project grid: column tracks ────────────────────────────────────
-    /**
-     * Seven two-line columns that fit a 1280px window with the section nav open
-     * (992px of table) without scrolling. Only Customer and Progress take spare
-     * width — they hold the text that is otherwise truncated (the name beside
-     * its chips, the phase name).
-     */
-    'col-project-customer': 'minmax(296px,2.4fr)',
-    /** Ring + "Site Survey & Design", the longest common phase, untruncated. */
-    'col-project-progress': 'minmax(196px,1.4fr)',
-    'col-project-size': '96px',
-    'col-project-contract': '116px',
-    'col-project-dates': '128px',
-    'col-project-team': '92px',
-    'col-project-actions': '36px',
-    // Hidden by default, but they still need a track to reappear into.
-    'col-project-creator': '140px',
-    'col-project-pending-task': '150px',
-    'col-project-tickets': '150px',
-    'col-project-address': 'minmax(240px,1.4fr)',
-    // Sum of the default-visible floors (296+196+96+116+128+92+36 = 960) plus
-    // the row's 16px gutter on each side. Cells carry their own right padding;
-    // the grid has no column gap to add.
-    'grid-min-width-project': '992px',
-
     'grid-min-width': '1280px',
     'row-gutter': '16px',
     'head-height': '40px',

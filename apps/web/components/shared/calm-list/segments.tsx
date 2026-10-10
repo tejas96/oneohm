@@ -41,7 +41,9 @@ export function Segment({
       title={title}
       onClick={onClick}
       className={cn(
-        'flex items-baseline gap-2 rounded-rf-lg px-3.5 py-2 transition-colors duration-200 motion-reduce:transition-none',
+        'flex items-baseline gap-2 rounded-rf-lg py-2 transition-colors duration-200 motion-reduce:transition-none',
+        // A view with no number is a plain label: a little tighter, so a long row of them fits.
+        count === null ? 'px-2.5' : 'px-3.5',
         pressed ? 'bg-foreground text-white' : 'hover:bg-background-tertiary',
       )}
     >
@@ -61,7 +63,7 @@ export function Segment({
       )}
       <span
         className={cn(
-          count === null ? 'text-[14px] font-medium' : 'text-[13px]',
+          count === null ? 'text-[13px] font-medium' : 'text-[13px]',
           pressed
             ? count === null
               ? 'text-white'
@@ -93,7 +95,7 @@ export function SegmentCard({
       aria-label={label}
       className={cn('rounded-card-calm bg-surface px-[22px] py-3.5 shadow-calm', className)}
     >
-      <div className="flex flex-wrap items-center gap-1.5">{children}</div>
+      <div className="flex flex-wrap items-center gap-1">{children}</div>
     </section>
   );
 }
