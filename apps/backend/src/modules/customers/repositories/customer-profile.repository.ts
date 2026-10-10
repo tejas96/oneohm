@@ -313,6 +313,14 @@ const NAME_MATCHES_SEARCH = customerNameMatchesSearch('customer');
 const NAME_SORT_ALIAS = 'customer_name_sort';
 const NAME_SORT_SQL = `LOWER(regexp_replace(customer.first_name, '^\\s+', ''))`;
 
+/**
+ * City A-Z / Z-A ignores case and stray white space for the same reason, and a
+ * customer with no city (a third of them) is NULL here so it can sort last in
+ * both directions — "Z-A" used to open on 42 pages of "Location not set".
+ */
+const CITY_SORT_ALIAS = 'customer_city_sort';
+const CITY_SORT_SQL = `NULLIF(LOWER(btrim(customer.city)), '')`;
+
 @Injectable()
 export class CustomerProfileRepository {
   constructor(
@@ -1096,9 +1104,22 @@ export class CustomerProfileRepository {
       qb.addSelect(NAME_SORT_SQL, NAME_SORT_ALIAS)
         .orderBy(NAME_SORT_ALIAS, sortDirection)
         .addOrderBy(sortColumn, sortDirection);
+    } else if (query.sortBy === CustomerSortField.CITY) {
+      qb.addSelect(CITY_SORT_SQL, CITY_SORT_ALIAS).orderBy(
+        CITY_SORT_ALIAS,
+        sortDirection,
+        'NULLS LAST',
+      );
     } else {
       qb.orderBy(sortColumn, sortDirection);
     }
+    // Hundreds of customers share a city (or a first name): without a last,
+    // unique key their order is not fixed and a row can repeat or go missing
+    // from one page to the next.
+    // (Not when the sort IS the created date: a second entry for the same
+    // column would replace its direction.)
+    if (sortColumn !== 'customer.createdAt') qb.addOrderBy('customer.createdAt', 'DESC');
+    qb.addOrderBy('customer.id', 'ASC');
 
     // Split getCount + getMany to avoid TypeORM getManyAndCount crash
     // when leftJoinAndSelect is combined with orderBy on a joined alias.

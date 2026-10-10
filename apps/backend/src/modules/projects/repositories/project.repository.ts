@@ -556,8 +556,13 @@ export class ProjectRepository {
           .orderBy(SYSTEM_SIZE_SORT_ALIAS, sortOrder, 'NULLS LAST')
           .addOrderBy('project.createdAt', 'DESC');
       } else {
-        query.orderBy(sortColumn, sortOrder);
+        // A project with no due date, start date or quote value sorts last in
+        // both directions — "latest first" used to open on five pages of
+        // "Not planned". The created date breaks ties so pages do not shuffle.
+        query.orderBy(sortColumn, sortOrder, 'NULLS LAST');
+        if (sortColumn !== 'project.createdAt') query.addOrderBy('project.createdAt', 'DESC');
       }
+      query.addOrderBy('project.id', 'ASC');
     }
 
     const projects = await query
