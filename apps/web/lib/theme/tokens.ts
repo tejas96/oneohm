@@ -397,17 +397,6 @@ const root = {
     'col-status': '106px',
     'col-onboarded': '102px',
     'col-actions': '40px',
-    // Payment approval queue (design min-width 1180px)
-    'col-approval-request': '152px',
-    'col-approval-date': '96px',
-    'col-approval-type': '124px',
-    'col-approval-project': 'minmax(148px,1.2fr)',
-    'col-approval-customer': 'minmax(148px,1.3fr)',
-    'col-approval-amount': '112px',
-    'col-approval-reference': 'minmax(108px,1fr)',
-    'col-approval-submitter': 'minmax(120px,1fr)',
-    'col-approval-waiting': '80px',
-    'col-approval-status': '104px',
     // Resellers list grid — five lifetime money columns (Revenue, Pending,
     // Owed, Paid, To recover). Narrower than the Payables figure: sized for a
     // plain `formatPaise` value with no "Advance " prefix (up to
