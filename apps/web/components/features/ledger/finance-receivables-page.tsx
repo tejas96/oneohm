@@ -509,7 +509,16 @@ export function FinanceReceivablesPage(): JSX.Element {
         />
       ) : rowCount === 0 ? (
         failed ? null : (
-          <ListEmpty title={isRecovery ? 'Nothing to recover.' : 'Nothing outstanding.'} />
+          <ListEmpty
+            title={
+              search
+                ? 'No match for this search'
+                : isRecovery
+                  ? 'Nothing to recover.'
+                  : 'Nothing outstanding.'
+            }
+            hint={search ? 'Try another customer or project.' : undefined}
+          />
         )
       ) : isRecovery ? (
         <div className="flex flex-col gap-2">

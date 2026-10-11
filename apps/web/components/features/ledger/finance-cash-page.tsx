@@ -288,7 +288,10 @@ export function FinanceCashPage(): JSX.Element {
         />
       ) : rows.length === 0 ? (
         entries.isError ? null : (
-          <ListEmpty title="Nothing recorded in this period." />
+          <ListEmpty
+            title={search ? 'No entry matches' : 'Nothing recorded in this period.'}
+            hint={search ? 'Try another entry number, customer, project or reference.' : undefined}
+          />
         )
       ) : (
         <div className="flex flex-col gap-2">
@@ -396,13 +399,26 @@ function KpiStrip({
     },
   ];
 
+  // No figure without an answer: "₹0.00 received" on a failed request reads as
+  // a period with no money. (This renders only once loading is over, so no
+  // data means the request failed.)
+  const shown = <T extends { value: string; sub: string; tone: StatTone }>(tiles: T[]): T[] =>
+    data
+      ? tiles
+      : tiles.map((t) => ({
+          ...t,
+          value: '—',
+          sub: 'could not load',
+          tone: 'default' as StatTone,
+        }));
+
   return (
     <div className="mb-2.5 flex flex-col gap-2.5">
       <StatTiles
         label="Figures for the selected period"
         className="grid-cols-2 md:grid-cols-3 xl:grid-cols-5"
       >
-        {flows.map((t) => (
+        {shown(flows).map((t) => (
           <Tile key={t.label} {...t} />
         ))}
       </StatTiles>
@@ -411,7 +427,7 @@ function KpiStrip({
           As of today — not affected by the selected period or the search
         </p>
         <StatTiles label="Figures as of today" className="grid-cols-2 lg:grid-cols-3">
-          {snapshots.map((t) => (
+          {shown(snapshots).map((t) => (
             <Tile key={t.label} {...t} />
           ))}
         </StatTiles>
