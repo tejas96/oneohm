@@ -4,9 +4,11 @@ import {
   ACTIVE_TICKET_STATUSES,
   ServiceTicketKind,
   ServiceTicketPriority,
+  ServiceTicketStatus,
 } from '@tejas96/shared/types';
 import { type EntityManager, Repository, type SelectQueryBuilder } from 'typeorm';
 
+import { containsPattern } from '../../customers/sql/name-search.sql';
 import { type ServiceTicketQueryDto } from '../dto';
 import { ServiceTicketEntity } from '../entities';
 
@@ -21,6 +23,39 @@ const SORT_FIELD_MAP: Record<string, string> = {
   status: 'ticket.status',
   priority: 'ticket.priority',
   dueDate: 'ticket.dueDate',
+};
+
+/** `WHEN 'a' THEN 1 WHEN 'b' THEN 2 …` — the place of each value in `order`. */
+const rankOf = (column: string, order: readonly string[]): string =>
+  `CASE ${column} ${order.map((value, index) => `WHEN '${value}' THEN ${index + 1}`).join(' ')} ELSE 0 END`;
+
+/**
+ * Sorts that are not the stored column as it is.
+ *
+ * Priority and status are stored as words, so sorting the column gave the
+ * alphabet (high, low, medium, urgent). They sort by what they mean instead:
+ * priority from low up to urgent (DESC = urgent first), status along the
+ * ticket's life from open to closed (ASC = open first). The title ignores case
+ * and stray white space, so "testing" does not come after every capital.
+ *
+ * Each is selected under `SORT_KEY_ALIAS` and ordered by that alias: TypeORM
+ * cannot `orderBy` an expression next to skip/take.
+ */
+const SORT_KEY_ALIAS = 'ticket_sort_key';
+const SORT_KEY_SQL: Record<string, string> = {
+  'ticket.priority': rankOf('ticket.priority', [
+    ServiceTicketPriority.LOW,
+    ServiceTicketPriority.MEDIUM,
+    ServiceTicketPriority.HIGH,
+    ServiceTicketPriority.URGENT,
+  ]),
+  'ticket.status': rankOf('ticket.status', [
+    ServiceTicketStatus.OPEN,
+    ServiceTicketStatus.IN_PROGRESS,
+    ServiceTicketStatus.RESOLVED,
+    ServiceTicketStatus.CLOSED,
+  ]),
+  'ticket.title': 'LOWER(btrim(ticket.title))',
 };
 
 @Injectable()
@@ -140,9 +175,11 @@ export class ServiceTicketRepository {
       );
     }
     if (query.search) {
-      qb.andWhere('(ticket.title ILIKE :search OR ticket.ticketNumber ILIKE :search)', {
-        search: `%${query.search}%`,
-      });
+      // `%` and `_` in what was typed are those characters, not wildcards.
+      qb.andWhere(
+        "(ticket.title ILIKE :search ESCAPE '\\' OR ticket.ticketNumber ILIKE :search ESCAPE '\\')",
+        { search: containsPattern(query.search) },
+      );
     }
     if (query.fromDate) {
       qb.andWhere('ticket.createdAt >= :fromDate', { fromDate: query.fromDate });
@@ -156,11 +193,21 @@ export class ServiceTicketRepository {
 
     const sortField = SORT_FIELD_MAP[query.sortBy] ?? 'ticket.createdAt';
     const sortOrder = query.sortOrder === 'ASC' ? 'ASC' : 'DESC';
-    if (sortField === 'ticket.dueDate') {
+    const sortKeySql = SORT_KEY_SQL[sortField];
+    if (sortKeySql) {
+      qb.addSelect(sortKeySql, SORT_KEY_ALIAS).orderBy(SORT_KEY_ALIAS, sortOrder);
+    } else if (sortField === 'ticket.dueDate') {
       qb.orderBy(sortField, sortOrder, 'NULLS LAST');
     } else {
       qb.orderBy(sortField, sortOrder);
     }
+    // Many tickets share a status, a priority or an empty due date: without a
+    // last, unique key their order is not fixed and a row can repeat or go
+    // missing from one page to the next.
+    // (Not when the sort IS the raised date: a second entry for the same
+    // column would replace its direction.)
+    if (sortField !== 'ticket.createdAt') qb.addOrderBy('ticket.createdAt', 'DESC');
+    qb.addOrderBy('ticket.id', 'ASC');
     qb.skip((query.page - 1) * query.limit).take(query.limit);
 
     const [items, total] = await qb.getManyAndCount();

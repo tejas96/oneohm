@@ -10,6 +10,7 @@ import { Brackets, type EntityManager, IsNull, Not, Repository } from 'typeorm';
 
 import { CUSTOMER_LEAD_NEEDS_FOLLOWUP, PROPERTY_NEEDS_FOLLOWUP } from './followup-predicates';
 import { FollowupEntity } from '../entities/followup.entity';
+import { customerNameMatchesSearch, nameSearchParams } from '../sql/name-search.sql';
 
 /**
  * Site work is scheduled as a follow-up but never listed as one.
@@ -200,6 +201,8 @@ export class FollowupRepository {
         new Brackets((where) => {
           where
             .where(`CONCAT_WS(' ', customer.firstName, customer.lastName) ILIKE :term`, { term })
+            // The lists' one name rule: stray white space ignored, middle name included.
+            .orWhere(customerNameMatchesSearch('customer'), nameSearchParams(search))
             .orWhere('property.propertyName ILIKE :term', { term });
           if (digits.length >= 4) {
             where.orWhere('customer.phone LIKE :digits', { digits: `%${digits}%` });

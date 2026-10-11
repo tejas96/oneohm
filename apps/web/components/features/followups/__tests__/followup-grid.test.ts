@@ -1,11 +1,13 @@
 /**
- * Guards the follow-up list column tracks.
+ * Guards the follow-up row's column tracks.
  *
- * The grid reused customer-list tracks (`col-onboarded` 102px for Due,
+ * The first grid reused customer-list tracks (`col-onboarded` 102px for Due,
  * `col-actions` 40px for Complete + kebab). The due pill ("Today, 9:00 am")
  * painted over Lead, while Lead/Subject — the columns with leftover width —
- * never received tracks of their own. These assertions pin the floors so that
- * cannot silently happen again.
+ * never received tracks of their own. These assertions pin the fixed floors so
+ * that cannot silently happen again. Lead and Subject are flexible with no
+ * floor: their text truncates, and a floor would push the row past the list at
+ * its narrowest wide width.
  */
 
 import { FOLLOWUP_GRID_TRACKS } from '../constants';
@@ -39,10 +41,15 @@ describe('follow-up grid tracks', () => {
   });
 
   it('lets Lead and Subject absorb leftover width', () => {
-    expect(trackFloorPx(FOLLOWUP_GRID_TRACKS.lead)).toBeGreaterThanOrEqual(180);
     expect(FOLLOWUP_GRID_TRACKS.lead).toContain('fr');
-    expect(trackFloorPx(FOLLOWUP_GRID_TRACKS.subject)).toBeGreaterThanOrEqual(180);
     expect(FOLLOWUP_GRID_TRACKS.subject).toContain('fr');
+  });
+
+  it('fits the list at its narrowest wide width', () => {
+    // The row goes wide when the list is 960px; the card pads 20px each side
+    // and there are six 18px gaps between the seven cells.
+    const floors = tracks.reduce((sum, track) => sum + trackFloorPx(track), 0);
+    expect(floors + 6 * 18).toBeLessThanOrEqual(960 - 40);
   });
 
   it('gives Actions room for Complete plus the kebab', () => {

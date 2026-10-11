@@ -1,5 +1,4 @@
 export { ServiceTicketsPage } from './components/service-tickets-page';
-export { ServiceTicketStatTiles } from './components/service-ticket-stat-tiles';
 export { ActiveTicketsChip } from './components/active-tickets-chip';
 export { EntityServiceTicketsTab } from './components/entity-service-tickets-tab';
 export { ServiceTicketFormDialog } from './components/service-ticket-form-dialog';

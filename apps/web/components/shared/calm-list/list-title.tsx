@@ -20,7 +20,8 @@ export function ListTitle({
         <p className="mt-1 min-h-[1.45em] text-[14px] text-foreground-secondary">{sub}</p>
       </div>
       {actions ? (
-        <div className="flex flex-none flex-wrap items-center gap-2.5">{actions}</div>
+        // `max-w-full`: on a phone two actions wrap onto two lines rather than run off the screen.
+        <div className="flex max-w-full flex-none flex-wrap items-center gap-2.5">{actions}</div>
       ) : null}
     </header>
   );

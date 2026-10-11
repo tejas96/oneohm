@@ -131,6 +131,9 @@ export const serviceTicketKeys = {
 // Queries
 // ============================================================================
 
+const commaList = (value: string[] | string | undefined): string | undefined =>
+  Array.isArray(value) ? value.join(',') : value;
+
 export function useServiceTickets(params: ServiceTicketListParams, enabled = true) {
   return useQuery({
     queryKey: serviceTicketKeys.list(params),
@@ -138,7 +141,13 @@ export function useServiceTickets(params: ServiceTicketListParams, enabled = tru
     placeholderData: keepPreviousData,
     queryFn: async (): Promise<ServiceTicketListResponse> => {
       const { data } = await apiClient.get<ServiceTicketListResponse>('/service-tickets', {
-        params,
+        // The API reads several statuses or priorities as one comma-separated
+        // value; the `status[]=` form axios writes for an array is rejected.
+        params: {
+          ...params,
+          status: commaList(params.status),
+          priority: commaList(params.priority),
+        },
       });
       return data;
     },

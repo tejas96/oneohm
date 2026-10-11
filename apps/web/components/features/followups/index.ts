@@ -5,7 +5,6 @@ export * from './lib/due';
 export * from './lib/followup-href';
 export * from './components/followup-complete-dialog';
 export * from './components/followup-when-picker';
-export * from './components/followup-list';
 export * from './components/followups-page';
 export * from './components/followup-reschedule-dialog';
 export * from './components/followup-reassign-dialog';

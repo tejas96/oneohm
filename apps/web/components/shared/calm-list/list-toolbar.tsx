@@ -20,8 +20,8 @@ import { cn } from '@/lib/utils';
 /** Matches `AdvancedTable` and `CrmTable`, so search feels the same across the app. */
 const SEARCH_DEBOUNCE_MS = 300;
 
-/** The toolbar's white pill button; a page uses it for its own extra control. */
-export const TOOLBAR_BUTTON =
+/** The toolbar's white pill button. */
+const TOOLBAR_BUTTON =
   'flex flex-none items-center gap-2 rounded-input-expressive bg-surface px-4 py-3 text-[14px] text-foreground-secondary shadow-calm';
 
 export interface ListToolbarProps<TRow> {
@@ -108,6 +108,14 @@ export function ListToolbar<TRow>({
     onFilterChangeRef.current(next),
   ).current;
   const closeFilters = useRef((): void => setFilterAnchor(null)).current;
+  // A view with nothing to filter by (a worklist with its own fixed rule) gets no button.
+  const hasFilters = filterColumns.some((column) => column.filterable);
+  // Moving to such a view closes the panel. Left "open" it would vanish with
+  // its button and then open by itself, tied to a button that is gone, when
+  // the filters came back.
+  useEffect(() => {
+    if (!hasFilters) setFilterAnchor(null);
+  }, [hasFilters]);
 
   return (
     <div>
@@ -140,28 +148,30 @@ export function ListToolbar<TRow>({
           ) : null}
         </label>
 
-        <button
-          type="button"
-          aria-haspopup="dialog"
-          aria-expanded={Boolean(filterAnchor)}
-          aria-label={activeFilterCount > 0 ? `Filters, ${activeFilterCount} active` : 'Filters'}
-          onClick={(event: MouseEvent<HTMLButtonElement>) =>
-            setFilterAnchor((open) => (open ? null : event.currentTarget))
-          }
-          // Open reads like a selected row: the same dark ring.
-          className={cn(
-            TOOLBAR_BUTTON,
-            'aria-expanded:text-foreground aria-expanded:ring-2 aria-expanded:ring-foreground',
-          )}
-        >
-          <FiltersIcon />
-          Filters
-          {activeFilterCount > 0 ? (
-            <span className="grid h-5 min-w-5 place-items-center rounded-pill bg-foreground px-1.5 text-[11px] font-semibold tabular-nums text-white">
-              {activeFilterCount}
-            </span>
-          ) : null}
-        </button>
+        {hasFilters ? (
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            aria-expanded={Boolean(filterAnchor)}
+            aria-label={activeFilterCount > 0 ? `Filters, ${activeFilterCount} active` : 'Filters'}
+            onClick={(event: MouseEvent<HTMLButtonElement>) =>
+              setFilterAnchor((open) => (open ? null : event.currentTarget))
+            }
+            // Open reads like a selected row: the same dark ring.
+            className={cn(
+              TOOLBAR_BUTTON,
+              'aria-expanded:text-foreground aria-expanded:ring-2 aria-expanded:ring-foreground',
+            )}
+          >
+            <FiltersIcon />
+            Filters
+            {activeFilterCount > 0 ? (
+              <span className="grid h-5 min-w-5 place-items-center rounded-pill bg-foreground px-1.5 text-[11px] font-semibold tabular-nums text-white">
+                {activeFilterCount}
+              </span>
+            ) : null}
+          </button>
+        ) : null}
 
         {sortOptions && onSortChange ? (
           <SortMenu

@@ -14,7 +14,7 @@ export interface SortOption {
 }
 
 /** The option whose field and direction a sort model names; the first one when none does. */
-export function matchSortOption(options: SortOption[], model: TableUrlSortModel | null): number {
+function matchSortOption(options: SortOption[], model: TableUrlSortModel | null): number {
   if (!model)
     return Math.max(
       0,
@@ -52,7 +52,7 @@ export function createSortIndex(
   };
 }
 
-export interface SortMenuProps {
+interface SortMenuProps {
   /** What the column headers of the old table offered, as one menu. */
   options: SortOption[];
   sortModel: TableUrlSortModel | null;

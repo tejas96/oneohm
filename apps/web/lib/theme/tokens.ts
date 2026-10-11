@@ -467,25 +467,6 @@ const root = {
     'col-discom-actions': '44px',
     'grid-min-width-discom': '1360px',
     'toolbar-search-width-discom': '250px',
-    // Service tickets grid (design min-width 1240px).
-    // Ticket numbers are `TKT-ONEOHM_EPC-2026-0001` — 24 characters, wider than
-    // any other code in the app, so this track is sized to hold one unclipped.
-    'col-ticket-number': '224px',
-    'col-ticket-title': 'minmax(220px,1.8fr)',
-    'col-ticket-customer': 'minmax(160px,1.2fr)',
-    // Same width as the ticket number: both hold a 24-char code
-    // (PRJ-ONEOHM_EPC-2026-0220), and at 180px it collided with Priority.
-    'col-ticket-project': '224px',
-    'col-ticket-priority': '104px',
-    'col-ticket-status': '116px',
-    'col-ticket-assignee': 'minmax(130px,1fr)',
-    'col-ticket-due': '104px',
-    'col-ticket-raised-by': 'minmax(130px,1fr)',
-    'col-ticket-created': '104px',
-    // Sum of the ticket columns' minimum tracks (224+220+160+224+104+116+130+104+130+104
-    // = 1516) plus headroom, so the grid scrolls rather than squeezing the
-    // flexible columns below their minmax floors.
-    'grid-min-width-ticket': '1570px',
 
     // Follow-up grid. Due is a nowrap status pill ("Today, 9:00 am",
     // "Tomorrow, 12:00 pm", "15 Feb 2026, 10:00 am") — not a short onboarded
@@ -493,15 +474,16 @@ const root = {
     // while Lead/Subject — the columns that should take leftover width —
     // never received tracks of their own. Actions holds Complete + kebab,
     // not the customer list's icon-only 40px.
+    'col-followup-tick': '28px',
     'col-followup-due': '168px',
-    'col-followup-lead': 'minmax(200px,1.6fr)',
-    'col-followup-temp': '88px',
-    'col-followup-subject': 'minmax(220px,1.8fr)',
-    'col-followup-owner': 'minmax(120px,0.9fr)',
+    // Lead, Subject and Owner share what is left; their text truncates, so they
+    // need no floor and the row fits the list at its narrowest wide width (960px).
+    'col-followup-lead': 'minmax(0px,1.5fr)',
+    'col-followup-temp': '72px',
+    'col-followup-subject': 'minmax(0px,1.6fr)',
+    'col-followup-owner': 'minmax(0px,0.9fr)',
     // Complete (~110px) + kebab (~30px) + gap — 124px let the button paint over Owner.
     'col-followup-actions': '160px',
-    // 38 (select) + 168 + 200 + 88 + 220 + 120 + 160 = 994, plus gutters.
-    'grid-min-width-followup': '1040px',
 
     'grid-min-width': '1280px',
     'row-gutter': '16px',

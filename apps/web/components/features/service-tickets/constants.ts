@@ -53,14 +53,15 @@ export const TICKET_FILTER_KEYS = {
   createdBy: 'createdBy',
 } as const;
 
-const LIVE_STATUSES: readonly ServiceTicketStatus[] = [
+/** Work still to be done: the statuses a ticket can be overdue or unassigned in. */
+export const LIVE_TICKET_STATUSES: readonly ServiceTicketStatus[] = [
   ServiceTicketStatus.OPEN,
   ServiceTicketStatus.IN_PROGRESS,
 ];
 
 /** Active ticket with a due date before today. */
 export function isTicketOverdue(ticket: Pick<ServiceTicket, 'dueDate' | 'status'>): boolean {
-  if (!ticket.dueDate || !LIVE_STATUSES.includes(ticket.status)) return false;
+  if (!ticket.dueDate || !LIVE_TICKET_STATUSES.includes(ticket.status)) return false;
   const due = parseLocalDate(ticket.dueDate);
   if (!due) return false;
   const today = new Date();
