@@ -196,6 +196,13 @@ export function usePaymentApproval(id: string | null): UseQueryResult<PaymentApp
       return data;
     },
     enabled: Boolean(id),
+    // A request that is gone (404) or an id that was never one (400) will not
+    // come back on a second try: say so at once instead of waiting on a retry.
+    retry: (failureCount, error) => {
+      const status = error.response?.status;
+      if (status !== undefined && status >= 400 && status < 500) return false;
+      return failureCount < 1;
+    },
   });
 }
 

@@ -93,7 +93,11 @@ export function ApprovalReviewDrawer({
   onClose,
 }: ApprovalReviewDrawerProps): JSX.Element {
   const { user } = useAuth();
-  const { data, isLoading } = usePaymentApproval(approvalId);
+  const { data, isLoading, error } = usePaymentApproval(approvalId);
+  // A link from an old notice can name a request that is gone (404) or an id
+  // that was never one (400). Either way there is nothing to wait for.
+  const errorStatus = error?.response?.status;
+  const notFound = errorStatus === 404 || errorStatus === 400;
   // Only a pending request has a consequence to preview. Once decided, its
   // effect is already in the balances the preview is worked out from, so it
   // would be counted a second time.
@@ -126,7 +130,13 @@ export function ApprovalReviewDrawer({
           </IconButton>
         </Stack>
 
-        {isLoading || !data ? (
+        {!data && error && !isLoading ? (
+          <Alert severity={notFound ? 'info' : 'error'} sx={{ mt: 3 }}>
+            {notFound
+              ? 'This request was not found. It may have been removed.'
+              : 'Could not load this request. Close it and try again.'}
+          </Alert>
+        ) : isLoading || !data ? (
           <Typography sx={{ mt: 3 }}>Loading…</Typography>
         ) : (
           <Stack spacing={2} sx={{ mt: 2 }}>
