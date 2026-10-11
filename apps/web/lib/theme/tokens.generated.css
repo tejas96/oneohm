@@ -183,9 +183,6 @@
   --crm-col-status: 106px;
   --crm-col-onboarded: 102px;
   --crm-col-actions: 40px;
-  --crm-col-reseller-money: 124px;
-  --crm-col-reseller-maths: minmax(260px,1.4fr);
-  --crm-col-reseller-state: 140px;
   --crm-col-discom-hierarchy: minmax(250px,1.7fr);
   --crm-col-discom-circle: minmax(160px,1.1fr);
   --crm-col-discom-officers: minmax(150px,1fr);

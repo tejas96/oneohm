@@ -93,8 +93,11 @@ export interface CalmListPageProps {
    * away and only the search bar pins — what a small window always does.
    */
   pinHeader?: boolean;
-  /** The search / filters / sort bar. It pins on every screen size. */
-  toolbar: ReactNode;
+  /**
+   * The search / filters / sort bar. It pins on every screen size. Omit it for
+   * a short list that has none of the three (a reseller's commissions).
+   */
+  toolbar?: ReactNode;
   /** Shown between the toolbar and the rows when the list failed to load. */
   error?: ReactNode;
   /** Something that belongs with the rows and scrolls with them (a selection bar). */
@@ -179,7 +182,11 @@ export function CalmListPage({
         <div ref={pinnedHeaderRef} className={pinHeader ? PINNED_HEADER : 'contents'}>
           {header}
 
-          <div ref={pinnedToolbarRef} className={PINNED_TOOLBAR}>
+          {/* With no toolbar this is only the thin strip the refetch bar rides on. */}
+          <div
+            ref={pinnedToolbarRef}
+            className={toolbar == null ? 'relative mt-2.5 h-2.5' : PINNED_TOOLBAR}
+          >
             {toolbar}
             {/* Background refetch: the rows stay; only this thin bar shows. Always
                 mounted so toggling it never moves the list. It rides on the pinned
