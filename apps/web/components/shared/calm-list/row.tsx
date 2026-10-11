@@ -51,8 +51,10 @@ export function useDragGuard(): {
   };
 }
 
-const CARD = cn(
-  'relative cursor-pointer rounded-rf-xl bg-surface px-5 py-4 shadow-e1',
+const CARD_BASE = 'relative rounded-rf-xl bg-surface px-5 py-4 shadow-e1';
+/** A card that opens something rises under the pointer; one that opens nothing stays still. */
+const CARD_OPENS = cn(
+  'cursor-pointer',
   'transition-[box-shadow,transform] duration-[250ms] ease-calm hover:-translate-y-0.5 hover:shadow-calm',
   'motion-reduce:transition-none motion-reduce:hover:translate-y-0',
 );
@@ -61,8 +63,12 @@ export interface CalmRowProps {
   /** The row's CSS grid (its columns at each width). */
   className: string;
   /** What opening the row does, for a screen reader: "Open quote QT-12 for Asha Patil". */
-  label: string;
-  /** A row that opens a page. Give this or `onOpen`. */
+  label?: string;
+  /**
+   * A row that opens a page. Give this or `onOpen` — or neither, for a row
+   * that is only read (a ledger line): it is then a plain card, with no cover,
+   * no pointer and no lift, so nothing promises a click that does nothing.
+   */
   href?: string;
   /** A row that opens something in place (a panel, a dialog). */
   onOpen?: () => void;
@@ -114,6 +120,7 @@ export function CalmRow({
   // A row that opens in place keeps its cells in their own grid, so what it
   // opens can sit under them at the card's full width.
   const expandable = expansion !== undefined;
+  const opens = Boolean(href || onOpen);
 
   const open = (event: MouseEvent): void => {
     if (drag.wasDrag(event)) return;
@@ -130,21 +137,22 @@ export function CalmRow({
   return (
     <div
       data-list-row={rowId}
-      onMouseDown={drag.onMouseDown}
-      onClick={open}
+      onMouseDown={opens ? drag.onMouseDown : undefined}
+      onClick={opens ? open : undefined}
       style={
         entering
           ? { animationDelay: `${Math.min(index, MAX_STAGGER_STEPS) * STAGGER_MS}ms` }
           : undefined
       }
       className={cn(
-        CARD,
+        CARD_BASE,
+        opens && CARD_OPENS,
         !expandable && className,
         entering && 'animate-calm-rise motion-reduce:animate-none',
         selected && 'shadow-calm ring-2 ring-foreground',
       )}
     >
-      {href ? (
+      {!opens ? null : href ? (
         <Link
           href={href}
           prefetch={false}

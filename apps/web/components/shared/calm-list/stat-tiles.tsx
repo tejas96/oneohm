@@ -38,22 +38,38 @@ export function StatTile({
   value,
   note,
   tone = 'default',
+  compact = false,
+  linked = false,
   below,
 }: {
   label: string;
   value: ReactNode;
   note?: ReactNode;
   tone?: StatTone;
+  /** For a strip of five: a smaller figure and less padding, so a crore still fits. */
+  compact?: boolean;
+  /** The tile sits inside a link: it answers the pointer. */
+  linked?: boolean;
   /** Something that belongs with this figure and sits under its card (a note that filters). */
   below?: ReactNode;
 }): JSX.Element {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <div className="rounded-card-calm bg-surface px-[22px] py-4 shadow-calm">
+      <div
+        className={cn(
+          'rounded-card-calm bg-surface py-4 shadow-calm',
+          compact ? 'px-3 sm:px-4' : 'px-[22px]',
+          linked &&
+            'transition-colors duration-200 hover:bg-background-tertiary motion-reduce:transition-none',
+        )}
+      >
         <dt className="text-[12px] font-medium text-foreground-tertiary">{label}</dt>
         <dd
+          // An amount is never cut short: a figure too long for its tile wraps.
           className={cn(
-            'm-0 mt-1 truncate text-[22px] font-semibold leading-[1.3] tracking-[-0.01em] tabular-nums',
+            'm-0 mt-1 font-semibold leading-[1.3] tracking-[-0.01em] tabular-nums [overflow-wrap:anywhere]',
+            // Two to a row on a phone: small enough that a crore stays on one line.
+            compact ? 'text-[15px] sm:text-[18px]' : 'text-[22px]',
             TONE_CLASS[tone],
           )}
         >

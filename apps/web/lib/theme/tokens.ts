@@ -441,12 +441,6 @@ const root = {
     // payout number, cancel/recovery note). Wider than the generic
     // `col-status` (106px) because that second line needs room to breathe.
     'col-reseller-state': '140px',
-    // Cash ledger grid (design min-width 960px)
-    'col-cash-date': '104px',
-    'col-cash-entry': '150px',
-    'col-cash-customer': 'minmax(150px,1.3fr)',
-    'col-cash-detail': 'minmax(150px,1.4fr)',
-    'col-cash-amount': '128px',
     // DISCOM admin grid (design min-width 1360px)
     'col-discom-hierarchy': 'minmax(250px,1.7fr)',
     'col-discom-circle': 'minmax(160px,1.1fr)',
