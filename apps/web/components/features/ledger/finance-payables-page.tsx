@@ -1,73 +1,39 @@
 'use client';
 
-import { Box } from '@mui/material';
-import { type JSX, useMemo, useState } from 'react';
+import { type JSX, useCallback, useState } from 'react';
 
 import { PayVendorDialog } from './pay-vendor-dialog';
-import { buildPayableColumns } from './payables-columns';
-import { VendorBillList } from './vendor-bill-list';
+import { PayableRowCard, PayableRowSkeleton } from './payable-row';
 
-import { CrmTable, type CrmQuickFilter } from '@/components/shared/crm-table';
+import {
+  CalmListPage,
+  ListEmpty,
+  ListError,
+  ListPager,
+  ListSkeleton,
+  ListTitle,
+  ListToolbar,
+  Segment,
+  SegmentCard,
+  StatTile,
+  StatTiles,
+  useListEntrance,
+} from '@/components/shared/calm-list';
 import { usePayables, type PayableRow } from '@/lib/hooks/resources/ledger';
-import { color, crm, radius, shadow } from '@/lib/theme/tokens';
+import { getErrorMessage } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 const PAGE_SIZE = 25;
 
-function StatCard({
-  label,
-  value,
-  note,
-  danger,
-}: {
-  label: string;
-  value: string;
-  note: string;
-  danger?: boolean;
-}): JSX.Element {
-  return (
-    <Box
-      sx={{
-        height: crm['kpi-height'],
-        px: 2,
-        py: 1.75,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        backgroundColor: color.surface,
-        borderRadius: radius['card-functional'],
-        boxShadow: shadow.e2,
-      }}
-    >
-      <Box
-        component="span"
-        sx={{
-          fontSize: 'var(--text-overline-size)',
-          fontWeight: 700,
-          letterSpacing: 'var(--text-overline-track)',
-          textTransform: 'uppercase',
-          color: color['text-tertiary'],
-        }}
-      >
-        {label}
-      </Box>
-      <Box
-        component="span"
-        sx={{
-          fontSize: 'var(--text-h3-size)',
-          lineHeight: 'var(--text-h3-line)',
-          letterSpacing: 'var(--text-h3-track)',
-          fontWeight: 700,
-          fontVariantNumeric: 'tabular-nums',
-          color: danger ? color.danger : undefined,
-        }}
-      >
-        {value}
-      </Box>
-      <Box sx={{ fontSize: crm['text-row-sm'], color: color['text-tertiary'] }}>{note}</Box>
-    </Box>
-  );
-}
+const VENDOR_NOUN = { one: 'vendor', many: 'vendors' };
+
+/** A screenful; a longer page does not need a longer placeholder. */
+const SKELETON_ROWS = 8;
+
+/** This list has no filter panel. */
+const NO_FILTER_COLUMNS: never[] = [];
+const NO_FILTERS = {};
+const ignoreFilters = (): void => undefined;
 
 /**
  * Who we owe, vendor by vendor.
@@ -94,15 +60,26 @@ function StatCard({
  * reconciliation went wrong.
  */
 export function FinancePayablesPage(): JSX.Element {
-  // CrmTable's `page` is zero-indexed; the API is one-indexed.
+  // The pager's `page` is zero-indexed; the API is one-indexed.
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [search, setSearch] = useState('');
   const [onlyOwing, setOnlyOwing] = useState<boolean | undefined>(undefined);
-  // The single `PayVendorDialog` instance this page owns — see
-  // `payables-columns.tsx`'s module doc for why the row menu takes a callback
-  // instead of each row mounting its own dialog.
+  // The single `PayVendorDialog` instance this page owns — see `PayableRowProps`
+  // for why the row menu takes a callback instead of each row mounting its own
+  // dialog.
   const [payingVendor, setPayingVendor] = useState<PayableRow | null>(null);
+  // Which vendors show their bills. Several can be open at once, and they stay
+  // open across a search or a page change, as they did in the table.
+  const [openVendorIds, setOpenVendorIds] = useState<ReadonlySet<string>>(() => new Set());
+  const toggleVendor = useCallback((row: PayableRow): void => {
+    setOpenVendorIds((current) => {
+      const next = new Set(current);
+      if (next.has(row.vendorId)) next.delete(row.vendorId);
+      else next.add(row.vendorId);
+      return next;
+    });
+  }, []);
 
   const query = usePayables({
     search: search || undefined,
@@ -114,118 +91,141 @@ export function FinancePayablesPage(): JSX.Element {
   const rows = query.data?.data ?? [];
   const totals = query.data?.totals;
 
-  const columns = useMemo(() => buildPayableColumns(setPayingVendor), []);
-
-  // "Owing only" keeps vendors we owe money (`payable_paise > 0`). A vendor
-  // holding an advance from us is not one to pay, so it only shows under
-  // "All vendors".
-  const quickFilters = useMemo<CrmQuickFilter[]>(
-    () => [
-      { key: '', label: 'All vendors', tone: 'neutral', dot: false },
-      { key: 'owing', label: 'Owing only', tone: 'warning', dot: true },
-    ],
-    [],
-  );
+  // Rows rise in once. Later changes swap in without replaying it.
+  const entering = useListEntrance(rows.length);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: { xs: 2, lg: 3 } }}>
-      <Box>
-        <Box
-          component="span"
-          sx={{
-            fontSize: 'var(--text-overline-size)',
-            fontWeight: 700,
-            letterSpacing: 'var(--text-overline-track)',
-            textTransform: 'uppercase',
-            color: color['text-tertiary'],
+    <CalmListPage
+      // Three figures and the views would leave little room for the vendors.
+      pinHeader={false}
+      header={
+        <>
+          <ListTitle
+            title="Payables"
+            sub="What we owe vendors — bills taken on credit, less what has been paid. A net balance per vendor, not bill by bill."
+          />
+
+          <StatTiles label="Payables totals" className="mb-2.5 sm:grid-cols-3">
+            <StatTile
+              label="Total payable"
+              value={formatPaise(totals?.totalPayablePaise ?? 0)}
+              note="owed to vendors"
+            />
+            <StatTile
+              label="Vendors owed"
+              value={String(totals?.vendorsOwedCount ?? 0)}
+              note="with a balance due"
+            />
+            <StatTile
+              label="Advances paid"
+              value={formatPaise(totals?.advancePaise ?? 0)}
+              // The totals cover every vendor, but "Owing only" hides the vendors
+              // holding an advance — so say so rather than show a figure the list
+              // below cannot explain.
+              note={onlyOwing ? 'all vendors, incl. ones this filter hides' : 'paid ahead of bills'}
+            />
+          </StatTiles>
+
+          {/* "Owing only" keeps vendors we owe money (`payable_paise > 0`). A
+              vendor holding an advance from us is not one to pay, so it only
+              shows under "All vendors". */}
+          <SegmentCard label="Vendors by what is owed">
+            <Segment
+              pressed={!onlyOwing}
+              onClick={() => {
+                setOnlyOwing(undefined);
+                setPage(0);
+              }}
+              count={null}
+              label="All vendors"
+            />
+            <Segment
+              pressed={Boolean(onlyOwing)}
+              onClick={() => {
+                setOnlyOwing(true);
+                setPage(0);
+              }}
+              count={null}
+              label="Owing only"
+              dot="var(--ds-warning)"
+            />
+          </SegmentCard>
+        </>
+      }
+      toolbar={
+        <ListToolbar
+          search={search}
+          onSearchChange={(next) => {
+            setSearch(next);
+            setPage(0);
           }}
-        >
-          Finance
-        </Box>
-        <Box
-          component="h1"
-          sx={{
-            m: 0,
-            mt: '5px',
-            mb: '3px',
-            fontSize: crm['text-page-title'],
-            fontWeight: 700,
-            letterSpacing: crm['text-page-title-track'],
+          searchPlaceholder="Search vendor name or code"
+          searchLabel="Search vendors"
+          // The payables API searches on any length.
+          searchMinLength={1}
+          filterColumns={NO_FILTER_COLUMNS}
+          filters={NO_FILTERS}
+          onFilterChange={ignoreFilters}
+        />
+      }
+      error={
+        query.isError ? (
+          <ListError
+            title="Couldn’t load payables"
+            message={getErrorMessage(query.error)}
+            onRetry={() => void query.refetch()}
+          />
+        ) : null
+      }
+      isFetching={query.isFetching}
+      isLoading={query.isLoading}
+      page={page}
+      footer={
+        <ListPager
+          page={page}
+          pageSize={pageSize}
+          totalRowCount={query.data?.total ?? 0}
+          onPageChange={setPage}
+          onPageSizeChange={(next) => {
+            setPageSize(next);
+            setPage(0);
           }}
-        >
-          Payables
-        </Box>
-        <Box
-          component="p"
-          sx={{ m: 0, fontSize: crm['text-row-title'], color: color['text-secondary'] }}
-        >
-          What we owe vendors — bills taken on credit, less what has been paid. A net balance per
-          vendor, not bill by bill.
-        </Box>
-      </Box>
-
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 1.5,
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-        }}
-      >
-        <StatCard
-          label="Total payable"
-          value={formatPaise(totals?.totalPayablePaise ?? 0)}
-          note="owed to vendors"
+          noun={VENDOR_NOUN}
+          countUnknown={query.isError && !query.data}
         />
-        <StatCard
-          label="Vendors owed"
-          value={String(totals?.vendorsOwedCount ?? 0)}
-          note="with a balance due"
+      }
+      overlays={
+        payingVendor ? (
+          <PayVendorDialog open vendor={payingVendor} onClose={() => setPayingVendor(null)} />
+        ) : null
+      }
+    >
+      {query.isLoading ? (
+        <ListSkeleton
+          rows={SKELETON_ROWS}
+          label="Loading vendors"
+          renderRow={() => <PayableRowSkeleton />}
         />
-        <StatCard
-          label="Advances paid"
-          value={formatPaise(totals?.advancePaise ?? 0)}
-          // The totals cover every vendor, but "Owing only" hides the vendors
-          // holding an advance — so say so rather than show a figure the list
-          // below cannot explain.
-          note={onlyOwing ? 'all vendors, incl. ones this filter hides' : 'paid ahead of bills'}
-        />
-      </Box>
-
-      <CrmTable<PayableRow>
-        columns={columns}
-        rows={rows}
-        getRowId={(row) => row.vendorId}
-        loading={query.isLoading}
-        refetching={query.isFetching && !query.isLoading}
-        itemLabel="vendors"
-        gridMinWidth="760px"
-        searchPlaceholder="Search vendor name or code"
-        onSearchChange={(next) => {
-          setSearch(next);
-          setPage(0);
-        }}
-        quickFilters={quickFilters}
-        activeQuickFilter={onlyOwing ? 'owing' : ''}
-        onQuickFilterChange={(key) => {
-          setOnlyOwing(key === 'owing' ? true : undefined);
-          setPage(0);
-        }}
-        page={page}
-        pageSize={pageSize}
-        totalRowCount={query.data?.total ?? 0}
-        onPageChange={setPage}
-        onPageSizeChange={(next) => {
-          setPageSize(next);
-          setPage(0);
-        }}
-        // Click a vendor to see the bills and payments behind their balance.
-        renderExpandedRow={(row) => <VendorBillList vendorId={row.vendorId} />}
-        emptyMessage="Nothing owed to anyone."
-      />
-
-      {payingVendor ? (
-        <PayVendorDialog open vendor={payingVendor} onClose={() => setPayingVendor(null)} />
-      ) : null}
-    </Box>
+      ) : rows.length === 0 ? (
+        query.isError ? null : (
+          <ListEmpty title="Nothing owed to anyone." />
+        )
+      ) : (
+        <div className="flex flex-col gap-2">
+          {rows.map((row, index) => (
+            // Open a vendor to see the bills and payments behind their balance.
+            <PayableRowCard
+              key={row.vendorId}
+              row={row}
+              index={index}
+              entering={entering}
+              expanded={openVendorIds.has(row.vendorId)}
+              onToggle={toggleVendor}
+              onPay={setPayingVendor}
+            />
+          ))}
+        </div>
+      )}
+    </CalmListPage>
   );
 }

@@ -17,6 +17,7 @@ export { BONE, ListSkeleton, SKELETON_CARD } from './list-skeleton';
 export { Segment, SegmentCard, type SegmentProps } from './segments';
 export { SelectionBar } from './selection-bar';
 export { QuietPill } from './quiet-pill';
+export { StatTile, StatTiles, type StatTone } from './stat-tiles';
 export {
   ABOVE,
   CalmRow,

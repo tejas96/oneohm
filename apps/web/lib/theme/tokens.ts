@@ -427,17 +427,8 @@ const root = {
     'col-recv-overdue': '148px',
     'col-recv-meter': '136px',
     'col-recv-bank': 'minmax(160px,1.2fr)',
-    // Payables grid — vendor, net payable, oldest credit bill, days past
-    // agreed terms, bill count, row menu. Payable is sized for
-    // "Advance ₹XX,XX,XXX.XX", the longest string that column ever renders.
-    'col-pay-vendor': 'minmax(180px,1.6fr)',
-    'col-pay-payable': '160px',
-    'col-pay-oldest': '112px',
-    'col-pay-past-terms': '108px',
-    'col-pay-bills': '76px',
-    'col-pay-actions': '44px',
     // Resellers list grid — five lifetime money columns (Revenue, Pending,
-    // Owed, Paid, To recover). Narrower than `col-pay-payable`: sized for a
+    // Owed, Paid, To recover). Narrower than the Payables figure: sized for a
     // plain `formatPaise` value with no "Advance " prefix (up to
     // "₹1,23,45,678.00", 16 chars). Sharing one token across all five keeps
     // them visually even and gives one place to widen if amounts grow.

@@ -74,6 +74,14 @@ export interface CalmRowProps {
   selected?: boolean;
   /** Marks the row in the DOM (`data-list-row`), e.g. with its id. */
   rowId: string;
+  /**
+   * A row that opens in place: what it shows under its cells while `expanded`
+   * (a vendor's bills, a project's milestones). Give it with `onOpen`, which
+   * then toggles. The card grows; nothing navigates.
+   */
+  expansion?: ReactNode;
+  /** The `expansion` is showing. */
+  expanded?: boolean;
   children: ReactNode;
 }
 
@@ -95,11 +103,17 @@ export function CalmRow({
   entering,
   selected = false,
   rowId,
+  expansion,
+  expanded = false,
   children,
 }: CalmRowProps): JSX.Element {
   const router = useRouter();
   const cover = useRef<HTMLButtonElement>(null);
   const drag = useDragGuard();
+
+  // A row that opens in place keeps its cells in their own grid, so what it
+  // opens can sit under them at the card's full width.
+  const expandable = expansion !== undefined;
 
   const open = (event: MouseEvent): void => {
     if (drag.wasDrag(event)) return;
@@ -125,7 +139,7 @@ export function CalmRow({
       }
       className={cn(
         CARD,
-        className,
+        !expandable && className,
         entering && 'animate-calm-rise motion-reduce:animate-none',
         selected && 'shadow-calm ring-2 ring-foreground',
       )}
@@ -143,6 +157,7 @@ export function CalmRow({
           ref={cover}
           type="button"
           aria-label={label}
+          aria-expanded={expandable ? expanded : undefined}
           onClick={(event) => {
             event.stopPropagation();
             onOpen?.();
@@ -150,7 +165,23 @@ export function CalmRow({
           className="absolute inset-0 z-0 cursor-pointer rounded-rf-xl"
         />
       )}
-      {children}
+      {expandable ? (
+        <>
+          <div className={className}>{children}</div>
+          {expanded ? (
+            // Its clicks are its own: a link or a drag to copy a figure in
+            // here must not close the row.
+            <div
+              className={cn(ABOVE, 'mt-4 cursor-auto border-t border-border pt-4')}
+              onClick={stopRowClick}
+            >
+              {expansion}
+            </div>
+          ) : null}
+        </>
+      ) : (
+        children
+      )}
     </div>
   );
 }
