@@ -6,7 +6,8 @@ import { ChevronIcon } from './icons';
 
 import { cn, formatNumber } from '@/lib/utils';
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+/** The sizes the pager offers unless a list passes its own. */
+export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 const CONTROL = 'h-[34px] rounded-input-functional bg-surface shadow-e1';
 const BUTTON = cn(

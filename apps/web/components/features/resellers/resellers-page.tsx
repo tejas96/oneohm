@@ -1,10 +1,10 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { type JSX, useCallback, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { type JSX, useCallback } from 'react';
 
 import { MissingCommissionsStrip } from './missing-commissions-strip';
-import { PeriodChips } from './period-chips';
+import { DEFAULT_PERIOD, PeriodChips, toPeriod } from './period-chips';
 import { ResellerRow, ResellerRowSkeleton } from './reseller-row';
 import { useClientPage } from './use-client-page';
 
@@ -20,6 +20,7 @@ import {
   useListEntrance,
 } from '@/components/shared/calm-list';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { setUrlChoice } from '@/lib/hooks';
 import {
   useResellers,
   type ResellerPeriod,
@@ -40,11 +41,15 @@ const SKELETON_ROWS = 8;
  */
 export function ResellersPage(): JSX.Element {
   const router = useRouter();
-  const [period, setPeriod] = useState<ResellerPeriod>('fy');
+  // The period lives in the URL (`?period=all`), with the page beside it, so
+  // Back returns to the same figures and the same page.
+  const period = toPeriod(useSearchParams().get('period'));
   const q = useResellers(period);
   const rows = q.data?.rows ?? [];
   const t = q.data?.totals;
-  const paged = useClientPage(rows);
+  const paged = useClientPage(rows, 'rsl');
+  const setPeriod = (next: ResellerPeriod): void =>
+    paged.url.edit((params) => setUrlChoice(params, 'period', next, DEFAULT_PERIOD));
   const { page, pageSize, totalRowCount, onPageChange, onPageSizeChange } = paged.tableProps;
 
   const open = useCallback(

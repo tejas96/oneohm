@@ -1,8 +1,7 @@
 'use client';
 
 import { Button } from '@mui/material';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { type JSX, useCallback, useEffect, useState } from 'react';
+import { type JSX, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { ApprovalKpiCards } from './approval-kpi-cards';
 import { ApprovalReviewDrawer } from './approval-review-drawer';
@@ -18,14 +17,16 @@ import {
   ListSkeleton,
   ListTitle,
   ListToolbar,
+  PAGE_SIZE_OPTIONS,
   Segment,
   SegmentCard,
   SelectionBar,
   type SortOption,
+  useKeepPageInRange,
   useListEntrance,
 } from '@/components/shared/calm-list';
 import { showToast } from '@/components/ui/sonner';
-import type { TableUrlSortModel } from '@/lib/hooks';
+import { setUrlChoice, useListUrl } from '@/lib/hooks';
 import {
   useApprovalMutations,
   useApprovalSummary,
@@ -117,57 +118,42 @@ export function PaymentApprovalsPage(): JSX.Element {
   );
   const { user } = useAuth();
 
-  // The status tab lives in the URL (`?status=rejected`), so a notification can
-  // open the right tab and a refresh keeps it. Pending is the bare URL.
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const status = toStatus(searchParams.get('status'));
-  const setStatus = (next: ApprovalStatus): void => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (next === 'pending') params.delete('status');
-    else params.set('status', next);
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  };
-
-  // The pager's `page` is zero-indexed; the API is one-indexed. Kept zero-based
-  // here and converted at the call. Remembered per status, so arriving on
-  // another tab from a link starts at its first page.
-  const [pageFor, setPageFor] = useState<{ status: ApprovalStatus; page: number }>({
-    status,
-    page: 0,
+  // The whole view lives in the URL: the status tab (`?status=rejected`, so a
+  // notification can open the right tab; Pending is the bare URL) and the
+  // search, filters, sort and page under it — so a refresh keeps them, and
+  // Back from a project returns to the place in the queue it was left on.
+  const url = useListUrl({
+    prefix: 'appr',
+    defaultPageSize: PAGE_SIZE,
+    pageSizeOptions: PAGE_SIZE_OPTIONS,
+    sortFields: SORTABLE,
   });
-  const page = pageFor.status === status ? pageFor.page : 0;
-  const setPage = (next: number): void => setPageFor({ status, page: next });
-  const [search, setSearch] = useState('');
-  const [pageSize, setPageSize] = useState(PAGE_SIZE);
-  const [filters, setFilters] = useState<FilterState>({});
-  const [sortModel, setSortModel] = useState<TableUrlSortModel | null>(null);
+  // The pager's `page` is zero-indexed; the API is one-indexed. Kept zero-based
+  // here and converted at the call.
+  const { page, pageSize, search, sortModel } = url.state;
+  const status = toStatus(url.params.get('status'));
+  // Page 3 of one tab is not page 3 of another: a tab starts at its first
+  // page, in the same URL write that selects it.
+  const setStatus = (next: ApprovalStatus): void =>
+    url.edit((params) => {
+      setUrlChoice(params, 'status', next, 'pending');
+      return { page: 0 };
+    });
+  // Only what the filter panel could have written; the rest of a hand-typed
+  // `appr_filters` is dropped, not sent.
+  const filters = useMemo(() => sanitizeFilters(url.state.filters), [url.state.filters]);
   const [selected, setSelected] = useState<PaymentApproval | null>(null);
 
-  // A notice links to one request (`?open=<id>`). Arriving on one opens that
-  // request in the drawer and clears whatever search was left in the box, so
-  // the queue behind it is not quietly filtered to something else — a stale
-  // search once made the page say "Nothing waiting" right under a notice that
-  // said something was. Keyed on the link, not on typing. (The search box
-  // follows `search`, so clearing it here clears the box too.)
-  const openId = searchParams.get('open');
-  const [linkSeen, setLinkSeen] = useState<string | null>(null);
-  if (openId !== linkSeen) {
-    setLinkSeen(openId);
-    if (openId) {
-      setSearch('');
-      setPageFor({ status, page: 0 });
-    }
-  }
+  // A notice links to one request (`?open=<id>`), which opens in the drawer.
+  // The link is a whole address, so it carries no search, filter or page: the
+  // queue behind the drawer is never quietly narrowed to something else — a
+  // stale search once made the page say "Nothing waiting" right under a notice
+  // that said something was.
+  const openId = url.params.get('open');
   const closeDrawer = (): void => {
     setSelected(null);
     if (!openId) return;
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('open');
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    url.edit((params) => params.delete('open'));
   };
 
   const summary = useApprovalSummary();
@@ -254,6 +240,15 @@ export function PaymentApprovalsPage(): JSX.Element {
     }
   };
 
+  // A page from an old link, or one Back returns to after requests were decided.
+  useKeepPageInRange({
+    page,
+    pageSize,
+    total: query.data?.total,
+    isFetching: query.isFetching,
+    onPageChange: url.setPage,
+  });
+
   // Rows rise in once. Later changes swap in without replaying it.
   const entering = useListEntrance(rows.length);
 
@@ -289,26 +284,17 @@ export function PaymentApprovalsPage(): JSX.Element {
       toolbar={
         <ListToolbar
           search={search}
-          onSearchChange={(next) => {
-            setSearch(next);
-            setPage(0);
-          }}
+          onSearchChange={url.setSearch}
           searchPlaceholder="Search request number, customer, project or reference"
           searchLabel="Search requests"
           // The approvals API searches on any length.
           searchMinLength={1}
           filterColumns={FILTER_COLUMNS}
           filters={filters}
-          onFilterChange={(next) => {
-            setFilters(next);
-            setPage(0);
-          }}
+          onFilterChange={url.setFilters}
           sortOptions={SORT_OPTIONS}
           sortModel={sortModel}
-          onSortChange={(next) => {
-            setSortModel(next);
-            setPage(0);
-          }}
+          onSortChange={url.setSortModel}
         />
       }
       error={
@@ -328,11 +314,8 @@ export function PaymentApprovalsPage(): JSX.Element {
           page={page}
           pageSize={pageSize}
           totalRowCount={query.data?.total ?? 0}
-          onPageChange={setPage}
-          onPageSizeChange={(next) => {
-            setPageSize(next);
-            setPage(0);
-          }}
+          onPageChange={url.setPage}
+          onPageSizeChange={url.setPageSize}
           noun={REQUEST_NOUN}
           countUnknown={query.isError && !query.data}
         />
@@ -400,6 +383,16 @@ export function PaymentApprovalsPage(): JSX.Element {
 /** Anything that is not a known tab is the pending queue. */
 function toStatus(value: string | null): ApprovalStatus {
   return value === 'approved' || value === 'rejected' || value === 'cancelled' ? value : 'pending';
+}
+
+/** The two filters the panel has, each only with a value the API accepts. */
+function sanitizeFilters(raw: FilterState): FilterState {
+  const kind = toKind(readFilter(raw, 'kind'));
+  const valueDate = readFilter(raw, 'valueDate');
+  return {
+    ...(kind ? { kind } : {}),
+    ...(valueDate && /^\d{4}-\d{2}-\d{2}$/.test(valueDate) ? { valueDate } : {}),
+  };
 }
 
 /** Narrows the free-form filter value to a kind the API accepts. */

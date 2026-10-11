@@ -13,12 +13,15 @@ import {
   ListSkeleton,
   ListTitle,
   ListToolbar,
+  PAGE_SIZE_OPTIONS,
   Segment,
   SegmentCard,
   StatTile,
   StatTiles,
+  useKeepPageInRange,
   useListEntrance,
 } from '@/components/shared/calm-list';
+import { setUrlChoice, useListUrl } from '@/lib/hooks';
 import { usePayables, type PayableRow } from '@/lib/hooks/resources/ledger';
 import { getErrorMessage } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
@@ -61,10 +64,20 @@ const ignoreFilters = (): void => undefined;
  */
 export function FinancePayablesPage(): JSX.Element {
   // The pager's `page` is zero-indexed; the API is one-indexed.
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE);
-  const [search, setSearch] = useState('');
-  const [onlyOwing, setOnlyOwing] = useState<boolean | undefined>(undefined);
+  // The view lives in the URL (`?owing=1&pay_search=…`), so Back from a
+  // vendor or a project returns to the search, view and page it was left on.
+  const url = useListUrl({
+    prefix: 'pay',
+    defaultPageSize: PAGE_SIZE,
+    pageSizeOptions: PAGE_SIZE_OPTIONS,
+  });
+  const { page, pageSize, search } = url.state;
+  const onlyOwing = url.params.get('owing') === '1' ? true : undefined;
+  const chooseOwing = (next: true | undefined): void =>
+    url.edit((params) => {
+      setUrlChoice(params, 'owing', next ? '1' : undefined);
+      return { page: 0 };
+    });
   // The single `PayVendorDialog` instance this page owns — see `PayableRowProps`
   // for why the row menu takes a callback instead of each row mounting its own
   // dialog.
@@ -95,6 +108,15 @@ export function FinancePayablesPage(): JSX.Element {
   const pending = query.isError ? 'could not load' : 'loading…';
   // The totals follow the search (not the "Owing only" view), so say so.
   const searching = search.length > 0;
+
+  // A page from an old link, or one Back returns to after the list shrank.
+  useKeepPageInRange({
+    page,
+    pageSize,
+    total: query.data?.total,
+    isFetching: query.isFetching,
+    onPageChange: url.setPage,
+  });
 
   // Rows rise in once. Later changes swap in without replaying it.
   const entering = useListEntrance(rows.length);
@@ -147,19 +169,13 @@ export function FinancePayablesPage(): JSX.Element {
           <SegmentCard label="Vendors by what is owed">
             <Segment
               pressed={!onlyOwing}
-              onClick={() => {
-                setOnlyOwing(undefined);
-                setPage(0);
-              }}
+              onClick={() => chooseOwing(undefined)}
               count={null}
               label="All vendors"
             />
             <Segment
               pressed={Boolean(onlyOwing)}
-              onClick={() => {
-                setOnlyOwing(true);
-                setPage(0);
-              }}
+              onClick={() => chooseOwing(true)}
               count={null}
               label="Owing only"
               dot="var(--ds-warning)"
@@ -170,10 +186,7 @@ export function FinancePayablesPage(): JSX.Element {
       toolbar={
         <ListToolbar
           search={search}
-          onSearchChange={(next) => {
-            setSearch(next);
-            setPage(0);
-          }}
+          onSearchChange={url.setSearch}
           searchPlaceholder="Search vendor name or code"
           searchLabel="Search vendors"
           // The payables API searches on any length.
@@ -200,11 +213,8 @@ export function FinancePayablesPage(): JSX.Element {
           page={page}
           pageSize={pageSize}
           totalRowCount={query.data?.total ?? 0}
-          onPageChange={setPage}
-          onPageSizeChange={(next) => {
-            setPageSize(next);
-            setPage(0);
-          }}
+          onPageChange={url.setPage}
+          onPageSizeChange={url.setPageSize}
           noun={VENDOR_NOUN}
           countUnknown={query.isError && !query.data}
         />

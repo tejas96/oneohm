@@ -11,6 +11,12 @@ const PERIODS: ReadonlyArray<{ value: ResellerPeriod; label: string }> = [
   { value: 'all', label: 'All time' },
 ];
 
+export const DEFAULT_PERIOD: ResellerPeriod = 'fy';
+
+/** `?period=`, typed by hand as often as it is clicked: anything else is this FY. */
+export const toPeriod = (raw: string | null): ResellerPeriod =>
+  PERIODS.find((period) => period.value === raw)?.value ?? DEFAULT_PERIOD;
+
 /** The period the funnel and the revenue are counted over, and what that means. */
 export function PeriodChips({
   value,

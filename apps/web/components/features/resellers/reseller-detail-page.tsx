@@ -2,6 +2,7 @@
 
 import { Alert, Box, Button } from '@mui/material';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { type JSX, useCallback, useEffect, useState } from 'react';
 
 import {
@@ -11,7 +12,7 @@ import {
   RecordCommissionPaymentDialog,
 } from './commission-dialogs';
 import { CommissionRowCard, CommissionRowSkeleton, type CommissionAction } from './commission-row';
-import { PeriodChips } from './period-chips';
+import { DEFAULT_PERIOD, PeriodChips, toPeriod } from './period-chips';
 import { useClientPage } from './use-client-page';
 
 import {
@@ -27,6 +28,7 @@ import {
 } from '@/components/shared/calm-list';
 import { showToast } from '@/components/ui/sonner';
 import { ROUTES } from '@/lib/config/routes';
+import { setUrlChoice } from '@/lib/hooks';
 import {
   useCommissionMutations,
   useReseller,
@@ -49,7 +51,9 @@ type Open =
   | null;
 
 export function ResellerDetailPage({ id }: { id: string }): JSX.Element {
-  const [period, setPeriod] = useState<ResellerPeriod>('fy');
+  // The period lives in the URL (`?period=all`), with the page beside it, so
+  // Back returns to the same figures and the same page.
+  const period = toPeriod(useSearchParams().get('period'));
   const q = useReseller(id, period);
   const m = useCommissionMutations();
   const [open, setOpen] = useState<Open>(null);
@@ -69,7 +73,9 @@ export function ResellerDetailPage({ id }: { id: string }): JSX.Element {
   const h = q.data?.reseller;
   const s = q.data?.summary;
   const rows = q.data?.commissions ?? [];
-  const paged = useClientPage(rows);
+  const paged = useClientPage(rows, 'rcm');
+  const setPeriod = (next: ResellerPeriod): void =>
+    paged.url.edit((params) => setUrlChoice(params, 'period', next, DEFAULT_PERIOD));
   const { pageRows } = paged;
   const { page, pageSize, totalRowCount, onPageChange, onPageSizeChange } = paged.tableProps;
 

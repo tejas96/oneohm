@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Tooltip } from '@mui/material';
-import { type JSX, useState } from 'react';
+import { type JSX } from 'react';
 
 import { CashRow, CashRowSkeleton } from './cash-row';
 
@@ -15,6 +15,7 @@ import {
   ListSkeleton,
   ListTitle,
   ListToolbar,
+  PAGE_SIZE_OPTIONS,
   PillTabs,
   Segment,
   SegmentCard,
@@ -22,10 +23,11 @@ import {
   StatTile,
   StatTiles,
   type StatTone,
+  useKeepPageInRange,
   useListEntrance,
 } from '@/components/shared/calm-list';
 import { ROUTES } from '@/lib/config/routes';
-import type { TableUrlSortModel } from '@/lib/hooks';
+import { setUrlChoice, useListUrl } from '@/lib/hooks';
 import {
   useCashFlow,
   useFinanceKpis,
@@ -85,6 +87,8 @@ function resolvePreset(key: PresetKey): { from: string; to: string } {
   }
 }
 
+const DEFAULT_PRESET: PresetKey = 'month';
+
 const PRESETS: Array<{ value: PresetKey; label: string }> = [
   { value: 'today', label: 'Today' },
   { value: 'month', label: 'This month' },
@@ -106,6 +110,14 @@ const SORT_OPTIONS: SortOption[] = [
   { label: 'Customer A–Z', model: { field: 'customerName', direction: 'asc' } },
   { label: 'Customer Z–A', model: { field: 'customerName', direction: 'desc' } },
 ];
+
+/** `?period=`, typed by hand as often as it is clicked: anything else is this month. */
+const toPreset = (raw: string | null): PresetKey =>
+  PRESETS.find((preset) => preset.value === raw)?.value ?? DEFAULT_PRESET;
+
+/** `?dir=in|out`; anything else is both directions. */
+const toDirection = (raw: string | null): LedgerDirection | undefined =>
+  raw === 'in' || raw === 'out' ? raw : undefined;
 
 const ENTRY_NOUN = { one: 'entry', many: 'entries' };
 
@@ -130,13 +142,18 @@ const ignoreFilters = (): void => undefined;
  * a customer "owes ₹X in March".
  */
 export function FinanceCashPage(): JSX.Element {
-  const [preset, setPreset] = useState<PresetKey>('month');
-  const [direction, setDirection] = useState<LedgerDirection | undefined>();
+  // The whole view lives in the URL (`?period=fy&dir=in&cash_page=3`), so Back
+  // from a project returns to the period, search, sort and page it was left on.
+  const url = useListUrl({
+    prefix: 'cash',
+    defaultPageSize: PAGE_SIZE,
+    pageSizeOptions: PAGE_SIZE_OPTIONS,
+    sortFields: CASH_SORTABLE,
+  });
   // The pager's `page` is zero-indexed; the API is one-indexed.
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE);
-  const [search, setSearch] = useState('');
-  const [sortModel, setSortModel] = useState<TableUrlSortModel | null>(null);
+  const { page, pageSize, search, sortModel } = url.state;
+  const preset = toPreset(url.params.get('period'));
+  const direction = toDirection(url.params.get('dir'));
   const range = resolvePreset(preset);
 
   // Search narrows the period figures so the cards describe the rows on
@@ -161,10 +178,20 @@ export function FinanceCashPage(): JSX.Element {
   // Rows rise in once. Later changes swap in without replaying it.
   const entering = useListEntrance(rows.length);
 
-  const chooseDirection = (next: LedgerDirection | undefined): void => {
-    setDirection(next);
-    setPage(0);
-  };
+  const chooseDirection = (next: LedgerDirection | undefined): void =>
+    url.edit((params) => {
+      setUrlChoice(params, 'dir', next);
+      return { page: 0 };
+    });
+
+  // A page from an old link, or one Back returns to after entries were reversed.
+  useKeepPageInRange({
+    page,
+    pageSize,
+    total: entries.data?.total,
+    isFetching: entries.isFetching,
+    onPageChange: url.setPage,
+  });
 
   return (
     <CalmListPage
@@ -182,10 +209,12 @@ export function FinanceCashPage(): JSX.Element {
                 label="Reporting period"
                 options={PRESETS}
                 value={preset}
-                onChange={(next) => {
-                  setPreset(next);
-                  setPage(0);
-                }}
+                onChange={(next) =>
+                  url.edit((params) => {
+                    setUrlChoice(params, 'period', next, DEFAULT_PRESET);
+                    return { page: 0 };
+                  })
+                }
               />
             }
           />
@@ -234,10 +263,7 @@ export function FinanceCashPage(): JSX.Element {
       toolbar={
         <ListToolbar
           search={search}
-          onSearchChange={(next) => {
-            setSearch(next);
-            setPage(0);
-          }}
+          onSearchChange={url.setSearch}
           searchPlaceholder="Search entry number, customer, project or reference"
           searchLabel="Search entries"
           // The ledger API searches on any length.
@@ -247,10 +273,7 @@ export function FinanceCashPage(): JSX.Element {
           onFilterChange={ignoreFilters}
           sortOptions={SORT_OPTIONS}
           sortModel={sortModel}
-          onSortChange={(next) => {
-            setSortModel(next);
-            setPage(0);
-          }}
+          onSortChange={url.setSortModel}
         />
       }
       error={
@@ -270,11 +293,8 @@ export function FinanceCashPage(): JSX.Element {
           page={page}
           pageSize={pageSize}
           totalRowCount={entries.data?.total ?? 0}
-          onPageChange={setPage}
-          onPageSizeChange={(next) => {
-            setPageSize(next);
-            setPage(0);
-          }}
+          onPageChange={url.setPage}
+          onPageSizeChange={url.setPageSize}
           noun={ENTRY_NOUN}
           countUnknown={entries.isError && !entries.data}
         />

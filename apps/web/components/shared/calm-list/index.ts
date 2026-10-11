@@ -11,7 +11,7 @@ export {
 export { ListTitle, PrimaryAction } from './list-title';
 export { ListToolbar, type ListToolbarProps } from './list-toolbar';
 export { createSortIndex, type SortOption } from './sort-menu';
-export { ListPager, type ListPagerProps } from './list-pager';
+export { ListPager, type ListPagerProps, PAGE_SIZE_OPTIONS } from './list-pager';
 export { ListEmpty, ListError } from './list-states';
 export { BONE, ListSkeleton, SKELETON_CARD } from './list-skeleton';
 export { Segment, SegmentCard, type SegmentProps } from './segments';

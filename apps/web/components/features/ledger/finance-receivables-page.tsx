@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { type JSX, useCallback, useState } from 'react';
 
 import {
@@ -19,15 +19,17 @@ import {
   ListSkeleton,
   ListTitle,
   ListToolbar,
+  PAGE_SIZE_OPTIONS,
   PillTabs,
   Segment,
   SegmentCard,
   type SortOption,
   StatTile,
   StatTiles,
+  useKeepPageInRange,
   useListEntrance,
 } from '@/components/shared/calm-list';
-import type { TableUrlSortModel } from '@/lib/hooks';
+import { setUrlChoice, useListUrl } from '@/lib/hooks';
 import {
   useReceivables,
   useRecovery,
@@ -147,6 +149,17 @@ const AGEING_VIEWS: ReadonlyArray<{
   { bucket: '90plus', label: '90+ days', dot: 'var(--ds-danger)' },
 ];
 
+/** `?bucket=`, typed by hand as often as it is clicked: anything else is no ageing view. */
+const BUCKETS: ReadonlyArray<NonNullable<ReceivableFilters['bucket']>> = [
+  ...AGEING_VIEWS.map((view) => view.bucket),
+  'no_due_date',
+];
+const toBucket = (raw: string | null): ReceivableFilters['bucket'] =>
+  BUCKETS.find((bucket) => bucket === raw);
+
+/** What a change of scope or funding does to the list under it. */
+const AFRESH = { page: 0, sortModel: null };
+
 const EMPTY_IDS: ReadonlySet<string> = new Set();
 
 /**
@@ -170,10 +183,10 @@ const EMPTY_IDS: ReadonlySet<string> = new Set();
  * milestone — the length of the list is the number of calls to make.
  */
 export function FinanceReceivablesPage(): JSX.Element {
-  // The scope lives in the URL (`?scope=recovery-cash`), so a refresh keeps it,
-  // a link can open it, and "Projects commissioned" lands on Recovery directly.
-  const router = useRouter();
-  const pathname = usePathname();
+  // The whole view lives in the URL, so a refresh keeps it, a link can open
+  // it, and Back from a project returns to the scope, ageing view, search,
+  // sort and page it was left on. `?scope=recovery-cash` is also how
+  // "Projects commissioned" lands on Recovery directly.
   const searchParams = useSearchParams();
   const scope = toScope(searchParams.get('scope'));
   const isRecovery = scope !== 'all';
@@ -181,40 +194,34 @@ export function FinanceReceivablesPage(): JSX.Element {
   // with its Cash/Loan switch, and the total must match the card it came from.
   const fundingParam = searchParams.get('funding');
   const funding = fundingParam === 'cash' || fundingParam === 'loan' ? fundingParam : undefined;
+  const bucket = toBucket(searchParams.get('bucket'));
 
-  const [bucket, setBucket] = useState<ReceivableFilters['bucket']>(undefined);
-  const [search, setSearch] = useState('');
-  const [pageSize, setPageSize] = useState(PAGE_SIZE);
-  // Page and sort belong to one list: the lists sort on different columns, and
-  // page 3 of one is not page 3 of another. Keyed by scope AND funding so a
-  // change of either — from the toggle, a link, or Back/Forward between
-  // `?funding=cash` and the bare URL — starts both afresh, never on a page the
-  // shorter list does not have.
-  const viewKey = `${scope}|${funding ?? 'all'}`;
-  const [view, setView] = useState<{ key: string; page: number; sort: TableUrlSortModel | null }>({
-    key: viewKey,
-    page: 0,
-    sort: null,
+  const url = useListUrl({
+    prefix: 'recv',
+    defaultPageSize: PAGE_SIZE,
+    pageSizeOptions: PAGE_SIZE_OPTIONS,
+    // The two lists sort on different columns: a sort left over from the other
+    // one is dropped rather than sent.
+    sortFields: isRecovery ? RECOVERY_SORTABLE : SORTABLE,
   });
   // The pager's `page` is zero-indexed; the API is one-indexed.
-  const page = view.key === viewKey ? view.page : 0;
-  const sortModel = view.key === viewKey ? view.sort : null;
-  const setPage = (next: number): void => setView({ key: viewKey, page: next, sort: sortModel });
-  const setSortModel = (next: TableUrlSortModel | null): void =>
-    setView({ key: viewKey, page: 0, sort: next });
-  const changePageSize = (next: number): void => {
-    setPageSize(next);
-    setPage(0);
-  };
+  const { page, pageSize, search, sortModel } = url.state;
 
-  const setScope = (next: Scope): void => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('funding');
-    if (next === 'all') params.delete('scope');
-    else params.set('scope', next);
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  };
+  // Page and sort belong to one list: the lists sort on different columns, and
+  // page 3 of one is not page 3 of another. So a change of scope or funding
+  // starts both afresh, in the same URL write as the change itself. The ageing
+  // view, the search and the page size carry over, as they always did.
+  const setScope = (next: Scope): void =>
+    url.edit((params) => {
+      params.delete('funding');
+      setUrlChoice(params, 'scope', next, 'all');
+      return AFRESH;
+    });
+  const clearFunding = (): void =>
+    url.edit((params) => {
+      params.delete('funding');
+      return AFRESH;
+    });
 
   const receivables = useReceivables(
     {
@@ -255,10 +262,11 @@ export function FinanceReceivablesPage(): JSX.Element {
     : (receivables.data?.buckets.noDueDate ?? 0);
   const undatedLabel = `${undatedCount} ${isRecovery ? 'project' : 'milestone'}${undatedCount === 1 ? '' : 's'}`;
 
-  const chooseBucket = (next: ReceivableFilters['bucket']): void => {
-    setBucket(next);
-    setPage(0);
-  };
+  const chooseBucket = (next: ReceivableFilters['bucket']): void =>
+    url.edit((params) => {
+      setUrlChoice(params, 'bucket', next);
+      return { page: 0 };
+    });
   const countFor = (key: NonNullable<ReceivableFilters['bucket']>): number | undefined => {
     if (!buckets) return undefined;
     if (key === 'current') return buckets.current;
@@ -292,6 +300,15 @@ export function FinanceReceivablesPage(): JSX.Element {
   // Rows rise in once. Later changes swap in without replaying it.
   const entering = useListEntrance(rowCount);
 
+  // A page from an old link, or one Back returns to after money came in.
+  useKeepPageInRange({
+    page,
+    pageSize,
+    total: active.data?.total,
+    isFetching: active.isFetching,
+    onPageChange: url.setPage,
+  });
+
   return (
     <CalmListPage
       // Three figures, the scope and the ageing views would leave little room for the rows.
@@ -308,12 +325,7 @@ export function FinanceReceivablesPage(): JSX.Element {
                     {funding === 'cash' ? 'Cash' : 'Loan'} jobs only.{' '}
                     <button
                       type="button"
-                      onClick={() => {
-                        const params = new URLSearchParams(searchParams.toString());
-                        params.delete('funding');
-                        const qs = params.toString();
-                        router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-                      }}
+                      onClick={clearFunding}
                       className="font-semibold text-primary-dark hover:underline"
                     >
                       Show all
@@ -459,10 +471,7 @@ export function FinanceReceivablesPage(): JSX.Element {
       toolbar={
         <ListToolbar
           search={search}
-          onSearchChange={(next) => {
-            setSearch(next);
-            setPage(0);
-          }}
+          onSearchChange={url.setSearch}
           searchPlaceholder={
             isRecovery ? 'Search customer or project' : 'Search customer, project or milestone'
           }
@@ -474,7 +483,7 @@ export function FinanceReceivablesPage(): JSX.Element {
           onFilterChange={ignoreFilters}
           sortOptions={isRecovery ? RECOVERY_SORT_OPTIONS : RECEIVABLE_SORT_OPTIONS}
           sortModel={sortModel}
-          onSortChange={setSortModel}
+          onSortChange={url.setSortModel}
         />
       }
       error={
@@ -494,8 +503,8 @@ export function FinanceReceivablesPage(): JSX.Element {
           page={page}
           pageSize={pageSize}
           totalRowCount={active.data?.total ?? 0}
-          onPageChange={setPage}
-          onPageSizeChange={changePageSize}
+          onPageChange={url.setPage}
+          onPageSizeChange={url.setPageSize}
           noun={isRecovery ? PROJECT_NOUN : MILESTONE_NOUN}
           countUnknown={failed && !active.data}
         />
