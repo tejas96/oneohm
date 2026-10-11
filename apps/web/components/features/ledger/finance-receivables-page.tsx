@@ -1,27 +1,41 @@
 'use client';
 
-import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { type JSX, useMemo, useState } from 'react';
+import { type JSX, useCallback, useState } from 'react';
 
 import {
-  RECEIVABLE_COLUMNS,
-  RECOVERY_PROJECT_COLUMNS,
-  type ReceivableRow,
-  type RecoveryTableRow,
-} from './receivables-columns';
-import { RecoveryMilestones } from './recovery-milestones';
+  ReceivableRow,
+  ReceivableRowSkeleton,
+  RecoveryRowCard,
+  RecoveryRowSkeleton,
+} from './receivable-rows';
 
 import { Alert } from '@/components/shared';
-import type { TableSortModel } from '@/components/shared/advanced-table';
-import { CrmTable, type CrmQuickFilter } from '@/components/shared/crm-table';
+import {
+  CalmListPage,
+  ListEmpty,
+  ListError,
+  ListPager,
+  ListSkeleton,
+  ListTitle,
+  ListToolbar,
+  PillTabs,
+  Segment,
+  SegmentCard,
+  type SortOption,
+  StatTile,
+  StatTiles,
+  useListEntrance,
+} from '@/components/shared/calm-list';
+import type { TableUrlSortModel } from '@/lib/hooks';
 import {
   useReceivables,
   useRecovery,
   type ReceivableFilters,
   type RecoveryFilters,
+  type RecoveryRow,
 } from '@/lib/hooks/resources/ledger';
-import { color, crm, radius, shadow } from '@/lib/theme/tokens';
+import { getErrorMessage } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 const PAGE_SIZE = 25;
@@ -79,60 +93,61 @@ const SCOPE_INTRO: Record<Scope, string> = {
     'Meter installed, job delivered, loan still owed — one row per project. Open a row to see its milestones. Waived amounts are excluded.',
 };
 
-function StatCard({
-  label,
-  value,
-  note,
-  danger,
-}: {
+/**
+ * The four sortable columns of each old table, as one menu per list. With no
+ * sort both APIs put the worst overdue first, which is why that option sends
+ * none (asking for it by name returns the same order).
+ */
+const RECEIVABLE_SORT_OPTIONS: SortOption[] = [
+  { label: 'Worst overdue first', model: null },
+  { label: 'Least overdue first', model: { field: 'daysOverdue', direction: 'asc' } },
+  { label: 'Short by: large to small', model: { field: 'outstandingAmount', direction: 'desc' } },
+  { label: 'Short by: small to large', model: { field: 'outstandingAmount', direction: 'asc' } },
+  { label: 'Due date: soonest first', model: { field: 'dueDate', direction: 'asc' } },
+  { label: 'Due date: latest first', model: { field: 'dueDate', direction: 'desc' } },
+  { label: 'Customer A–Z', model: { field: 'customerName', direction: 'asc' } },
+  { label: 'Customer Z–A', model: { field: 'customerName', direction: 'desc' } },
+];
+
+const RECOVERY_SORT_OPTIONS: SortOption[] = [
+  { label: 'Worst overdue first', model: null },
+  { label: 'Least overdue first', model: { field: 'worstDaysOverdue', direction: 'asc' } },
+  { label: 'Still owed: large to small', model: { field: 'outstanding', direction: 'desc' } },
+  { label: 'Still owed: small to large', model: { field: 'outstanding', direction: 'asc' } },
+  { label: 'Since meter: longest first', model: { field: 'daysSinceMeter', direction: 'desc' } },
+  { label: 'Since meter: shortest first', model: { field: 'daysSinceMeter', direction: 'asc' } },
+  { label: 'Customer A–Z', model: { field: 'customerName', direction: 'asc' } },
+  { label: 'Customer Z–A', model: { field: 'customerName', direction: 'desc' } },
+];
+
+const MILESTONE_NOUN = { one: 'milestone', many: 'milestones' };
+const PROJECT_NOUN = { one: 'project', many: 'projects' };
+
+/** A screenful; a longer page does not need a longer placeholder. */
+const MAX_SKELETON_ROWS = 10;
+
+/** This list has no filter panel. */
+const NO_FILTER_COLUMNS: never[] = [];
+const NO_FILTERS = {};
+const ignoreFilters = (): void => undefined;
+
+/** The ageing views, by the bucket each asks the API for. */
+const AGEING_VIEWS: ReadonlyArray<{
+  bucket: NonNullable<ReceivableFilters['bucket']>;
   label: string;
-  value: string;
-  note: string;
-  danger?: boolean;
-}): JSX.Element {
-  return (
-    <Box
-      sx={{
-        height: crm['kpi-height'],
-        px: 2,
-        py: 1.75,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        backgroundColor: color.surface,
-        borderRadius: radius['card-functional'],
-        boxShadow: shadow.e2,
-      }}
-    >
-      <Box
-        component="span"
-        sx={{
-          fontSize: 'var(--text-overline-size)',
-          fontWeight: 700,
-          letterSpacing: 'var(--text-overline-track)',
-          textTransform: 'uppercase',
-          color: color['text-tertiary'],
-        }}
-      >
-        {label}
-      </Box>
-      <Box
-        component="span"
-        sx={{
-          fontSize: 'var(--text-h3-size)',
-          lineHeight: 'var(--text-h3-line)',
-          letterSpacing: 'var(--text-h3-track)',
-          fontWeight: 700,
-          fontVariantNumeric: 'tabular-nums',
-          color: danger ? color.danger : undefined,
-        }}
-      >
-        {value}
-      </Box>
-      <Box sx={{ fontSize: crm['text-row-sm'], color: color['text-tertiary'] }}>{note}</Box>
-    </Box>
-  );
-}
+  dot: string;
+}> = [
+  // Most of this bucket has no due date at all (198 of 202): a milestone is
+  // only dated once its stage work is done. "Not due yet" claimed a date that
+  // does not exist.
+  { bucket: 'current', label: 'Not due / no date', dot: 'var(--ds-primary)' },
+  { bucket: '1-30', label: '1–30 days', dot: 'var(--ds-warning)' },
+  { bucket: '31-60', label: '31–60 days', dot: 'var(--ds-warning)' },
+  { bucket: '61-90', label: '61–90 days', dot: 'var(--ds-danger)' },
+  { bucket: '90plus', label: '90+ days', dot: 'var(--ds-danger)' },
+];
+
+const EMPTY_IDS: ReadonlySet<string> = new Set();
 
 /**
  * Who owes us money, milestone by milestone.
@@ -176,16 +191,16 @@ export function FinanceReceivablesPage(): JSX.Element {
   // `?funding=cash` and the bare URL — starts both afresh, never on a page the
   // shorter list does not have.
   const viewKey = `${scope}|${funding ?? 'all'}`;
-  const [view, setView] = useState<{ key: string; page: number; sort: TableSortModel | null }>({
+  const [view, setView] = useState<{ key: string; page: number; sort: TableUrlSortModel | null }>({
     key: viewKey,
     page: 0,
     sort: null,
   });
-  // CrmTable's `page` is zero-indexed; the API is one-indexed.
+  // The pager's `page` is zero-indexed; the API is one-indexed.
   const page = view.key === viewKey ? view.page : 0;
   const sortModel = view.key === viewKey ? view.sort : null;
   const setPage = (next: number): void => setView({ key: viewKey, page: next, sort: sortModel });
-  const setSortModel = (next: TableSortModel | null): void =>
+  const setSortModel = (next: TableUrlSortModel | null): void =>
     setView({ key: viewKey, page: 0, sort: next });
   const changePageSize = (next: number): void => {
     setPageSize(next);
@@ -226,8 +241,8 @@ export function FinanceReceivablesPage(): JSX.Element {
     { enabled: isRecovery },
   );
 
-  const receivableRows = (receivables.data?.data ?? []) as ReceivableRow[];
-  const recoveryRows = (recovery.data?.data ?? []) as RecoveryTableRow[];
+  const receivableRows = receivables.data?.data ?? [];
+  const recoveryRows = recovery.data?.data ?? [];
   const buckets = isRecovery ? recovery.data?.buckets : receivables.data?.buckets;
   // No figure until this scope, chip and search have answered. The cards used
   // to fall back to 0, so a slow or failed request read "₹0.00 — nothing
@@ -240,298 +255,282 @@ export function FinanceReceivablesPage(): JSX.Element {
     : (receivables.data?.buckets.noDueDate ?? 0);
   const undatedLabel = `${undatedCount} ${isRecovery ? 'project' : 'milestone'}${undatedCount === 1 ? '' : 's'}`;
 
-  const quickFilters = useMemo<CrmQuickFilter[]>(
-    () => [
-      { key: '', label: 'All open', count: buckets?.all, tone: 'neutral', dot: false },
-      // Most of this bucket has no due date at all (198 of 202): a milestone is
-      // only dated once its stage work is done. "Not due yet" claimed a date
-      // that does not exist.
-      {
-        key: 'current',
-        label: 'Not due / no date',
-        count: buckets?.current,
-        tone: 'success',
-        dot: true,
-      },
-      { key: '1-30', label: '1–30 days', count: buckets?.d1to30, tone: 'warning', dot: true },
-      { key: '31-60', label: '31–60 days', count: buckets?.d31to60, tone: 'warning', dot: true },
-      { key: '61-90', label: '61–90 days', count: buckets?.d61to90, tone: 'danger', dot: true },
-      { key: '90plus', label: '90+ days', count: buckets?.d90plus, tone: 'danger', dot: true },
-    ],
-    [buckets],
+  const chooseBucket = (next: ReceivableFilters['bucket']): void => {
+    setBucket(next);
+    setPage(0);
+  };
+  const countFor = (key: NonNullable<ReceivableFilters['bucket']>): number | undefined => {
+    if (!buckets) return undefined;
+    if (key === 'current') return buckets.current;
+    if (key === '1-30') return buckets.d1to30;
+    if (key === '31-60') return buckets.d31to60;
+    if (key === '61-90') return buckets.d61to90;
+    return buckets.d90plus;
+  };
+
+  // Which projects show their milestones. Kept per scope, so Cash and Loan
+  // never share opened rows.
+  const [opened, setOpened] = useState<{ scope: Scope; ids: ReadonlySet<string> }>(() => ({
+    scope,
+    ids: new Set(),
+  }));
+  const openIds = opened.scope === scope ? opened.ids : EMPTY_IDS;
+  const toggleProject = useCallback(
+    (row: RecoveryRow): void => {
+      setOpened((current) => {
+        const ids = new Set(current.scope === scope ? current.ids : []);
+        if (ids.has(row.projectId)) ids.delete(row.projectId);
+        else ids.add(row.projectId);
+        return { scope, ids };
+      });
+    },
+    [scope],
   );
 
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: { xs: 2, lg: 3 } }}>
-      <Box>
-        <Box
-          component="span"
-          sx={{
-            fontSize: 'var(--text-overline-size)',
-            fontWeight: 700,
-            letterSpacing: 'var(--text-overline-track)',
-            textTransform: 'uppercase',
-            color: color['text-tertiary'],
-          }}
-        >
-          Finance
-        </Box>
-        <Box
-          component="h1"
-          sx={{
-            m: 0,
-            mt: '5px',
-            mb: '3px',
-            fontSize: crm['text-page-title'],
-            fontWeight: 700,
-            letterSpacing: crm['text-page-title-track'],
-          }}
-        >
-          Receivables
-        </Box>
-        <Box
-          component="p"
-          sx={{ m: 0, fontSize: crm['text-row-title'], color: color['text-secondary'] }}
-        >
-          {SCOPE_INTRO[scope]}
-        </Box>
-        {scope === 'all' && funding ? (
-          <Box
-            component="p"
-            sx={{ m: 0, mt: 0.5, fontSize: crm['text-row'], color: color['text-secondary'] }}
-          >
-            {funding === 'cash' ? 'Cash' : 'Loan'} jobs only.{' '}
-            <Box
-              component="button"
-              type="button"
-              onClick={() => {
-                const params = new URLSearchParams(searchParams.toString());
-                params.delete('funding');
-                const qs = params.toString();
-                router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-              }}
-              sx={{
-                p: 0,
-                border: 0,
-                background: 'none',
-                font: 'inherit',
-                fontWeight: 600,
-                color: color['accent-ink'],
-                cursor: 'pointer',
-                '&:hover': { textDecoration: 'underline' },
-              }}
-            >
-              Show all
-            </Box>
-          </Box>
-        ) : null}
-      </Box>
+  const active = isRecovery ? recovery : receivables;
+  const rowCount = isRecovery ? recoveryRows.length : receivableRows.length;
+  // Rows rise in once. Later changes swap in without replaying it.
+  const entering = useListEntrance(rowCount);
 
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 1.5,
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-          alignItems: 'start',
-        }}
-      >
-        <StatCard
-          label={isRecovery ? 'Projects to recover' : 'Open milestones'}
-          value={buckets ? String(buckets.all) : '—'}
-          note={
-            !buckets ? pending : isRecovery ? 'delivered, money still due' : 'with money still due'
-          }
-        />
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-          <StatCard
-            label="Total outstanding"
-            value={buckets ? formatPaise(buckets.totalOutstandingPaise) : '—'}
-            note={
-              !buckets
-                ? pending
-                : search
-                  ? 'matching the search'
-                  : isRecovery
-                    ? 'across these projects'
-                    : 'across every open milestone'
+  return (
+    <CalmListPage
+      // Three figures, the scope and the ageing views would leave little room for the rows.
+      pinHeader={false}
+      header={
+        <>
+          <ListTitle
+            title="Receivables"
+            sub={
+              <>
+                {SCOPE_INTRO[scope]}
+                {scope === 'all' && funding ? (
+                  <span className="mt-1 block text-[13px]">
+                    {funding === 'cash' ? 'Cash' : 'Loan'} jobs only.{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const params = new URLSearchParams(searchParams.toString());
+                        params.delete('funding');
+                        const qs = params.toString();
+                        router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+                      }}
+                      className="font-semibold text-primary-dark hover:underline"
+                    >
+                      Show all
+                    </button>
+                  </span>
+                ) : null}
+              </>
+            }
+            actions={
+              <PillTabs
+                label="Receivables scope"
+                options={SCOPE_OPTIONS}
+                value={scope}
+                // Choosing the scope already shown changes nothing — in
+                // particular it keeps a `?funding=` the link arrived with.
+                onChange={(next) => {
+                  if (next !== scope) setScope(next);
+                }}
+              />
             }
           />
+
+          <StatTiles label="Receivables totals" className="mb-2.5 sm:grid-cols-3">
+            <StatTile
+              label={isRecovery ? 'Projects to recover' : 'Open milestones'}
+              value={buckets ? String(buckets.all) : '—'}
+              note={
+                !buckets
+                  ? pending
+                  : isRecovery
+                    ? 'delivered, money still due'
+                    : 'with money still due'
+              }
+            />
+            <StatTile
+              label="Total outstanding"
+              value={buckets ? formatPaise(buckets.totalOutstandingPaise) : '—'}
+              note={
+                !buckets
+                  ? pending
+                  : search
+                    ? 'matching the search'
+                    : isRecovery
+                      ? 'across these projects'
+                      : 'across every open milestone'
+              }
+              below={
+                /*
+                  A forecasting gap, not hidden debt: per spec §2.4, 178 of these 198
+                  milestones have zero work done, so the money is genuinely not owed
+                  yet — it just cannot be dated. No sixth ageing view: this note IS
+                  the toggle, in both directions. None of the ageing views (nor
+                  "All open") is pressed while this filter is active — without the
+                  note itself changing state, a financier who clicked through would
+                  see the row count drop, nothing on screen indicate a filter is on,
+                  and no visible way back to "All open". `|| bucket === 'no_due_date'`
+                  keeps this block on screen for exactly that state even if a
+                  narrower search happens to leave zero undated rows in the current
+                  scope, so the way out never disappears while it is still needed.
+                */
+                buckets && (undatedCount > 0 || bucket === 'no_due_date') ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      chooseBucket(bucket === 'no_due_date' ? undefined : 'no_due_date')
+                    }
+                    className="px-1 text-left text-[12px] text-primary-dark hover:underline"
+                  >
+                    {bucket === 'no_due_date' ? (
+                      <>
+                        Showing only the {undatedLabel} with money that has no due date —{' '}
+                        {formatPaise(buckets.noDueDatePaise)} that just can&apos;t be forecast yet.
+                        Show all →
+                      </>
+                    ) : (
+                      <>
+                        {formatPaise(buckets.noDueDatePaise)} of this has no due date — it cannot be
+                        forecast. Show these →
+                      </>
+                    )}
+                  </button>
+                ) : null
+              }
+            />
+            <StatTile
+              label="Overdue"
+              value={buckets ? formatPaise(buckets.overduePaise) : '—'}
+              note={buckets ? 'past its due date' : pending}
+              tone={(buckets?.overduePaise ?? 0) > 0 ? 'danger' : 'default'}
+            />
+          </StatTiles>
+
           {/*
-            A forecasting gap, not hidden debt: per spec §2.4, 178 of these 198
-            milestones have zero work done, so the money is genuinely not owed
-            yet — it just cannot be dated. No seventh chip: this note IS the
-            toggle, in both directions. `CrmTableToolbar` has no chip keyed
-            'no_due_date', so none of the six preset chips (nor "All open")
-            lights up while this filter is active — without the note itself
-            changing state, a financier who clicked through would see the row
-            count drop, nothing on screen indicate a filter is on, and no
-            visible way back to "All open". `|| bucket === 'no_due_date'`
-            keeps this block on screen for exactly that state even if a
-            narrower search happens to leave zero undated rows in the current
-            scope, so the way out never disappears while it is still needed.
+            A data gap, not an overdue debt — warning tone, never danger.
+            `missingLenderProjects` counts projects with no lender-payer
+            milestone: the bank's share was never split out of the contract.
+            The row's "Add bank" button only PATCHes `financingBank` on the
+            property — it does not create that milestone and does not move this
+            count. Confirmed live, not assumed: attach a real bank to a real row
+            and refetch, and the number is unchanged (task-15-report.md,
+            "End-to-end proof of the Add-bank flow"). Attaching a bank and
+            splitting the bank's share out of the contract are different
+            problems, so the copy says outright that the button below does not
+            resolve this banner — otherwise a collector who clicks it and still
+            sees "15 of 15" concludes the feature is broken.
           */}
-          {buckets && (undatedCount > 0 || bucket === 'no_due_date') ? (
-            <Box
-              component="button"
-              type="button"
-              onClick={() => {
-                setBucket(bucket === 'no_due_date' ? undefined : 'no_due_date');
-                setPage(0);
-              }}
-              sx={{
-                textAlign: 'left',
-                background: 'none',
-                border: 'none',
-                p: 0,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-sans)',
-                fontSize: crm['text-row-sm'],
-                color: color.accent,
-                '&:hover': { textDecoration: 'underline' },
-              }}
-            >
-              {bucket === 'no_due_date' ? (
-                <>
-                  Showing only the {undatedLabel} with money that has no due date —{' '}
-                  {formatPaise(buckets.noDueDatePaise)} that just can&apos;t be forecast yet. Show
-                  all →
-                </>
-              ) : (
-                <>
-                  {formatPaise(buckets.noDueDatePaise)} of this has no due date — it cannot be
-                  forecast. Show these →
-                </>
-              )}
-            </Box>
+          {(scope === 'recovery-loan' || scope === 'recovery') &&
+          recovery.data &&
+          recovery.data.buckets.missingLenderProjects > 0 ? (
+            <div className="mb-2.5">
+              <Alert variant="warning">
+                {recovery.data.buckets.missingLenderProjects} of{' '}
+                {recovery.data.buckets.loanProjects} loan projects have no bank share split out of
+                the contract (marked on their rows). The customer may be getting chased for the
+                bank&apos;s money. This needs the project&apos;s payment terms reviewed — adding a
+                bank name below won&apos;t change this count.
+              </Alert>
+            </div>
           ) : null}
-        </Box>
-        <StatCard
-          label="Overdue"
-          value={buckets ? formatPaise(buckets.overduePaise) : '—'}
-          note={buckets ? 'past its due date' : pending}
-          danger={(buckets?.overduePaise ?? 0) > 0}
-        />
-      </Box>
 
-      <Box>
-        <ToggleButtonGroup
-          exclusive
-          size="small"
-          value={scope}
-          onChange={(_, next: Scope | null) => {
-            // MUI hands back `null` when the already-active button is clicked
-            // again — exclusive groups otherwise allow deselecting to nothing,
-            // which this control has no "nothing selected" state for.
-            if (next) setScope(next);
+          {/* The ageing views. "All open" carries no number: it is the first
+              figure above, and one fact has one home. */}
+          <SegmentCard label={isRecovery ? 'Projects by ageing' : 'Milestones by ageing'}>
+            <Segment
+              pressed={!bucket}
+              onClick={() => chooseBucket(undefined)}
+              count={null}
+              label="All open"
+            />
+            {AGEING_VIEWS.map((view) => (
+              <Segment
+                key={view.bucket}
+                pressed={bucket === view.bucket}
+                onClick={() => chooseBucket(view.bucket)}
+                count={countFor(view.bucket)}
+                label={view.label}
+                dot={view.dot}
+              />
+            ))}
+          </SegmentCard>
+        </>
+      }
+      toolbar={
+        <ListToolbar
+          search={search}
+          onSearchChange={(next) => {
+            setSearch(next);
+            setPage(0);
           }}
-          aria-label="Receivables scope"
-        >
-          {SCOPE_OPTIONS.map((opt) => (
-            <ToggleButton key={opt.value} value={opt.value}>
-              {opt.label}
-            </ToggleButton>
+          searchPlaceholder={
+            isRecovery ? 'Search customer or project' : 'Search customer, project or milestone'
+          }
+          searchLabel={isRecovery ? 'Search projects to recover' : 'Search receivables'}
+          // Both APIs search on any length.
+          searchMinLength={1}
+          filterColumns={NO_FILTER_COLUMNS}
+          filters={NO_FILTERS}
+          onFilterChange={ignoreFilters}
+          sortOptions={isRecovery ? RECOVERY_SORT_OPTIONS : RECEIVABLE_SORT_OPTIONS}
+          sortModel={sortModel}
+          onSortChange={setSortModel}
+        />
+      }
+      error={
+        failed ? (
+          <ListError
+            title={isRecovery ? 'Couldn’t load the recovery list' : 'Couldn’t load receivables'}
+            message={getErrorMessage(active.error)}
+            onRetry={() => void active.refetch()}
+          />
+        ) : null
+      }
+      isFetching={active.isFetching}
+      isLoading={active.isLoading}
+      page={page}
+      footer={
+        <ListPager
+          page={page}
+          pageSize={pageSize}
+          totalRowCount={active.data?.total ?? 0}
+          onPageChange={setPage}
+          onPageSizeChange={changePageSize}
+          noun={isRecovery ? PROJECT_NOUN : MILESTONE_NOUN}
+          countUnknown={failed && !active.data}
+        />
+      }
+    >
+      {active.isLoading ? (
+        <ListSkeleton
+          rows={Math.min(pageSize, MAX_SKELETON_ROWS)}
+          label={isRecovery ? 'Loading projects' : 'Loading milestones'}
+          renderRow={() => (isRecovery ? <RecoveryRowSkeleton /> : <ReceivableRowSkeleton />)}
+        />
+      ) : rowCount === 0 ? (
+        failed ? null : (
+          <ListEmpty title={isRecovery ? 'Nothing to recover.' : 'Nothing outstanding.'} />
+        )
+      ) : isRecovery ? (
+        <div className="flex flex-col gap-2">
+          {recoveryRows.map((row, index) => (
+            <RecoveryRowCard
+              key={row.projectId}
+              row={row}
+              index={index}
+              entering={entering}
+              expanded={openIds.has(row.projectId)}
+              onToggle={toggleProject}
+            />
           ))}
-        </ToggleButtonGroup>
-      </Box>
-
-      {/*
-        A data gap, not an overdue debt — warning tone, never danger.
-        `missingLenderProjects` counts projects with no lender-payer
-        milestone: the bank's share was never split out of the contract.
-        `BankCell`'s "Add bank" button only PATCHes `financingBank` on the
-        property — it does not create that milestone and does not move this
-        count. Confirmed live, not assumed: attach a real bank to a real row
-        and refetch, and the number is unchanged (task-15-report.md,
-        "End-to-end proof of the Add-bank flow"). Attaching a bank and
-        splitting the bank's share out of the contract are different
-        problems, so the copy says outright that the button below does not
-        resolve this banner — otherwise a collector who clicks it and still
-        sees "15 of 15" concludes the feature is broken.
-      */}
-      {(scope === 'recovery-loan' || scope === 'recovery') &&
-      recovery.data &&
-      recovery.data.buckets.missingLenderProjects > 0 ? (
-        <Alert variant="warning">
-          {recovery.data.buckets.missingLenderProjects} of {recovery.data.buckets.loanProjects} loan
-          projects have no bank share split out of the contract (marked on their rows). The customer
-          may be getting chased for the bank&apos;s money. This needs the project&apos;s payment
-          terms reviewed — adding a bank name below won&apos;t change this count.
-        </Alert>
-      ) : null}
-
-      {failed ? (
-        <Alert variant="error">
-          Couldn&apos;t load {isRecovery ? 'the recovery list' : 'receivables'}. Refresh the page to
-          try again.
-        </Alert>
-      ) : null}
-
-      {isRecovery ? (
-        <CrmTable<RecoveryTableRow>
-          // Keyed by scope so Cash and Loan never share expanded rows.
-          key={scope}
-          columns={RECOVERY_PROJECT_COLUMNS}
-          rows={recoveryRows}
-          getRowId={(row) => row.projectId}
-          loading={recovery.isLoading}
-          refetching={recovery.isFetching && !recovery.isLoading}
-          itemLabel="projects"
-          gridMinWidth="980px"
-          // The two tables are separate instances; carry the typed search over.
-          initialSearch={search}
-          searchPlaceholder="Search customer or project"
-          onSearchChange={(next) => {
-            setSearch(next);
-            setPage(0);
-          }}
-          quickFilters={quickFilters}
-          activeQuickFilter={bucket ?? ''}
-          onQuickFilterChange={(key) => {
-            setBucket((key || undefined) as ReceivableFilters['bucket']);
-            setPage(0);
-          }}
-          sortModel={sortModel}
-          onSortChange={setSortModel}
-          page={page}
-          pageSize={pageSize}
-          totalRowCount={recovery.data?.total ?? 0}
-          onPageChange={setPage}
-          onPageSizeChange={changePageSize}
-          renderExpandedRow={(row) => <RecoveryMilestones projectId={row.projectId} />}
-          emptyMessage={recovery.isError ? 'Could not load.' : 'Nothing to recover.'}
-        />
+        </div>
       ) : (
-        <CrmTable<ReceivableRow>
-          key="all"
-          columns={RECEIVABLE_COLUMNS}
-          rows={receivableRows}
-          getRowId={(row) => row.milestoneId}
-          loading={receivables.isLoading}
-          refetching={receivables.isFetching && !receivables.isLoading}
-          itemLabel="milestones"
-          gridMinWidth="920px"
-          initialSearch={search}
-          searchPlaceholder="Search customer, project or milestone"
-          onSearchChange={(next) => {
-            setSearch(next);
-            setPage(0);
-          }}
-          quickFilters={quickFilters}
-          activeQuickFilter={bucket ?? ''}
-          onQuickFilterChange={(key) => {
-            setBucket((key || undefined) as ReceivableFilters['bucket']);
-            setPage(0);
-          }}
-          sortModel={sortModel}
-          onSortChange={setSortModel}
-          page={page}
-          pageSize={pageSize}
-          totalRowCount={receivables.data?.total ?? 0}
-          onPageChange={setPage}
-          onPageSizeChange={changePageSize}
-          emptyMessage={receivables.isError ? 'Could not load.' : 'Nothing outstanding.'}
-        />
+        <div className="flex flex-col gap-2">
+          {receivableRows.map((row, index) => (
+            <ReceivableRow key={row.milestoneId} row={row} index={index} entering={entering} />
+          ))}
+        </div>
       )}
-    </Box>
+    </CalmListPage>
   );
 }

@@ -408,25 +408,6 @@ const root = {
     'col-approval-submitter': 'minmax(120px,1fr)',
     'col-approval-waiting': '80px',
     'col-approval-status': '104px',
-    // Receivables grid (design min-width 1020px)
-    'col-recv-customer': 'minmax(160px,1.4fr)',
-    'col-recv-project': 'minmax(150px,1.2fr)',
-    'col-recv-milestone': 'minmax(150px,1.2fr)',
-    'col-recv-due': '104px',
-    'col-recv-expected': '112px',
-    'col-recv-paid': '112px',
-    'col-recv-outstanding': '124px',
-    'col-recv-ageing': '116px',
-    // Recovery-only columns, appended after ageing (Task 15). "Oldest
-    // overdue" needs its own track, not the "Ageing" one above — that header
-    // is one word and 116px, but "Oldest overdue" plus the sort icon wraps
-    // onto two lines at that width, throwing off every column after it.
-    // "Since meter" renders up to 4 digits plus "d", but its header is the
-    // wrapping risk, not its value. "Bank" is sized for the longest bank
-    // label, which is roughly as wide as the vendor column.
-    'col-recv-overdue': '148px',
-    'col-recv-meter': '136px',
-    'col-recv-bank': 'minmax(160px,1.2fr)',
     // Resellers list grid — five lifetime money columns (Revenue, Pending,
     // Owed, Paid, To recover). Narrower than the Payables figure: sized for a
     // plain `formatPaise` value with no "Advance " prefix (up to

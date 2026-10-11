@@ -15,15 +15,16 @@ import { formatPaise } from '@/lib/utils/paise';
 
 /**
  * Wide: date · customer and project · detail · entry and flow · amount on one
- * line. The amount track holds "-₹XX,XX,XX,XXX.XX" unclipped: an amount is
- * never cut short. Narrow (the list itself under 960px): customer beside the
+ * line. The amount track holds "-₹XX,XX,XX,XXX.XX" unclipped and the customer
+ * track never drops below the width of a whole project number: neither is
+ * ever cut short. Narrow (the list itself under 960px): customer beside the
  * amount, then the detail, then the date beside the entry and its flow.
  * Phone (under 460px): the project number needs the whole line — its last
  * digits tell two projects apart — so the customer gets one, and the amount
  * moves beside the detail.
  */
 const ROW_GRID =
-  'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2.5 @[960px]:grid-cols-[112px_minmax(0,1.2fr)_minmax(0,1.5fr)_164px_170px] @[960px]:gap-5';
+  'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2.5 @[960px]:grid-cols-[112px_minmax(188px,1.2fr)_minmax(0,1.5fr)_164px_170px] @[960px]:gap-5';
 
 const WIDE = '@[960px]:col-auto @[960px]:row-auto';
 const CELL = {

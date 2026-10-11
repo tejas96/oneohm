@@ -2,7 +2,7 @@
 
 import { type JSX } from 'react';
 
-import { ageingBucket } from './receivables-columns';
+import { ageingBucket } from './ageing-bucket';
 
 import { CrmStatusPill } from '@/components/shared/crm-table';
 import { useProjectLedger, type MilestoneBalance } from '@/lib/hooks/resources/ledger';
