@@ -285,8 +285,9 @@ export const LEDGER_PAGE_SQL = `
     CASE WHEN $7 = 'valueDate'   AND $8 = 'desc' THEN e.value_date        END DESC,
     CASE WHEN $7 = 'amountPaise' AND $8 = 'asc'  THEN ABS(e.amount_paise) END ASC,
     CASE WHEN $7 = 'amountPaise' AND $8 = 'desc' THEN ABS(e.amount_paise) END DESC,
-    CASE WHEN $7 = 'customerName' AND $8 = 'asc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END ASC,
-    CASE WHEN $7 = 'customerName' AND $8 = 'desc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END DESC,
+    -- LOWER: a name typed without a capital ("tejas patil") belongs under T, not after Z.
+    CASE WHEN $7 = 'customerName' AND $8 = 'asc' THEN LOWER(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name))) END ASC,
+    CASE WHEN $7 = 'customerName' AND $8 = 'desc' THEN LOWER(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name))) END DESC,
     -- Default: newest money first.
     e.value_date DESC, e.created_at DESC,
     -- Unique last key, so a tie can never straddle two pages. Entries posted in
@@ -418,7 +419,9 @@ export const RECEIVABLES_SQL = `
     CASE WHEN $5 = 'outstandingAmount' AND $6 = 'asc'  THEN v.balance_paise  END ASC,
     CASE WHEN $5 = 'outstandingAmount' AND $6 = 'desc' THEN v.balance_paise  END DESC,
     CASE WHEN $5 = 'dueDate'           AND $6 = 'asc'  THEN v.due_date       END ASC,
-    CASE WHEN $5 = 'dueDate'           AND $6 = 'desc' THEN v.due_date       END DESC,
+    -- NULLS LAST: a milestone with no due date has no place in a date order, so
+    -- it goes after the dated ones in both directions (ASC does that by default).
+    CASE WHEN $5 = 'dueDate'           AND $6 = 'desc' THEN v.due_date       END DESC NULLS LAST,
     CASE WHEN $5 = 'customerName'      AND $6 = 'asc'  THEN LOWER(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name))) END ASC,
     CASE WHEN $5 = 'customerName'      AND $6 = 'desc' THEN LOWER(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name))) END DESC,
     -- Default: worst overdue first, which is the order to work the list in.

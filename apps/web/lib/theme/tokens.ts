@@ -397,65 +397,6 @@ const root = {
     'col-status': '106px',
     'col-onboarded': '102px',
     'col-actions': '40px',
-    // Payment approval queue (design min-width 1180px)
-    'col-approval-request': '152px',
-    'col-approval-date': '96px',
-    'col-approval-type': '124px',
-    'col-approval-project': 'minmax(148px,1.2fr)',
-    'col-approval-customer': 'minmax(148px,1.3fr)',
-    'col-approval-amount': '112px',
-    'col-approval-reference': 'minmax(108px,1fr)',
-    'col-approval-submitter': 'minmax(120px,1fr)',
-    'col-approval-waiting': '80px',
-    'col-approval-status': '104px',
-    // Receivables grid (design min-width 1020px)
-    'col-recv-customer': 'minmax(160px,1.4fr)',
-    'col-recv-project': 'minmax(150px,1.2fr)',
-    'col-recv-milestone': 'minmax(150px,1.2fr)',
-    'col-recv-due': '104px',
-    'col-recv-expected': '112px',
-    'col-recv-paid': '112px',
-    'col-recv-outstanding': '124px',
-    'col-recv-ageing': '116px',
-    // Recovery-only columns, appended after ageing (Task 15). "Oldest
-    // overdue" needs its own track, not the "Ageing" one above — that header
-    // is one word and 116px, but "Oldest overdue" plus the sort icon wraps
-    // onto two lines at that width, throwing off every column after it.
-    // "Since meter" renders up to 4 digits plus "d", but its header is the
-    // wrapping risk, not its value. "Bank" is sized for the longest bank
-    // label, which is roughly as wide as the vendor column.
-    'col-recv-overdue': '148px',
-    'col-recv-meter': '136px',
-    'col-recv-bank': 'minmax(160px,1.2fr)',
-    // Payables grid — vendor, net payable, oldest credit bill, days past
-    // agreed terms, bill count, row menu. Payable is sized for
-    // "Advance ₹XX,XX,XXX.XX", the longest string that column ever renders.
-    'col-pay-vendor': 'minmax(180px,1.6fr)',
-    'col-pay-payable': '160px',
-    'col-pay-oldest': '112px',
-    'col-pay-past-terms': '108px',
-    'col-pay-bills': '76px',
-    'col-pay-actions': '44px',
-    // Resellers list grid — five lifetime money columns (Revenue, Pending,
-    // Owed, Paid, To recover). Narrower than `col-pay-payable`: sized for a
-    // plain `formatPaise` value with no "Advance " prefix (up to
-    // "₹1,23,45,678.00", 16 chars). Sharing one token across all five keeps
-    // them visually even and gives one place to widen if amounts grow.
-    'col-reseller-money': '124px',
-    // Reseller commission grid (`/resellers/[id]`) — "Base × rate = amount"
-    // plus an occasional "edited"/"missing" pill: two money figures and an
-    // operator, wider than any other flexible column track in the app.
-    'col-reseller-maths': 'minmax(260px,1.4fr)',
-    // Same grid's State column: a status pill plus a second line (paid date,
-    // payout number, cancel/recovery note). Wider than the generic
-    // `col-status` (106px) because that second line needs room to breathe.
-    'col-reseller-state': '140px',
-    // Cash ledger grid (design min-width 960px)
-    'col-cash-date': '104px',
-    'col-cash-entry': '150px',
-    'col-cash-customer': 'minmax(150px,1.3fr)',
-    'col-cash-detail': 'minmax(150px,1.4fr)',
-    'col-cash-amount': '128px',
     // DISCOM admin grid (design min-width 1360px)
     'col-discom-hierarchy': 'minmax(250px,1.7fr)',
     'col-discom-circle': 'minmax(160px,1.1fr)',

@@ -16,7 +16,7 @@ export interface TableUrlSortModel {
 /** Inline filter state — mirrors FilterState without a circular import */
 export type TableUrlFilterRecord = Record<string, unknown>;
 
-interface TableUrlState {
+export interface TableUrlState {
   page: number;
   pageSize: number;
   search: string;
@@ -114,7 +114,7 @@ function normalizeFilters(filters: TableUrlFilterRecord): TableUrlFilterRecord {
 }
 
 /** Read table state from a URLSearchParams instance */
-function parseTableStateFromParams(
+export function parseTableStateFromParams(
   params: URLSearchParams,
   prefix: string,
   defaultPageSize: number,
@@ -133,7 +133,7 @@ function parseTableStateFromParams(
 }
 
 /** Write table state into an existing URLSearchParams (mutates in place) */
-function writeTableStateToParams(
+export function writeTableStateToParams(
   params: URLSearchParams,
   next: TableUrlState,
   prefix: string,

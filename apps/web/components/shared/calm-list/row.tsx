@@ -51,8 +51,10 @@ export function useDragGuard(): {
   };
 }
 
-const CARD = cn(
-  'relative cursor-pointer rounded-rf-xl bg-surface px-5 py-4 shadow-e1',
+const CARD_BASE = 'relative rounded-rf-xl bg-surface px-5 py-4 shadow-e1';
+/** A card that opens something rises under the pointer; one that opens nothing stays still. */
+const CARD_OPENS = cn(
+  'cursor-pointer',
   'transition-[box-shadow,transform] duration-[250ms] ease-calm hover:-translate-y-0.5 hover:shadow-calm',
   'motion-reduce:transition-none motion-reduce:hover:translate-y-0',
 );
@@ -61,8 +63,12 @@ export interface CalmRowProps {
   /** The row's CSS grid (its columns at each width). */
   className: string;
   /** What opening the row does, for a screen reader: "Open quote QT-12 for Asha Patil". */
-  label: string;
-  /** A row that opens a page. Give this or `onOpen`. */
+  label?: string;
+  /**
+   * A row that opens a page. Give this or `onOpen` — or neither, for a row
+   * that is only read (a ledger line): it is then a plain card, with no cover,
+   * no pointer and no lift, so nothing promises a click that does nothing.
+   */
   href?: string;
   /** A row that opens something in place (a panel, a dialog). */
   onOpen?: () => void;
@@ -74,6 +80,14 @@ export interface CalmRowProps {
   selected?: boolean;
   /** Marks the row in the DOM (`data-list-row`), e.g. with its id. */
   rowId: string;
+  /**
+   * A row that opens in place: what it shows under its cells while `expanded`
+   * (a vendor's bills, a project's milestones). Give it with `onOpen`, which
+   * then toggles. The card grows; nothing navigates.
+   */
+  expansion?: ReactNode;
+  /** The `expansion` is showing. */
+  expanded?: boolean;
   children: ReactNode;
 }
 
@@ -95,11 +109,18 @@ export function CalmRow({
   entering,
   selected = false,
   rowId,
+  expansion,
+  expanded = false,
   children,
 }: CalmRowProps): JSX.Element {
   const router = useRouter();
   const cover = useRef<HTMLButtonElement>(null);
   const drag = useDragGuard();
+
+  // A row that opens in place keeps its cells in their own grid, so what it
+  // opens can sit under them at the card's full width.
+  const expandable = expansion !== undefined;
+  const opens = Boolean(href || onOpen);
 
   const open = (event: MouseEvent): void => {
     if (drag.wasDrag(event)) return;
@@ -116,21 +137,22 @@ export function CalmRow({
   return (
     <div
       data-list-row={rowId}
-      onMouseDown={drag.onMouseDown}
-      onClick={open}
+      onMouseDown={opens ? drag.onMouseDown : undefined}
+      onClick={opens ? open : undefined}
       style={
         entering
           ? { animationDelay: `${Math.min(index, MAX_STAGGER_STEPS) * STAGGER_MS}ms` }
           : undefined
       }
       className={cn(
-        CARD,
-        className,
+        CARD_BASE,
+        opens && CARD_OPENS,
+        !expandable && className,
         entering && 'animate-calm-rise motion-reduce:animate-none',
         selected && 'shadow-calm ring-2 ring-foreground',
       )}
     >
-      {href ? (
+      {!opens ? null : href ? (
         <Link
           href={href}
           prefetch={false}
@@ -143,6 +165,7 @@ export function CalmRow({
           ref={cover}
           type="button"
           aria-label={label}
+          aria-expanded={expandable ? expanded : undefined}
           onClick={(event) => {
             event.stopPropagation();
             onOpen?.();
@@ -150,7 +173,23 @@ export function CalmRow({
           className="absolute inset-0 z-0 cursor-pointer rounded-rf-xl"
         />
       )}
-      {children}
+      {expandable ? (
+        <>
+          <div className={className}>{children}</div>
+          {expanded ? (
+            // Its clicks are its own: a link or a drag to copy a figure in
+            // here must not close the row.
+            <div
+              className={cn(ABOVE, 'mt-4 cursor-auto border-t border-border pt-4')}
+              onClick={stopRowClick}
+            >
+              {expansion}
+            </div>
+          ) : null}
+        </>
+      ) : (
+        children
+      )}
     </div>
   );
 }

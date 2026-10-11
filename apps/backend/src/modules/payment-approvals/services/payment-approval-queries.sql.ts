@@ -131,8 +131,9 @@ export const APPROVALS_PAGE_SQL = `
     CASE WHEN $8 = 'amountPaise'  AND $9 = 'desc' THEN ABS(p.amount_paise) END DESC,
     CASE WHEN $8 = 'submittedAt'  AND $9 = 'asc'  THEN p.submitted_at  END ASC,
     CASE WHEN $8 = 'submittedAt'  AND $9 = 'desc' THEN p.submitted_at  END DESC,
-    CASE WHEN $8 = 'customerName' AND $9 = 'asc'  THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END ASC,
-    CASE WHEN $8 = 'customerName' AND $9 = 'desc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END DESC,
+    -- LOWER: a name typed without a capital ("tejas patil") belongs under T, not after Z.
+    CASE WHEN $8 = 'customerName' AND $9 = 'asc'  THEN LOWER(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name))) END ASC,
+    CASE WHEN $8 = 'customerName' AND $9 = 'desc' THEN LOWER(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name))) END DESC,
     -- Default: the queue drains in the order it filled. p.id is the unique last
     -- key, so two requests stamped in the same millisecond cannot trade places
     -- between pages.

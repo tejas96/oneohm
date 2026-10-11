@@ -1,15 +1,33 @@
 'use client';
 
-import { Box, Card, Skeleton, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
-import { type JSX, useMemo, useState } from 'react';
+import { Box, Tooltip } from '@mui/material';
+import { type JSX } from 'react';
 
-import { CASH_COLUMNS, type CashRow } from './cash-columns';
+import { CashRow, CashRowSkeleton } from './cash-row';
 
 import { GatedLink } from '@/components/features/dashboard/business/components/gated-link';
-import type { TableSortModel } from '@/components/shared/advanced-table';
-import { CrmTable, type CrmQuickFilter } from '@/components/shared/crm-table';
-import { MUITypography } from '@/components/ui';
+import {
+  BONE,
+  CalmListPage,
+  ListEmpty,
+  ListError,
+  ListPager,
+  ListSkeleton,
+  ListTitle,
+  ListToolbar,
+  PAGE_SIZE_OPTIONS,
+  PillTabs,
+  Segment,
+  SegmentCard,
+  type SortOption,
+  StatTile,
+  StatTiles,
+  type StatTone,
+  useKeepPageInRange,
+  useListEntrance,
+} from '@/components/shared/calm-list';
 import { ROUTES } from '@/lib/config/routes';
+import { setUrlChoice, useListUrl } from '@/lib/hooks';
 import {
   useCashFlow,
   useFinanceKpis,
@@ -17,8 +35,7 @@ import {
   type LedgerDirection,
 } from '@/lib/hooks/resources/ledger';
 import type { Gate } from '@/lib/rbac';
-import { color, crm } from '@/lib/theme/tokens';
-import { formatBusinessDate, formatCount } from '@/lib/utils';
+import { cn, formatBusinessDate, formatCount, getErrorMessage } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 /** IST today, matching how the backend stamps value dates. */
@@ -70,13 +87,47 @@ function resolvePreset(key: PresetKey): { from: string; to: string } {
   }
 }
 
-const PRESETS: Array<{ key: PresetKey; label: string }> = [
-  { key: 'today', label: 'Today' },
-  { key: 'month', label: 'This month' },
-  { key: 'quarter', label: 'This quarter' },
-  { key: 'fy', label: 'This FY' },
-  { key: 'year', label: 'This year' },
+const DEFAULT_PRESET: PresetKey = 'month';
+
+const PRESETS: Array<{ value: PresetKey; label: string }> = [
+  { value: 'today', label: 'Today' },
+  { value: 'month', label: 'This month' },
+  { value: 'quarter', label: 'This quarter' },
+  { value: 'fy', label: 'This FY' },
+  { value: 'year', label: 'This year' },
 ];
+
+/**
+ * The three sortable columns of the old table. With no sort the API orders by
+ * value date, newest first — which is why "newest first" is the option that
+ * sends none.
+ */
+const SORT_OPTIONS: SortOption[] = [
+  { label: 'Newest first', model: null },
+  { label: 'Oldest first', model: { field: 'valueDate', direction: 'asc' } },
+  { label: 'Amount: large to small', model: { field: 'amountPaise', direction: 'desc' } },
+  { label: 'Amount: small to large', model: { field: 'amountPaise', direction: 'asc' } },
+  { label: 'Customer A–Z', model: { field: 'customerName', direction: 'asc' } },
+  { label: 'Customer Z–A', model: { field: 'customerName', direction: 'desc' } },
+];
+
+/** `?period=`, typed by hand as often as it is clicked: anything else is this month. */
+const toPreset = (raw: string | null): PresetKey =>
+  PRESETS.find((preset) => preset.value === raw)?.value ?? DEFAULT_PRESET;
+
+/** `?dir=in|out`; anything else is both directions. */
+const toDirection = (raw: string | null): LedgerDirection | undefined =>
+  raw === 'in' || raw === 'out' ? raw : undefined;
+
+const ENTRY_NOUN = { one: 'entry', many: 'entries' };
+
+/** A screenful; a longer page does not need a longer placeholder. */
+const MAX_SKELETON_ROWS = 12;
+
+/** This list has no filter panel. */
+const NO_FILTER_COLUMNS: never[] = [];
+const NO_FILTERS = {};
+const ignoreFilters = (): void => undefined;
 
 /**
  * The finance dashboard.
@@ -91,18 +142,23 @@ const PRESETS: Array<{ key: PresetKey; label: string }> = [
  * a customer "owes ₹X in March".
  */
 export function FinanceCashPage(): JSX.Element {
-  const [preset, setPreset] = useState<PresetKey>('month');
-  const [direction, setDirection] = useState<LedgerDirection | undefined>();
-  // CrmTable's `page` is zero-indexed; the API is one-indexed.
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE);
-  const [search, setSearch] = useState('');
-  const [sortModel, setSortModel] = useState<TableSortModel | null>(null);
+  // The whole view lives in the URL (`?period=fy&dir=in&cash_page=3`), so Back
+  // from a project returns to the period, search, sort and page it was left on.
+  const url = useListUrl({
+    prefix: 'cash',
+    defaultPageSize: PAGE_SIZE,
+    pageSizeOptions: PAGE_SIZE_OPTIONS,
+    sortFields: CASH_SORTABLE,
+  });
+  // The pager's `page` is zero-indexed; the API is one-indexed.
+  const { page, pageSize, search, sortModel } = url.state;
+  const preset = toPreset(url.params.get('period'));
+  const direction = toDirection(url.params.get('dir'));
   const range = resolvePreset(preset);
 
   // Search narrows the period figures so the cards describe the rows on
-  // screen. The direction chip deliberately does not: the cards show money in
-  // and money out side by side, so it is a table view, not a scope change.
+  // screen. The direction view deliberately does not: the cards show money in
+  // and money out side by side, so it is a list view, not a scope change.
   const kpis = useFinanceKpis(range.from, range.to, search || undefined);
   const grain = preset === 'today' ? 'day' : 'month';
   // The bars follow the search too, so they describe the same rows as the cards.
@@ -117,124 +173,154 @@ export function FinanceCashPage(): JSX.Element {
     limit: pageSize,
   });
 
-  const rows = (entries.data?.data ?? []) as CashRow[];
+  const rows = entries.data?.data ?? [];
 
-  /** Direction as chips, matching how every other list filters. */
-  const quickFilters = useMemo<CrmQuickFilter[]>(
-    () => [
-      { key: '', label: 'All', tone: 'neutral', dot: false },
-      { key: 'in', label: 'Money in', tone: 'success', dot: true },
-      { key: 'out', label: 'Money out', tone: 'info', dot: true },
-    ],
-    [],
-  );
+  // Rows rise in once. Later changes swap in without replaying it.
+  const entering = useListEntrance(rows.length);
+
+  const chooseDirection = (next: LedgerDirection | undefined): void =>
+    url.edit((params) => {
+      setUrlChoice(params, 'dir', next);
+      return { page: 0 };
+    });
+
+  // A page from an old link, or one Back returns to after entries were reversed.
+  useKeepPageInRange({
+    page,
+    pageSize,
+    total: entries.data?.total,
+    isFetching: entries.isFetching,
+    onPageChange: url.setPage,
+  });
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: { xs: 2, lg: 3 } }}>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', lg: 'row' },
-          justifyContent: 'space-between',
-          gap: 2,
-        }}
-      >
-        <Box>
-          <Box
-            component="span"
-            sx={{
-              fontSize: 'var(--text-overline-size)',
-              fontWeight: 700,
-              letterSpacing: 'var(--text-overline-track)',
-              textTransform: 'uppercase',
-              color: color['text-tertiary'],
-            }}
-          >
-            Finance
-          </Box>
-          <Box
-            component="h1"
-            sx={{
-              m: 0,
-              mt: '5px',
-              mb: '3px',
-              fontSize: crm['text-page-title'],
-              fontWeight: 700,
-              letterSpacing: crm['text-page-title-track'],
-            }}
-          >
-            Cash
-          </Box>
-          {/* The active period is always visible — misreading it is the error
-              this layout is designed against. */}
-          <Box
-            component="p"
-            sx={{ m: 0, fontSize: crm['text-row-title'], color: color['text-secondary'] }}
-          >
-            {formatBusinessDate(range.from)} to {formatBusinessDate(range.to)}
-          </Box>
-        </Box>
-
-        <ToggleButtonGroup
-          exclusive
-          size="small"
-          value={preset}
-          onChange={(_, next: PresetKey | null) => {
-            if (next) {
-              setPreset(next);
-              setPage(0);
+    <CalmListPage
+      // The figures and the chart would leave no room for the entries.
+      pinHeader={false}
+      header={
+        <>
+          <ListTitle
+            title="Cash"
+            // The active period is always visible — misreading it is the error
+            // this layout is designed against.
+            sub={`${formatBusinessDate(range.from)} to ${formatBusinessDate(range.to)}`}
+            actions={
+              <PillTabs
+                label="Reporting period"
+                options={PRESETS}
+                value={preset}
+                onChange={(next) =>
+                  url.edit((params) => {
+                    setUrlChoice(params, 'period', next, DEFAULT_PRESET);
+                    return { page: 0 };
+                  })
+                }
+              />
             }
-          }}
-          aria-label="Reporting period"
-          sx={{ alignSelf: { lg: 'flex-start' }, mt: { lg: 2.25 } }}
-        >
-          {PRESETS.map((p) => (
-            <ToggleButton key={p.key} value={p.key}>
-              {p.label}
-            </ToggleButton>
+          />
+
+          {kpis.isLoading ? (
+            <div
+              role="status"
+              aria-label="Loading figures"
+              className={cn(BONE, 'mb-2.5 h-[104px] rounded-card-calm')}
+            />
+          ) : (
+            <KpiStrip data={kpis.data} />
+          )}
+
+          <CashFlowChart
+            points={cashFlow.data ?? []}
+            grain={grain}
+            isLoading={cashFlow.isLoading}
+          />
+
+          {/* Direction as quick views, matching how every other list filters. */}
+          <SegmentCard label="Entries by direction">
+            <Segment
+              pressed={!direction}
+              onClick={() => chooseDirection(undefined)}
+              count={null}
+              label="All"
+            />
+            <Segment
+              pressed={direction === 'in'}
+              onClick={() => chooseDirection('in')}
+              count={null}
+              label="Money in"
+              dot="var(--ds-primary)"
+            />
+            <Segment
+              pressed={direction === 'out'}
+              onClick={() => chooseDirection('out')}
+              count={null}
+              label="Money out"
+              dot="var(--ds-info-soft)"
+            />
+          </SegmentCard>
+        </>
+      }
+      toolbar={
+        <ListToolbar
+          search={search}
+          onSearchChange={url.setSearch}
+          searchPlaceholder="Search entry number, customer, project or reference"
+          searchLabel="Search entries"
+          // The ledger API searches on any length.
+          searchMinLength={1}
+          filterColumns={NO_FILTER_COLUMNS}
+          filters={NO_FILTERS}
+          onFilterChange={ignoreFilters}
+          sortOptions={SORT_OPTIONS}
+          sortModel={sortModel}
+          onSortChange={url.setSortModel}
+        />
+      }
+      error={
+        entries.isError ? (
+          <ListError
+            title="Couldn’t load the entries"
+            message={getErrorMessage(entries.error)}
+            onRetry={() => void entries.refetch()}
+          />
+        ) : null
+      }
+      isFetching={entries.isFetching}
+      isLoading={entries.isLoading}
+      page={page}
+      footer={
+        <ListPager
+          page={page}
+          pageSize={pageSize}
+          totalRowCount={entries.data?.total ?? 0}
+          onPageChange={url.setPage}
+          onPageSizeChange={url.setPageSize}
+          noun={ENTRY_NOUN}
+          countUnknown={entries.isError && !entries.data}
+        />
+      }
+    >
+      {entries.isLoading ? (
+        <ListSkeleton
+          rows={Math.min(pageSize, MAX_SKELETON_ROWS)}
+          label="Loading entries"
+          renderRow={() => <CashRowSkeleton />}
+        />
+      ) : rows.length === 0 ? (
+        entries.isError ? null : (
+          <ListEmpty
+            title={search ? 'No entry matches' : 'Nothing recorded in this period.'}
+            hint={search ? 'Try another entry number, customer, project or reference.' : undefined}
+          />
+        )
+      ) : (
+        <div className="flex flex-col gap-2">
+          {rows.map((row, index) => (
+            <CashRow key={row.id} row={row} index={index} entering={entering} />
           ))}
-        </ToggleButtonGroup>
-      </Box>
-
-      {kpis.isLoading ? <Skeleton variant="rounded" height={104} /> : <KpiStrip data={kpis.data} />}
-
-      <CashFlowChart points={cashFlow.data ?? []} grain={grain} isLoading={cashFlow.isLoading} />
-
-      <CrmTable<CashRow>
-        columns={CASH_COLUMNS}
-        rows={rows}
-        getRowId={(row) => row.id}
-        loading={entries.isLoading}
-        refetching={entries.isFetching && !entries.isLoading}
-        itemLabel="entries"
-        gridMinWidth="900px"
-        searchPlaceholder="Search entry number, customer, project or reference"
-        onSearchChange={(next) => {
-          setSearch(next);
-          setPage(0);
-        }}
-        quickFilters={quickFilters}
-        activeQuickFilter={direction ?? ''}
-        onQuickFilterChange={(key) => {
-          setDirection((key || undefined) as LedgerDirection | undefined);
-          setPage(0);
-        }}
-        sortModel={sortModel}
-        onSortChange={(next) => {
-          setSortModel(next);
-          setPage(0);
-        }}
-        page={page}
-        pageSize={pageSize}
-        totalRowCount={entries.data?.total ?? 0}
-        onPageChange={setPage}
-        onPageSizeChange={(next) => {
-          setPageSize(next);
-          setPage(0);
-        }}
-        emptyMessage="Nothing recorded in this period."
-      />
-    </Box>
+        </div>
+      )}
+    </CalmListPage>
   );
 }
 
@@ -249,7 +335,7 @@ function KpiStrip({
     label: string;
     value: string;
     sub: string;
-    tone: string;
+    tone: StatTone;
     href?: string;
     gate?: Gate;
   }> = [
@@ -288,7 +374,7 @@ function KpiStrip({
       label: 'Net',
       value: rupees(data?.netCashflowInRange ?? 0),
       sub: 'in period',
-      tone: (data?.netCashflowInRange ?? 0) < 0 ? 'error' : 'success',
+      tone: (data?.netCashflowInRange ?? 0) < 0 ? 'danger' : 'success',
     },
     {
       // This used to count TASKS carrying the "Net meter installation" stage
@@ -309,7 +395,7 @@ function KpiStrip({
     },
   ];
 
-  const snapshots: Array<{ label: string; value: string; sub: string; tone: string }> = [
+  const snapshots: Array<{ label: string; value: string; sub: string; tone: StatTone }> = [
     {
       label: 'Outstanding',
       value: rupees(data?.outstandingNow ?? 0),
@@ -333,22 +419,38 @@ function KpiStrip({
     },
   ];
 
+  // No figure without an answer: "₹0.00 received" on a failed request reads as
+  // a period with no money. (This renders only once loading is over, so no
+  // data means the request failed.)
+  const shown = <T extends { value: string; sub: string; tone: StatTone }>(tiles: T[]): T[] =>
+    data
+      ? tiles
+      : tiles.map((t) => ({
+          ...t,
+          value: '—',
+          sub: 'could not load',
+          tone: 'default' as StatTone,
+        }));
+
   return (
-    <div className="flex flex-col gap-3">
-      <dl className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-        {flows.map((t) => (
+    <div className="mb-2.5 flex flex-col gap-2.5">
+      <StatTiles
+        label="Figures for the selected period"
+        className="grid-cols-2 md:grid-cols-3 xl:grid-cols-5"
+      >
+        {shown(flows).map((t) => (
           <Tile key={t.label} {...t} />
         ))}
-      </dl>
+      </StatTiles>
       <div>
-        <MUITypography variant="finePrint" sx={{ mb: 1 }}>
+        <p className="m-0 mb-1.5 px-1 text-[12px] text-foreground-tertiary">
           As of today — not affected by the selected period or the search
-        </MUITypography>
-        <dl className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-          {snapshots.map((t) => (
+        </p>
+        <StatTiles label="Figures as of today" className="grid-cols-2 lg:grid-cols-3">
+          {shown(snapshots).map((t) => (
             <Tile key={t.label} {...t} />
           ))}
-        </dl>
+        </StatTiles>
       </div>
     </div>
   );
@@ -365,56 +467,31 @@ function Tile({
   label: string;
   value: string;
   sub: string;
-  tone: string;
+  tone: StatTone;
   /** When set, the whole tile becomes a way in to that count's own screen. */
   href?: string;
   /** Permission gate the destination requires. Required when href is set. */
   gate?: Gate;
 }): JSX.Element {
-  // MUI palette tokens rather than Tailwind colour utilities.
-  const color =
-    tone === 'success' || tone === 'warning' || tone === 'error' || tone === 'info'
-      ? `${tone}.main`
-      : 'text.primary';
-
-  const card = (
-    <Card
-      variant="outlined"
-      sx={{ p: 2, ...(href ? { '&:hover': { bgcolor: 'action.hover' } } : {}) }}
-    >
-      <MUITypography variant="metaLabel" component="dt">
-        {label}
-      </MUITypography>
-      <MUITypography
-        component="dd"
-        variant="inherit"
-        color={color}
-        sx={{ mt: 0.5, fontSize: '1.125rem', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
-      >
-        {value}
-      </MUITypography>
-      <MUITypography variant="finePrint" component="dd" sx={{ mt: 0.25 }}>
-        {sub}
-      </MUITypography>
-    </Card>
+  const tile = (
+    <StatTile label={label} value={value} note={sub} tone={tone} compact linked={Boolean(href)} />
   );
 
-  if (!href) return card;
+  if (!href) return tile;
 
   // Gated link: if a destination route requires a permission gate distinct
   // from this page's own gate (e.g., /finance/receivables needs
   // finance.receivables.view, not just finance.view), wrap in GatedLink to
   // show an access dialog instead of navigating to a permission wall.
-  // Same wrapped-content affordance already used for CrmTable links.
   if (gate) {
     return (
       <GatedLink href={href} gate={gate}>
-        {card}
+        {tile}
       </GatedLink>
     );
   }
 
-  return card;
+  return tile;
 }
 
 /** Bar pair per period. Deliberately simple — a chart library is not needed here. */
@@ -427,7 +504,15 @@ function CashFlowChart({
   grain: 'day' | 'month';
   isLoading: boolean;
 }): JSX.Element {
-  if (isLoading) return <Skeleton variant="rounded" height={160} />;
+  if (isLoading) {
+    return (
+      <div
+        role="status"
+        aria-label="Loading chart"
+        className={cn(BONE, 'mb-2.5 h-[160px] rounded-card-calm')}
+      />
+    );
+  }
   if (points.length === 0) return <></>;
 
   const peak = Math.max(...points.map((p) => Math.max(p.cashIn, p.cashOut)), 1);
@@ -441,10 +526,8 @@ function CashFlowChart({
   };
 
   return (
-    <Card variant="outlined" component="section" sx={{ p: 2 }}>
-      <MUITypography variant="sectionTitle" sx={{ mb: 2 }}>
-        Money in vs out
-      </MUITypography>
+    <section className="mb-2.5 rounded-card-calm bg-surface px-[22px] py-4 shadow-calm">
+      <h2 className="m-0 mb-4 text-[14px] font-semibold">Money in vs out</h2>
       <div className="flex items-end gap-3 overflow-x-auto pb-2" style={{ minHeight: 120 }}>
         {points.map((p) => (
           <div key={p.month} className="flex min-w-14 flex-1 flex-col items-center gap-1">
@@ -464,10 +547,10 @@ function CashFlowChart({
                 />
               </Tooltip>
             </div>
-            <MUITypography variant="finePrint">{bucketLabel(p.month)}</MUITypography>
+            <span className="text-[12px] text-foreground-tertiary">{bucketLabel(p.month)}</span>
           </div>
         ))}
       </div>
-    </Card>
+    </section>
   );
 }

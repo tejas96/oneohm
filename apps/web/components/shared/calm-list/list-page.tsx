@@ -87,8 +87,17 @@ export function useKeepPageInRange({
 export interface CalmListPageProps {
   /** The title and anything else that pins above the search bar (a ribbon, quick views). */
   header: ReactNode;
-  /** The search / filters / sort bar. It pins on every screen size. */
-  toolbar: ReactNode;
+  /**
+   * False for a page whose header is tall (figures, a chart, several rows of
+   * views): pinned, it would leave little room for the rows, so it scrolls
+   * away and only the search bar pins — what a small window always does.
+   */
+  pinHeader?: boolean;
+  /**
+   * The search / filters / sort bar. It pins on every screen size. Omit it for
+   * a short list that has none of the three (a reseller's commissions).
+   */
+  toolbar?: ReactNode;
   /** Shown between the toolbar and the rows when the list failed to load. */
   error?: ReactNode;
   /** Something that belongs with the rows and scrolls with them (a selection bar). */
@@ -116,6 +125,7 @@ export interface CalmListPageProps {
  */
 export function CalmListPage({
   header,
+  pinHeader = true,
   toolbar,
   error,
   aboveRows,
@@ -169,10 +179,14 @@ export function CalmListPage({
       className="-m-4 min-h-[calc(100vh-var(--header-height))] bg-surface-secondary text-[14px] leading-[1.45] text-foreground transition-[padding] duration-200 ease-calm motion-reduce:transition-none min-[1350px]:pr-[var(--filters-drawer-w,0px)] lg:-m-5"
     >
       <div className="mx-auto max-w-[1180px] px-4 pb-20 pt-6 sm:px-7 sm:pt-9">
-        <div ref={pinnedHeaderRef} className={PINNED_HEADER}>
+        <div ref={pinnedHeaderRef} className={pinHeader ? PINNED_HEADER : 'contents'}>
           {header}
 
-          <div ref={pinnedToolbarRef} className={PINNED_TOOLBAR}>
+          {/* With no toolbar this is only the thin strip the refetch bar rides on. */}
+          <div
+            ref={pinnedToolbarRef}
+            className={toolbar == null ? 'relative mt-2.5 h-2.5' : PINNED_TOOLBAR}
+          >
             {toolbar}
             {/* Background refetch: the rows stay; only this thin bar shows. Always
                 mounted so toggling it never moves the list. It rides on the pinned
