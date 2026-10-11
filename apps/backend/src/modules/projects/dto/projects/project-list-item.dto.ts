@@ -81,7 +81,7 @@ class ProjectListItemNextTaskDto {
   endDate?: Date;
 }
 
-class ProjectListNextStepDto {
+export class ProjectListNextStepDto {
   @ApiProperty({ example: 'Site Survey' })
   @Expose()
   name!: string;
