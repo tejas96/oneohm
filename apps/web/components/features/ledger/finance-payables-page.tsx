@@ -90,6 +90,11 @@ export function FinancePayablesPage(): JSX.Element {
 
   const rows = query.data?.data ?? [];
   const totals = query.data?.totals;
+  // No figure until this search has answered: "₹0.00 owed to vendors" on a
+  // slow or failed request reads as nothing owed. (Receivables does the same.)
+  const pending = query.isError ? 'could not load' : 'loading…';
+  // The totals follow the search (not the "Owing only" view), so say so.
+  const searching = search.length > 0;
 
   // Rows rise in once. Later changes swap in without replaying it.
   const entering = useListEntrance(rows.length);
@@ -108,21 +113,31 @@ export function FinancePayablesPage(): JSX.Element {
           <StatTiles label="Payables totals" className="mb-2.5 sm:grid-cols-3">
             <StatTile
               label="Total payable"
-              value={formatPaise(totals?.totalPayablePaise ?? 0)}
-              note="owed to vendors"
+              value={totals ? formatPaise(totals.totalPayablePaise) : '—'}
+              note={!totals ? pending : searching ? 'matching the search' : 'owed to vendors'}
             />
             <StatTile
               label="Vendors owed"
-              value={String(totals?.vendorsOwedCount ?? 0)}
-              note="with a balance due"
+              value={totals ? String(totals.vendorsOwedCount) : '—'}
+              note={!totals ? pending : searching ? 'matching the search' : 'with a balance due'}
             />
             <StatTile
               label="Advances paid"
-              value={formatPaise(totals?.advancePaise ?? 0)}
+              value={totals ? formatPaise(totals.advancePaise) : '—'}
               // The totals cover every vendor, but "Owing only" hides the vendors
               // holding an advance — so say so rather than show a figure the list
               // below cannot explain.
-              note={onlyOwing ? 'all vendors, incl. ones this filter hides' : 'paid ahead of bills'}
+              note={
+                !totals
+                  ? pending
+                  : onlyOwing
+                    ? searching
+                      ? 'matching the search, incl. ones this filter hides'
+                      : 'all vendors, incl. ones this filter hides'
+                    : searching
+                      ? 'matching the search'
+                      : 'paid ahead of bills'
+              }
             />
           </StatTiles>
 
@@ -207,7 +222,9 @@ export function FinancePayablesPage(): JSX.Element {
           renderRow={() => <PayableRowSkeleton />}
         />
       ) : rows.length === 0 ? (
-        query.isError ? null : (
+        query.isError ? null : searching ? (
+          <ListEmpty title="No vendor matches" hint="Try another name or code." />
+        ) : (
           <ListEmpty title="Nothing owed to anyone." />
         )
       ) : (
