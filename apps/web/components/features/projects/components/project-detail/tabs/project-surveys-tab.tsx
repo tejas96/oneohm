@@ -5,8 +5,8 @@ import React, { useState } from 'react';
 
 import { DetailCard, EmptyPane, Mono, TonePill, type Tone } from '../primitives';
 
-import { useProperty } from '@/components/features/properties/hooks';
 import { EditSiteDataModal } from '@/components/features/properties/components/edit-site-data-modal';
+import { useProperty } from '@/components/features/properties/hooks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGatedAction } from '@/lib/rbac';
 import { cn, formatDate, toTitleLabel } from '@/lib/utils';
