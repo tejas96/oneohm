@@ -26,8 +26,14 @@ describe('followupRecordHref', () => {
 
   it('always opens the follow-ups tab on site leads', () => {
     const href = followupRecordHref({ propertyId: PROPERTY_ID, customerId: CUSTOMER_ID });
-    expect(href).toContain('/properties/');
-    expect(href).toContain(PROPERTY_ID);
+    expect(href).toContain(`/customers/${CUSTOMER_ID}`);
+    expect(href).toContain(`site=${PROPERTY_ID}`);
+    expect(href).toContain('tab=followups');
+  });
+
+  it('keeps the old site address when the customer is not known', () => {
+    const href = followupRecordHref({ propertyId: PROPERTY_ID });
+    expect(href).toContain(`/properties/${PROPERTY_ID}`);
     expect(href).toContain('tab=followups');
   });
 

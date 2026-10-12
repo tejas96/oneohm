@@ -17,6 +17,7 @@ import {
   getPropertyDeleteBlockReasons,
 } from '../utils/delete-eligibility';
 
+import { siteHref } from '@/components/features/customers/lib/site-href';
 import { GatedMenuItem } from '@/components/shared/guards';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 
@@ -78,7 +79,7 @@ export function PropertyRowActionsMenu({
         <MenuItem
           onClick={() => {
             handleClose();
-            void router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: property.id }));
+            void router.push(siteHref(property.customerId, property.id));
           }}
         >
           <ListItemIcon>

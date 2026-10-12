@@ -29,7 +29,7 @@ import {
 } from '@tejas96/shared/types';
 import React, { useState, useEffect } from 'react';
 
-import { type CustomerPropertyResponse, useUpdateProperty } from '../../hooks';
+import { type CustomerPropertyResponse, useUpdateProperty } from '../hooks';
 
 import { useEmployees } from '@/components/features/employees';
 import type { Employee } from '@/components/features/employees/hooks/use-employees';

@@ -27,19 +27,20 @@ import {
   SERVICE_TICKET_STATUS_LABELS,
   SERVICE_TICKET_STATUS_TONE,
 } from '../constants';
-import { ServiceTicketFormDialog } from './service-ticket-form-dialog';
-import { useServiceTickets, type ServiceTicketListParams } from '../hooks/use-service-tickets';
-
 import {
   DetailCard,
+  detailTableSx,
   EmptyPane,
   IconCircle,
   Mono,
   RowSkeleton,
   SectionHeading,
+  tableCardSx,
   TonePill,
-} from '@/components/features/customers/customer-detail/primitives';
-import { detailTableSx, tableCardSx } from '@/components/features/customers/customer-detail/styles';
+} from './project-service-tab-parts';
+import { ServiceTicketFormDialog } from './service-ticket-form-dialog';
+import { useServiceTickets, type ServiceTicketListParams } from '../hooks/use-service-tickets';
+
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { ROUTES, buildRoute } from '@/lib/config/routes';
 import {
@@ -49,28 +50,12 @@ import {
   getDueDateMuiColor,
 } from '@/lib/utils';
 
-type ServiceTicketScope = 'customer' | 'property' | 'project';
-
-export interface EntityServiceTicketsTabProps {
-  scope: ServiceTicketScope;
-  /** The customer / property / project id, per `scope`. */
-  id: string;
-  /** Lets the property and project tabs pre-select the customer on create. */
+export interface ProjectServiceTicketsTabProps {
+  projectId: string;
+  /** Pre-selects the customer on a new ticket. */
   customerId?: string;
-  /**
-   * Property scope only: a property has exactly one project, so passing it locks
-   * the new ticket to that project. Without it the user could file the ticket
-   * against another of the customer's projects and it would vanish from this tab.
-   */
-  projectId?: string;
   enabled: boolean;
 }
-
-const EMPTY_COPY: Record<ServiceTicketScope, string> = {
-  customer: 'Tickets raised against any of this customer’s installations will appear here.',
-  property: 'Tickets raised against this site’s installation will appear here.',
-  project: 'Tickets raised against this project will appear here.',
-};
 
 /** Statuses that still need someone — used for the open-count in the heading. */
 const LIVE_STATUSES: readonly ServiceTicketStatus[] = [
@@ -79,31 +64,19 @@ const LIVE_STATUSES: readonly ServiceTicketStatus[] = [
 ];
 
 /**
- * The single service-tickets tab, rendered by the customer, property and
- * project detail screens alike. It branches on `scope` only to pick the query
- * parameter and the empty-state wording — everything else is shared, so the
- * three tabs cannot drift.
+ * The Service tab of the project page: every ticket raised against the project.
  *
- * All three pages render tab content straight onto the canvas, so this owns its
- * own surface: the same `tableCardSx` shell, overline headers, zebra rows and
- * tone pills every other detail tab uses. It used to be a bare divider-ruled
- * list on no surface at all, which made it the one tab on each page that looked
- * like it came from a different product.
+ * The page renders tab content straight onto the canvas, so this owns its own
+ * surface: the `tableCardSx` shell, overline headers, zebra rows and tone pills.
  */
-export function EntityServiceTicketsTab({
-  scope,
-  id,
-  customerId,
+export function ProjectServiceTicketsTab({
   projectId,
+  customerId,
   enabled,
-}: EntityServiceTicketsTabProps): JSX.Element {
+}: ProjectServiceTicketsTabProps): JSX.Element {
   const [formOpen, setFormOpen] = useState(false);
 
-  const params = useMemo<ServiceTicketListParams>(() => {
-    if (scope === 'customer') return { customerId: id, limit: 50 };
-    if (scope === 'property') return { propertyId: id, limit: 50 };
-    return { projectId: id, limit: 50 };
-  }, [scope, id]);
+  const params = useMemo<ServiceTicketListParams>(() => ({ projectId, limit: 50 }), [projectId]);
 
   const { data, isLoading } = useServiceTickets(params, enabled);
   const tickets = useMemo(() => data?.items ?? [], [data?.items]);
@@ -112,11 +85,6 @@ export function EntityServiceTicketsTab({
     () => tickets.filter((ticket) => LIVE_STATUSES.includes(ticket.status)).length,
     [tickets],
   );
-
-  // Customer scope locks the customer; project scope locks both; property scope
-  // locks the customer and — when the caller supplies it — the property's project.
-  const lockedCustomerId = scope === 'customer' ? id : customerId;
-  const lockedProjectId = scope === 'project' ? id : scope === 'property' ? projectId : undefined;
 
   const newTicketButton = (
     <Button
@@ -133,8 +101,8 @@ export function EntityServiceTicketsTab({
     <ServiceTicketFormDialog
       open={formOpen}
       onClose={() => setFormOpen(false)}
-      lockedCustomerId={lockedCustomerId}
-      lockedProjectId={lockedProjectId}
+      lockedCustomerId={customerId}
+      lockedProjectId={projectId}
     />
   );
 
@@ -154,7 +122,7 @@ export function EntityServiceTicketsTab({
             size="page"
             icon={<BuildOutlinedIcon />}
             title="No service tickets"
-            description={EMPTY_COPY[scope]}
+            description="Tickets raised against this project will appear here."
             action={newTicketButton}
           />
         </DetailCard>
@@ -184,7 +152,6 @@ export function EntityServiceTicketsTab({
                   <TableCell sx={{ minWidth: 260 }}>Ticket</TableCell>
                   <TableCell sx={{ minWidth: 130 }}>Status</TableCell>
                   <TableCell sx={{ minWidth: 120 }}>Priority</TableCell>
-                  {scope !== 'project' && <TableCell sx={{ minWidth: 160 }}>Project</TableCell>}
                   <TableCell sx={{ minWidth: 160 }}>Assignee</TableCell>
                   <TableCell sx={{ minWidth: 100 }}>Due</TableCell>
                   <TableCell sx={{ minWidth: 130 }}>Raised by</TableCell>
@@ -250,15 +217,6 @@ export function EntityServiceTicketsTab({
                           dot
                         />
                       </TableCell>
-
-                      {/* Redundant on the project page — every row is that project. */}
-                      {scope !== 'project' && (
-                        <TableCell>
-                          <Mono sx={{ color: 'var(--ds-text-secondary)' }}>
-                            {ticket.projectNumber || '—'}
-                          </Mono>
-                        </TableCell>
-                      )}
 
                       <TableCell>
                         {ticket.assigneeName ? (

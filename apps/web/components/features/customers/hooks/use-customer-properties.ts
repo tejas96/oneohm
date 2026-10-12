@@ -131,6 +131,10 @@ export interface CustomerPropertyResponse extends Partial<SiteJourney> {
   latestQuoteDate?: string;
   latestQuoteFinalPrice?: number;
   latestQuoteSystemSizeKw?: number;
+  /** The project's contract as it stands. Present only once the site is converted. */
+  contractValue?: number;
+  /** Agreed after signing; the contract less the signed quote. */
+  changeOrderValue?: number;
   project?: {
     id: string;
     status: string;

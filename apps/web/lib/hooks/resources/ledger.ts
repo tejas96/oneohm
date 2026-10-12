@@ -254,15 +254,6 @@ export interface Paginated<T> {
   limit: number;
 }
 
-export function lastReceiptValueDate(entries: LedgerEntry[]): string | null {
-  let last: string | null = null;
-  for (const entry of entries) {
-    if (entry.entryType !== 'receipt' || entry.direction !== 'in' || entry.reversesId) continue;
-    if (!last || entry.valueDate > last) last = entry.valueDate;
-  }
-  return last;
-}
-
 export interface LedgerFilters {
   direction?: LedgerDirection;
   from?: string;

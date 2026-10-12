@@ -7,11 +7,8 @@ import type { JSX, ReactNode } from 'react';
 import type { CrmTone } from '@/components/shared/crm-table';
 
 /**
- * Shared building blocks for the customer detail page.
- *
- * Every tab used to invent its own card, its own section title and its own
- * empty state, which is why nine tabs read as nine different products. These
- * are the small set of pieces they now share.
+ * The building blocks of the project page's Service tab: its card, heading,
+ * pills, empty state and table paint.
  *
  * The governing DS rule applies throughout: **hierarchy comes from luminance
  * and soft shadow, never from lines.** Nothing here draws a 1px border — a
@@ -28,7 +25,7 @@ import type { CrmTone } from '@/components/shared/crm-table';
  * reads "success" in the list must read "success" here too, and sharing the
  * type means a new tone can never exist on one surface only.
  */
-export type DetailTone = CrmTone;
+type DetailTone = CrmTone;
 
 interface ToneInk {
   /** Foreground — text, icon strokes, dots. */
@@ -37,7 +34,7 @@ interface ToneInk {
   tint: string;
 }
 
-export const TONE_INK = {
+const TONE_INK = {
   neutral: { ink: 'var(--ds-text-secondary)', tint: 'var(--ds-canvas-sunken)' },
   accent: { ink: 'var(--ds-accent)', tint: 'var(--ds-accent-subtle)' },
   success: { ink: 'var(--ds-success-main)', tint: 'var(--ds-success-bg)' },
@@ -50,7 +47,7 @@ export const TONE_INK = {
 // Surfaces
 // ============================================================================
 
-export interface DetailCardProps {
+interface DetailCardProps {
   children: ReactNode;
   /** Merged onto the card. Use for grid placement, not for borders. */
   sx?: SxProps<Theme>;
@@ -92,7 +89,7 @@ export function DetailCard({
 // Section heading
 // ============================================================================
 
-export interface SectionHeadingProps {
+interface SectionHeadingProps {
   children: ReactNode;
   /** Rendered right-aligned on the same line — a button or link, kept small. */
   action?: ReactNode;
@@ -150,94 +147,10 @@ export function SectionHeading({ children, action, count, sx }: SectionHeadingPr
 }
 
 // ============================================================================
-// Fields
-// ============================================================================
-
-export interface FieldProps {
-  label: string;
-  value: ReactNode;
-  /** Renders the value in the mono face — for IDs, consumer numbers, codes. */
-  mono?: boolean;
-  /** Span both columns of a `FieldGrid` — for addresses and notes. */
-  wide?: boolean;
-}
-
-/**
- * A label/value pair. The label is a caption above the value rather than a
- * left column: at 288–360px of card width a two-column layout truncates every
- * value it holds, which is what made the old contact card unreadable.
- */
-export function Field({ label, value, mono }: FieldProps): JSX.Element {
-  const isEmpty = value === null || value === undefined || value === '' || value === '—';
-
-  return (
-    <Box sx={{ minWidth: 0 }}>
-      <Typography
-        sx={{
-          fontSize: '0.6875rem',
-          fontWeight: 500,
-          color: 'var(--ds-text-tertiary)',
-          lineHeight: 1.4,
-          mb: 0.25,
-        }}
-      >
-        {label}
-      </Typography>
-      {typeof value === 'string' || typeof value === 'number' ? (
-        <Typography
-          sx={{
-            fontSize: '0.8125rem',
-            lineHeight: 1.45,
-            color: isEmpty ? 'var(--ds-text-tertiary)' : 'var(--ds-text-primary)',
-            ...(mono && { fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }),
-            overflowWrap: 'anywhere',
-          }}
-        >
-          {isEmpty ? '—' : value}
-        </Typography>
-      ) : (
-        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
-          {value}
-        </Box>
-      )}
-    </Box>
-  );
-}
-
-export interface FieldGridProps {
-  fields: FieldProps[];
-  /** Columns at `sm` and up. Defaults to 2. */
-  columns?: 1 | 2 | 3;
-}
-
-/** Fields on a grid, with `wide` entries spanning the full row. */
-export function FieldGrid({ fields, columns = 2 }: FieldGridProps): JSX.Element {
-  return (
-    <Box
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: { xs: '1fr', sm: `repeat(${columns}, minmax(0, 1fr))` },
-        columnGap: 2,
-        rowGap: 1.75,
-      }}
-    >
-      {fields.map((field) => (
-        <Box
-          key={field.label}
-          sx={{ minWidth: 0, gridColumn: field.wide ? { sm: '1 / -1' } : undefined }}
-        >
-          <Field {...field} />
-        </Box>
-      ))}
-    </Box>
-  );
-}
-
-// ============================================================================
 // Icon circle
 // ============================================================================
 
-export interface IconCircleProps {
+interface IconCircleProps {
   children: ReactNode;
   tone?: DetailTone;
   /** 32px is the DS functional-density size; 40px the expressive one. */
@@ -278,7 +191,7 @@ export function IconCircle({
 // Pills
 // ============================================================================
 
-export interface TonePillProps {
+interface TonePillProps {
   label: ReactNode;
   tone?: DetailTone;
   /** Leading tone-coloured dot, so state is never carried by colour alone. */
@@ -346,7 +259,7 @@ export function TonePill({
 // Numerals
 // ============================================================================
 
-export interface MonoProps {
+interface MonoProps {
   children: ReactNode;
   /** Larger, heavier — for the one number a card is actually about. */
   emphasis?: boolean;
@@ -383,7 +296,7 @@ export function Mono({ children, emphasis, tone, sx }: MonoProps): JSX.Element {
 // Empty + loading
 // ============================================================================
 
-export interface EmptyPaneProps {
+interface EmptyPaneProps {
   title: string;
   description?: string;
   icon?: ReactNode;
@@ -445,3 +358,63 @@ export function RowSkeleton({ rows = 4 }: { rows?: number }): JSX.Element {
     </Stack>
   );
 }
+
+// ============================================================================
+// Table
+// ============================================================================
+
+/**
+ * Table styling for the ticket rows.
+ *
+ * Applied to a MUI `<Table>` so the tabs keep real table semantics and MUI's
+ * own components — only the paint changes. Three things happen here:
+ *
+ *   1. Every default `border-bottom` is removed. The DS forbids structural
+ *      lines; separation comes from the zebra stripe instead.
+ *   2. Headers become the overline micro-label (11px / 700 / 0.12em upper).
+ *   3. Rows alternate `surface` / `surface-alt`, the DS functional-density
+ *      pattern, and hover raises the row by luminance rather than a rule.
+ */
+export const detailTableSx: SxProps<Theme> = {
+  borderCollapse: 'separate',
+  borderSpacing: 0,
+  '& .MuiTableCell-root': {
+    borderBottom: 'none',
+    fontSize: '0.8125rem',
+    color: 'var(--ds-text-primary)',
+    px: 1.5,
+    py: 1.25,
+  },
+  '& .MuiTableHead-root .MuiTableCell-root': {
+    fontSize: 'var(--text-overline-size)',
+    fontWeight: 700,
+    letterSpacing: 'var(--text-overline-track)',
+    textTransform: 'uppercase',
+    color: 'var(--ds-text-secondary)',
+    bgcolor: 'var(--ds-surface)',
+    whiteSpace: 'nowrap',
+    py: 1,
+  },
+  '& .MuiTableBody-root .MuiTableRow-root': {
+    transition: 'background-color 120ms var(--ease-standard)',
+  },
+  '& .MuiTableBody-root .MuiTableRow-root:nth-of-type(even)': {
+    bgcolor: 'var(--ds-surface-alt)',
+  },
+  '& .MuiTableBody-root .MuiTableRow-root:hover': {
+    bgcolor: 'var(--ds-accent-subtle)',
+  },
+  /** Money and counts line up column-to-column. */
+  '& .MuiTableCell-alignRight': {
+    fontFamily: 'var(--font-mono)',
+    fontVariantNumeric: 'tabular-nums',
+  },
+};
+
+/** Wrapper for a `detailTableSx` table: a card that lets the grid bleed to its edges. */
+export const tableCardSx: SxProps<Theme> = {
+  bgcolor: 'var(--ds-surface)',
+  borderRadius: 'var(--radius-card-functional)',
+  boxShadow: 'var(--shadow-e2)',
+  overflow: 'hidden',
+};

@@ -7,10 +7,10 @@ import { SiteSkeleton } from './list-skeleton';
 import { SiteBlock } from './site-block';
 import { useCustomerProperties } from '../../hooks/use-customer-properties';
 
+import { MarkAsLostDialog } from '@/components/features/properties/components/mark-as-lost-dialog';
 import type { PropertyRowActionsTarget } from '@/components/features/properties/components/property-row-actions-menu';
+import { ReopenPropertyDialog } from '@/components/features/properties/components/reopen-property-dialog';
 import { useDeleteProperty } from '@/components/features/properties/hooks/use-properties';
-import { MarkAsLostDialog } from '@/components/features/properties/property-detail/mark-as-lost-dialog';
-import { ReopenPropertyDialog } from '@/components/features/properties/property-detail/reopen-property-dialog';
 import { ORG_ADMIN_ROLES } from '@/components/features/properties/utils/delete-eligibility';
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
 import { useDeleteConfirmation } from '@/lib/hooks/core';

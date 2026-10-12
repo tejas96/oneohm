@@ -4,7 +4,7 @@
 export { CUSTOMER_STATUS_CHIP_COLOR } from './constants';
 // Components
 export { CustomerListPage } from './components/customer-list-page';
-export { CustomerDetailPage } from './components/customer-detail-page';
+export { CustomerPage } from './customer-page/customer-page';
 // Schemas
 // Hooks
 export {

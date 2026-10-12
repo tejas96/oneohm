@@ -112,4 +112,3 @@ export { Spinner } from './spinner';
 // Typography
 export { Typography } from './typography';
 // WhatsApp Icon
-export { WhatsAppIcon } from './whatsapp-icon';

@@ -4,7 +4,7 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { QuoteStatus } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
-import type { CustomerQuote, CustomerQuotesResponse } from '@/components/features/customers/hooks';
+import type { CustomerQuotesResponse } from '@/components/features/customers/hooks';
 import { quoteKeys } from '@/components/features/quotes';
 import { apiClient } from '@/lib/api/client';
 
@@ -14,7 +14,7 @@ import { apiClient } from '@/lib/api/client';
 
 /**
  * Hook to fetch all quotes for a specific property
- * Reuses CustomerQuote and CustomerQuotesResponse types from customer hooks
+ * Reuses the CustomerQuotesResponse type from customer hooks
  *
  * @param propertyId - The property UUID to fetch quotes for
  * @param options - Optional pagination and filter options
@@ -52,4 +52,4 @@ export function usePropertyQuotes(
 }
 
 // Re-export types for convenience
-export type { CustomerQuote, CustomerQuotesResponse };
+export type { CustomerQuotesResponse };

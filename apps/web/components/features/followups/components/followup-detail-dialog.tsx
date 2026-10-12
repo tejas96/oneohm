@@ -167,9 +167,6 @@ export function FollowupDetailDialog({
   const recordHref = followup ? followupRecordHref(followup) : null;
   const onSameRecord = useMemo(() => {
     if (!followup || !pathname || !recordHref) return false;
-    if (followup.propertyId) {
-      return pathname.includes(buildRouteSegment(ROUTES.PROPERTIES.DETAIL, followup.propertyId));
-    }
     return pathname.includes(buildRouteSegment(ROUTES.CUSTOMERS.DETAIL, followup.customerId));
   }, [followup, pathname, recordHref]);
 

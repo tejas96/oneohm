@@ -1,5 +1,6 @@
 import type { DashboardItem } from '@tejas96/shared/types';
 
+import { siteHref } from '@/components/features/customers/lib/site-href';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 
 export type ActionTarget =
@@ -41,12 +42,17 @@ export function resolveAction(item: DashboardItem): ActionTarget {
       };
 
     case 'open_property':
-    case 'complete_survey':
+    case 'complete_survey': {
+      const propertyId = params.propertyId ?? params.id ?? '';
       return {
         mode: 'navigate',
-        href: buildRoute(ROUTES.PROPERTIES.DETAIL, { id: params.propertyId ?? params.id ?? '' }),
+        // Without a customer id the old site address finds the customer itself.
+        href: params.customerId
+          ? siteHref(params.customerId, propertyId)
+          : buildRoute(ROUTES.PROPERTIES.DETAIL, { id: propertyId }),
         label,
       };
+    }
 
     case 'create_quote':
       return {

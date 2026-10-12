@@ -57,7 +57,7 @@ export function SiteBlock({
   onRequestDelete,
 }: SiteBlockProps): JSX.Element {
   const router = useRouter();
-  const siteHref = customerLinks.site(property.id);
+  const siteHref = customerLinks.site(property.customerId, property.id);
   const journey = siteJourneyText(property);
   const lifecycle = getSiteLifecycle(property);
   const typeLabel =

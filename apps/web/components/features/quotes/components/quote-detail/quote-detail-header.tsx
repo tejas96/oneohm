@@ -16,6 +16,7 @@ import { useDeleteQuote, usePropertyLockStatus } from '../../hooks/use-quotes';
 import { QuoteStatusDropdown } from '../quote-status-dropdown';
 import { VoidQuoteDialog } from '../void-quote-dialog';
 
+import { siteHref } from '@/components/features/customers/lib/site-href';
 import { Can } from '@/components/shared/guards';
 import {
   Breadcrumb,
@@ -187,7 +188,7 @@ export const QuoteDetailHeader = React.memo(
               <>
                 <BreadcrumbItem>
                   <BreadcrumbLink asChild>
-                    <Link href={buildRoute(ROUTES.PROPERTIES.DETAIL, { id: quote.propertyId })}>
+                    <Link href={siteHref(quote.customerId, quote.propertyId)}>
                       {quote.propertyName}
                     </Link>
                   </BreadcrumbLink>
@@ -251,7 +252,7 @@ export const QuoteDetailHeader = React.memo(
               {quote.propertyName && quote.propertyId && (
                 <>
                   <Link
-                    href={buildRoute(ROUTES.PROPERTIES.DETAIL, { id: quote.propertyId })}
+                    href={siteHref(quote.customerId, quote.propertyId)}
                     className="text-primary hover:underline font-medium"
                   >
                     {quote.propertyName}

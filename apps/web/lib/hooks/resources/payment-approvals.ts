@@ -1,6 +1,12 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseQueryResult,
+} from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import { useCallback } from 'react';
 
@@ -172,20 +178,27 @@ function compact<T extends object>(input: T): Partial<T> {
 // Reads
 // ============================================================================
 
-export function usePaymentApprovals(
-  filters: ApprovalFilters = {},
-  options?: { enabled?: boolean },
-): UseQueryResult<ApprovalPage, AxiosError> {
+/**
+ * The list query itself, for a caller that needs it for several projects at
+ * once (`useQueries`) and must share the cache with `usePaymentApprovals`.
+ */
+export function paymentApprovalsQuery(filters: ApprovalFilters = {}) {
   const params = compact(filters);
-  return useQuery({
+  return queryOptions<ApprovalPage, AxiosError>({
     queryKey: approvalKeys.list(params),
     queryFn: async ({ signal }): Promise<ApprovalPage> => {
       const { data } = await apiClient.get<ApprovalPage>('/payment-approvals', { params, signal });
       return data;
     },
-    enabled: options?.enabled !== false,
     staleTime: 15_000,
   });
+}
+
+export function usePaymentApprovals(
+  filters: ApprovalFilters = {},
+  options?: { enabled?: boolean },
+): UseQueryResult<ApprovalPage, AxiosError> {
+  return useQuery({ ...paymentApprovalsQuery(filters), enabled: options?.enabled !== false });
 }
 
 export function usePaymentApproval(id: string | null): UseQueryResult<PaymentApproval, AxiosError> {
