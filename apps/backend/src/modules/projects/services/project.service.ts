@@ -404,10 +404,38 @@ export class ProjectService {
   }
 
   /**
-   * Find projects by customer
+   * A customer's projects, each with the facts the project list shows on a
+   * row — phase, next step, meter, task counts — from the same two queries
+   * the list runs, so both screens say the same thing about one project.
    */
-  async findByCustomer(customerId: string): Promise<ProjectEntity[]> {
-    return this.projectRepository.findByCustomer(customerId);
+  async findByCustomer(customerId: string): Promise<
+    (ProjectEntity & {
+      currentPhase: string | null;
+      meterInstalled: boolean;
+      meterInstalledOn: string | null;
+      nextStep: { name: string; assigneeName: string | null } | null;
+      completedTasks: number;
+      totalTasks: number;
+    })[]
+  > {
+    const projects = await this.projectRepository.findByCustomer(customerId);
+    const projectIds = projects.map((project) => project.id);
+    const [factsMap, taskCountMap] = await Promise.all([
+      this.projectRepository.getListFacts(projectIds),
+      this.projectRepository.getTaskCounts(projectIds),
+    ]);
+
+    return projects.map((project) => {
+      const facts = factsMap.get(project.id);
+      const taskCounts = taskCountMap.get(project.id) ?? { completedTasks: 0, totalTasks: 0 };
+      return Object.assign(project, {
+        currentPhase: facts?.currentPhase ?? null,
+        meterInstalled: facts?.meterInstalled ?? false,
+        meterInstalledOn: facts?.meterInstalledOn ?? null,
+        nextStep: facts?.nextStep ?? null,
+        ...taskCounts,
+      });
+    });
   }
 
   /**

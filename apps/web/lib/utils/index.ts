@@ -55,4 +55,4 @@ export { formatPhoneForWhatsApp, normalizePhoneToE164, stripPhoneCountryCode } f
 export { buildTasksTabUrl } from './project';
 
 export { recordRecentView } from './recent-views';
-export { contractMovedNote, siteValue } from './site-value';
+export { contractMovedNote } from './site-value';

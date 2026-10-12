@@ -29,7 +29,19 @@ export interface CustomerProjectItem {
   actualSystemSizeKw?: number;
   startDate?: string;
   endDate?: string;
+  /** When the project record was made: the day the quote became a project. */
+  createdAt?: string;
   property: CustomerPropertyResponse;
+  /** Phase the project is in — furthest reached; null with no main-line steps. */
+  currentPhase?: string | null;
+  /** The open step to do next and who holds it; null when nothing is open. */
+  nextStep?: { name: string; assigneeName: string | null } | null;
+  /** A net-meter installation step is done. */
+  meterInstalled?: boolean;
+  /** India day the meter went in (`YYYY-MM-DD`); null when not installed or undated. */
+  meterInstalledOn?: string | null;
+  totalTasks?: number;
+  completedTasks?: number;
 }
 
 const customerProjectKeys = {

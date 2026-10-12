@@ -24,7 +24,7 @@ import { useProjectReports } from '../../hooks/use-project-reports';
 
 import { ProjectAllocationsTab } from '@/components/features/inventory';
 import { ProjectMoneyTab } from '@/components/features/ledger/project-money-tab';
-import { EntityServiceTicketsTab } from '@/components/features/service-tickets';
+import { ProjectServiceTicketsTab } from '@/components/features/service-tickets';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
@@ -289,9 +289,8 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
           </Box>
 
           <Box sx={{ display: activeTab === 'service' ? 'block' : 'none' }}>
-            <EntityServiceTicketsTab
-              scope="project"
-              id={projectId}
+            <ProjectServiceTicketsTab
+              projectId={projectId}
               customerId={project.property?.customerId}
               enabled={activeTab === 'service'}
             />

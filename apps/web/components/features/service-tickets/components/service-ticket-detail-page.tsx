@@ -35,6 +35,7 @@ import { ServiceTicketStatusDialog } from './service-ticket-status-dialog';
 import { ServiceTicketTimeline } from './service-ticket-timeline';
 import { useServiceTicket } from '../hooks/use-service-tickets';
 
+import { siteHref } from '@/components/features/customers/lib/site-href';
 import { CrmStatusPill } from '@/components/shared/crm-table';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { ROUTES, buildRoute } from '@/lib/config/routes';
@@ -274,7 +275,7 @@ export function ServiceTicketDetailPage({ ticketId }: ServiceTicketDetailPagePro
                 <Field label="PROPERTY">
                   <MuiLink
                     component={NextLink}
-                    href={buildRoute(ROUTES.PROPERTIES.DETAIL, { id: ticket.propertyId })}
+                    href={siteHref(ticket.customerId, ticket.propertyId)}
                     underline="hover"
                   >
                     {ticket.propertyLabel}

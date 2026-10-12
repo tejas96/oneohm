@@ -118,7 +118,7 @@ export type UpdateServiceTicketInput = Partial<
 // Query keys
 // ============================================================================
 
-export const serviceTicketKeys = {
+const serviceTicketKeys = {
   all: () => ['service-tickets'] as const,
   lists: () => [...serviceTicketKeys.all(), 'list'] as const,
   list: (params: ServiceTicketListParams) => [...serviceTicketKeys.lists(), params] as const,

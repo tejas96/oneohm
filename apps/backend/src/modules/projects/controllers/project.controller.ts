@@ -34,6 +34,7 @@ import {
   CancelProjectDto,
   CancellationCleanupDto,
   ConvertFromQuoteDto,
+  CustomerProjectDto,
   ProjectResponseDto,
   UpdateProjectDto,
   UpdateProjectStatusDto,
@@ -496,10 +497,10 @@ export class ProjectController {
   async findByCustomer(
     @CurrentUser() currentUser: CurrentUserType,
     @Param('customerId', ParseUUIDPipe) customerId: string,
-  ): Promise<ProjectResponseDto[]> {
+  ): Promise<CustomerProjectDto[]> {
     const projects = await this.projectService.findByCustomer(customerId);
 
-    return plainToInstance(ProjectResponseDto, projects, {
+    return plainToInstance(CustomerProjectDto, projects, {
       excludeExtraneousValues: true,
     });
   }

@@ -168,7 +168,9 @@ export class CustomerPropertyRepository {
   async findByCustomer(customerId: string): Promise<CustomerPropertyEntity[]> {
     return this.repository.find({
       where: { customerId, deletedAt: IsNull() },
-      relations: ['discom'],
+      // The people are loaded so the list can name who added the site and who
+      // does its visit and survey, as the single-site read does.
+      relations: ['discom', 'creator', 'siteVisitAssigneeUser', 'siteSurveyAssigneeUser'],
       order: { isPrimary: 'DESC', createdAt: 'DESC' },
     });
   }

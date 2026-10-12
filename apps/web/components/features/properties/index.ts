@@ -2,8 +2,8 @@
 
 // Constants
 // Components
-export { PropertyDetailPage } from './components/property-detail-page';
-export { MarkAsLostDialog } from './property-detail';
+export { MarkAsLostDialog } from './components/mark-as-lost-dialog';
+export { PropertyRedirect } from './components/property-redirect';
 
 // Property-domain field groups — consumed by the onboarding wizard, which
 // supplies the surrounding card chrome.

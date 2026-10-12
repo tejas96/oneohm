@@ -14,8 +14,8 @@ const NO_NAMES: ReadonlyMap<string, string> = new Map();
  * names cost no extra request. A reseller who is no longer active is not in
  * that list; the row then reads plain "Reseller".
  */
-export function useResellerNames(): ReadonlyMap<string, string> {
-  const { data: employees } = useEmployees();
+export function useResellerNames(options?: { enabled?: boolean }): ReadonlyMap<string, string> {
+  const { data: employees } = useEmployees({ enabled: options?.enabled });
 
   return useMemo(() => {
     if (!employees) return NO_NAMES;

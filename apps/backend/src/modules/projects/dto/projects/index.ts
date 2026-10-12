@@ -5,3 +5,4 @@ export * from './project-response.dto';
 export * from './convert-from-quote.dto';
 export * from './milestone-aggregate.dto';
 export * from './cancellation-cleanup.dto';
+export * from './customer-project.dto';

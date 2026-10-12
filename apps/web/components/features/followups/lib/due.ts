@@ -23,16 +23,6 @@ export function followupIsPastDue(scheduledAt: string, now = new Date()): boolea
   return followupIstDayDiff(new Date(scheduledAt), now) < 0;
 }
 
-export function followupOverdueCount(
-  followups: { scheduledAt: string; status: string }[],
-  pendingStatus: string,
-  now = new Date(),
-): number {
-  return followups.filter(
-    (f) => f.status === pendingStatus && followupIsPastDue(f.scheduledAt, now),
-  ).length;
-}
-
 export function crmToneFromDue(tone: FollowupDueTone): CrmTone {
   if (tone === 'danger') return 'danger';
   if (tone === 'warning') return 'warning';

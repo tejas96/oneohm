@@ -16,32 +16,7 @@ import {
 
 import type { CrmTone } from '@/components/shared/crm-table';
 import type { StatusChipColor } from '@/components/ui/mui-status-chip';
-import type { Gate } from '@/lib/rbac/catalog';
 import { toTitleLabel } from '@/lib/utils';
-
-// ============================================================================
-// Detail Page: Tab Configuration
-// ============================================================================
-
-export const CUSTOMER_DETAIL_TABS = [
-  { value: 'overview', label: 'Overview', permission: 'customers.view' },
-  { value: 'properties', label: 'Properties', permission: 'properties.view' },
-  { value: 'quotes', label: 'Quotes', permission: 'quotes.view' },
-  { value: 'projects', label: 'Projects', permission: 'projects.view' },
-  { value: 'documents', label: 'Documents', permission: 'customers.view' },
-  { value: 'followups', label: 'Follow-ups', permission: 'followups.view' },
-  { value: 'finance', label: 'Finance', permission: 'finance.view' },
-  { value: 'service', label: 'Service', permission: 'service.view' },
-  { value: 'activity', label: 'Activity', permission: 'customers.view' },
-] as const satisfies readonly {
-  value: string;
-  label: string;
-  permission: Gate;
-}[];
-
-export type CustomerDetailTab = (typeof CUSTOMER_DETAIL_TABS)[number]['value'];
-
-export const CUSTOMER_DETAIL_DEFAULT_TAB: CustomerDetailTab = 'overview';
 
 export const LEAD_SOURCE_LABELS: Record<string, string> = {
   referral: 'Referral',

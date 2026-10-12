@@ -10,29 +10,27 @@ import {
 } from '@/lib/hooks/resources/ledger';
 
 /** Open-term query cap; callers surface a note when the cap bites. */
-export const PROPERTY_FINANCE_PAGE_LIMIT = 100;
+const PROPERTY_FINANCE_PAGE_LIMIT = 100;
 
 interface PropertyFinanceSnapshot {
   totalOutstanding: number;
   overdueAmount: number;
   maxDaysOverdue: number;
-  openTermCount: number;
   /** Total received from ledger summary (rupees). */
   receivedAmount: number;
-  /** Most recent received date (YYYY-MM-DD), not record date. */
-  lastReceiptDate: string | null;
   /**
-   * The contract as it stands, and its split (rupees).
-   *
-   * The page's "Quote value" tile shows the quote's own price, which is right —
-   * it is the document the customer signed. But billing for material added on
-   * site moves the CONTRACT and never the quote, so without these the page had
-   * no way to say the two had diverged, and reported a figure the project's own
-   * Money tab contradicted.
+   * The contract as it stands, and the part of it agreed after signing
+   * (rupees). The quote keeps its own price; billing for material added on site
+   * moves the CONTRACT and never the quote.
    */
   contractAmount: number;
   changeOrderAmount: number;
-  hasProject: boolean;
+  /** Written off on waived terms: the unpaid remainder, as the ledger reports it. */
+  waivedAmount: number;
+  /** Terms called off when the project was cancelled. */
+  cancelledAmount: number;
+  /** Money handed back to the payer. */
+  refundedAmount: number;
 }
 
 export interface UsePropertyFinanceSnapshotResult {
@@ -42,19 +40,21 @@ export interface UsePropertyFinanceSnapshotResult {
   /** True when the open-term list hit `PROPERTY_FINANCE_PAGE_LIMIT`. */
   isTruncated: boolean;
   isLoading: boolean;
-  hasProject: boolean;
+  /** A read failed: the figures are not known, and must not be shown as zero. */
+  isError: boolean;
+  refetch: () => void;
 }
 
 const EMPTY_SNAPSHOT: PropertyFinanceSnapshot = {
   totalOutstanding: 0,
   overdueAmount: 0,
   maxDaysOverdue: 0,
-  openTermCount: 0,
   receivedAmount: 0,
-  lastReceiptDate: null,
   contractAmount: 0,
   changeOrderAmount: 0,
-  hasProject: false,
+  waivedAmount: 0,
+  cancelledAmount: 0,
+  refundedAmount: 0,
 };
 
 const EMPTY_TERMS: OutstandingTerm[] = [];
@@ -110,32 +110,29 @@ export function usePropertyFinanceSnapshot(
     }
 
     const ledger = ledgerQ.data;
-    const receivedAmount = ledger ? ledger.receivedPaise / 100 : 0;
-
-    let lastReceiptDate: string | null = null;
-    for (const entry of receipts) {
-      if (entry.reversesId) continue;
-      if (!lastReceiptDate || entry.valueDate > lastReceiptDate) {
-        lastReceiptDate = entry.valueDate;
-      }
-    }
-
     return {
       totalOutstanding,
       overdueAmount,
       maxDaysOverdue,
-      openTermCount: openTerms.length,
-      receivedAmount,
-      lastReceiptDate,
+      receivedAmount: ledger ? ledger.receivedPaise / 100 : 0,
       contractAmount: ledger ? ledger.contractPaise / 100 : 0,
       changeOrderAmount: ledger ? ledger.changeOrderPaise / 100 : 0,
-      hasProject: true,
+      waivedAmount: ledger ? ledger.waivedPaise / 100 : 0,
+      cancelledAmount: ledger ? (ledger.cancelledPaise ?? 0) / 100 : 0,
+      refundedAmount: ledger ? ledger.refundedPaise / 100 : 0,
     };
-  }, [hasProject, openTerms, ledgerQ.data, receipts]);
+  }, [hasProject, openTerms, ledgerQ.data]);
 
   const isLoading =
     hasProject && (outstandingQ.isLoading || ledgerQ.isLoading || entriesQ.isLoading);
   const isTruncated = openTerms.length >= PROPERTY_FINANCE_PAGE_LIMIT;
 
-  return { snapshot, openTerms, receipts, isTruncated, isLoading, hasProject };
+  const isError = hasProject && (outstandingQ.isError || ledgerQ.isError || entriesQ.isError);
+  const refetch = (): void => {
+    void outstandingQ.refetch();
+    void ledgerQ.refetch();
+    void entriesQ.refetch();
+  };
+
+  return { snapshot, openTerms, receipts, isTruncated, isLoading, isError, refetch };
 }

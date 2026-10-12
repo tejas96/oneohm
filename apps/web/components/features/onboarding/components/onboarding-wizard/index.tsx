@@ -54,6 +54,7 @@ import {
   type CustomerPropertyResponse,
   type CustomerResponse,
 } from '@/components/features/customers';
+import { siteHref } from '@/components/features/customers/lib/site-href';
 import { useUploadDocumentsBulk } from '@/components/features/documents/hooks';
 import { useCreateFollowup } from '@/components/features/followups';
 import {
@@ -346,6 +347,12 @@ export function OnboardingWizard({
 
   /* ── Persistence ─────────────────────────────────────────────────────── */
 
+  /** A site is shown on its customer's page; the old address finds the customer when it is not known here. */
+  const siteAddress = (siteId: string): string =>
+    resolvedCustomerId
+      ? siteHref(resolvedCustomerId, siteId)
+      : buildRoute(ROUTES.PROPERTIES.DETAIL, { id: siteId });
+
   const ensureCustomerCreated = async (): Promise<string | null> => {
     if (resolvedCustomerId) return resolvedCustomerId;
     const customerData = form.getValues('customer');
@@ -498,7 +505,7 @@ export function OnboardingWizard({
         } as never,
       });
       showToast.success('Site updated successfully');
-      router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: propertyId }));
+      router.push(siteAddress(propertyId));
     } catch (error) {
       showToast.error(getErrorMessage(error));
     }
@@ -608,7 +615,7 @@ export function OnboardingWizard({
       showToast.success(
         usingExistingCustomer ? 'Site created successfully' : 'Customer and site created',
       );
-      router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: created.id }));
+      router.push(siteAddress(created.id));
     } catch (error) {
       showToast.error(getErrorMessage(error));
     }
@@ -617,7 +624,7 @@ export function OnboardingWizard({
   /* ── Navigation ──────────────────────────────────────────────────────── */
 
   const backLink = isEditProperty
-    ? buildRoute(ROUTES.PROPERTIES.DETAIL, { id: propertyId ?? '' })
+    ? siteAddress(propertyId ?? '')
     : resolvedCustomerId
       ? buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: resolvedCustomerId })
       : ROUTES.CUSTOMERS.LIST;

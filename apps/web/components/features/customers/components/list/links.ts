@@ -1,3 +1,5 @@
+import { siteHref } from '../../lib/site-href';
+
 import { quoteLinks } from '@/components/features/quotes/components/dashboard/links';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import type { DashboardFilters } from '@/lib/hooks/resources';
@@ -21,7 +23,7 @@ export const customerLinks = {
   addCustomer: (): string => ROUTES.ONBOARDING.NEW,
   addSite: (customerId: string): string =>
     buildRoute(ROUTES.ONBOARDING.NEW, undefined, { customerId }),
-  site: (propertyId: string): string => buildRoute(ROUTES.PROPERTIES.DETAIL, { id: propertyId }),
+  site: (customerId: string, propertyId: string): string => siteHref(customerId, propertyId),
   quote: (quoteId: string): string => quoteLinks.quote(quoteId),
   project: (projectId: string): string => buildRoute(ROUTES.PROJECTS.DETAIL, { id: projectId }),
   /** The quote list on its pipeline stage — the deals behind the header figure. */
